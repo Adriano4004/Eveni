@@ -5,9 +5,16 @@
         "source": "github",
         "repo": "obra/superpowers-marketplace"
       }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
     }
   },
   "enabledPlugins": {
-    "superpowers@superpowers-marketplace": true
+    "superpowers@superpowers-marketplace": true,
+    "feature-dev@claude-plugins-official": true
   }
 }
