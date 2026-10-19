@@ -1,0 +1,67 @@
+/* Identidade visual: docs/decisoes/004-identidade-visual.md */
+:root {
+  --cor-marca: #6553f3;
+  --cor-texto: #000000;
+  --cor-texto-suave: #52525b;
+  --cor-fundo: #ffffff;
+  /* Fontes do sistema: rápidas em redes lentas e telemóveis de gama média. */
+  --fonte: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte);
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  -webkit-font-smoothing: antialiased;
+}
+
+.inicio {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.inicio__logo {
+  width: min(320px, 80vw);
+  height: auto;
+  /* O PNG tem margem branca larga: mostrar só a faixa central com a marca. */
+  aspect-ratio: 2.6 / 1;
+  object-fit: cover;
+  margin-bottom: 24px;
+}
+
+.inicio__titulo {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-style: italic;
+  max-width: 28ch;
+}
+
+.inicio__texto {
+  margin: 0;
+  color: var(--cor-texto-suave);
+  max-width: 36ch;
+  line-height: 1.5;
+}
+
+.inicio__titulo::after {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 4px;
+  margin: 12px auto 0;
+  background: var(--cor-marca);
+  transform: skewX(-20deg);
+}
