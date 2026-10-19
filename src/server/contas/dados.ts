@@ -70,10 +70,13 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
     'select created_at, last_seen_at, expires_at, host(ip) as ip, user_agent from sessions where user_id = $1 order by created_at',
     [utilizadorId],
   );
-  // Os mesmos registos que a eliminação apaga: os da pessoa e os que guardam o e-mail.
+  // Os registos da pessoa e os que guardam o e-mail, mas só desde que a conta existe: os anteriores
+  // (ex.: tentativas de entrar nesse e-mail antes do registo) não são de quem criou a conta.
   const { rows: acessos } = await pool.query(
-    "select action, created_at, host(ip) as ip, details from audit_log where user_id = $1 or details->>'email' = $2 order by id",
-    [utilizadorId, u.email],
+    `select action, created_at, host(ip) as ip, details from audit_log
+      where user_id = $1 or (details->>'email' = $2 and created_at >= $3)
+      order by id`,
+    [utilizadorId, u.email, u.created_at],
   );
   return {
     geradoEm: new Date().toISOString(),

@@ -87,6 +87,14 @@ describe('exportar os meus dados', () => {
     expect(historico).toContainEqual(expect.objectContaining({ accao: 'sessao.bloqueada', detalhes: { email: 'ana@exemplo.ao' } }));
   });
 
+  it('não inclui tentativas de entrar nesse e-mail feitas antes de a conta existir', async () => {
+    for (let i = 0; i < 11; i++) await c.post('/api/auth/entrar', { email: 'ana@exemplo.ao', palavraPasse: 'errada-123456' }, undefined, '203.0.113.9');
+    await base.pool.query("update audit_log set created_at = now() - interval '1 minute'");
+    const cookie = cookieDe(await c.registar());
+    const historico = (await exportar(PALAVRA_PASSE, cookie)).json().historicoDeAcessos;
+    expect(historico.map((a: { accao: string }) => a.accao)).not.toContain('sessao.bloqueada');
+  });
+
   it('fica na auditoria', async () => {
     await exportar(PALAVRA_PASSE, cookieDe(await c.registar()));
     const { rows } = await base.pool.query("select count(*)::int as n from audit_log where action = 'conta.exportada'");
