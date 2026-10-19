@@ -144,6 +144,9 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
       <button className="botao botao--secundario botao--primeiro" type="button" onClick={() => navegar('/conta/2fa')}>
         {e.inicio.gerirDoisFactores}
       </button>
+      <button className="botao botao--secundario botao--primeiro" type="button" onClick={() => navegar('/conta/dados')}>
+        {e.inicio.osMeusDados}
+      </button>
       <button className="botao" type="button" onClick={() => sair(false)} disabled={aSair}>
         {aSair ? e.inicio.aSair : e.inicio.sair}
       </button>

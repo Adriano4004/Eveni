@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
+import { EcraDados } from './ecras-dados.js';
 import { EcraDoisFactores } from './ecras-dois-factores.js';
 import { EcraMudarPalavraPasse, EcraRecuperar, EcraRedefinir } from './ecras-palavra-passe.js';
 import { EcraConfirmarEmail, EcraEntrar, EcraInicio, EcraRegisto } from './ecras.js';
@@ -42,6 +43,8 @@ type Estado = { tipo: 'a-carregar' } | { tipo: 'anonimo' } | { tipo: 'com-sessao
 export function App() {
   const caminho = useCaminho();
   const [estado, setEstado] = useState<Estado>({ tipo: 'a-carregar' });
+  // Mensagem a mostrar no ecrã de entrada (ex.: depois de eliminar a conta).
+  const [avisoEntrada, setAvisoEntrada] = useState<string>();
 
   function carregarEu() {
     api<Eu>('GET', '/api/auth/eu')
@@ -58,7 +61,11 @@ export function App() {
     if (estado.tipo === 'com-sessao' && SO_ANONIMO.has(caminho)) navegar('/');
   }, [estado, caminho]);
 
-  const entrou = (eu: Eu) => setEstado({ tipo: 'com-sessao', eu });
+  const entrou = (eu: Eu) => {
+    // O aviso (ex.: "conta eliminada") só se mostra uma vez.
+    setAvisoEntrada(undefined);
+    setEstado({ tipo: 'com-sessao', eu });
+  };
 
   if (estado.tipo === 'a-carregar') {
     return <p className="a-carregar">{mensagens.ecras.carregar}</p>;
@@ -92,9 +99,21 @@ export function App() {
   if (estado.tipo === 'com-sessao') {
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;
+    if (caminho === '/conta/dados') {
+      return (
+        <EcraDados
+          eu={estado.eu}
+          aoEliminar={() => {
+            setAvisoEntrada(mensagens.ecras.dados.eliminada);
+            setEstado({ tipo: 'anonimo' });
+            navegar('/entrar');
+          }}
+        />
+      );
+    }
     return <EcraInicio eu={estado.eu} aoSair={() => setEstado({ tipo: 'anonimo' })} />;
   }
   if (caminho === '/registo') return <EcraRegisto aoEntrar={entrou} />;
   if (caminho === '/recuperar') return <EcraRecuperar />;
-  return <EcraEntrar aoEntrar={entrou} />;
+  return <EcraEntrar aoEntrar={entrou} aviso={avisoEntrada} />;
 }

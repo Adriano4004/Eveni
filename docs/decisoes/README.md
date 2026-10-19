@@ -14,3 +14,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 007 | [Confirmação de e-mail](007-confirmacao-email.md) | Em vigor |
 | 008 | [Recuperação e mudança de palavra-passe](008-recuperacao-palavra-passe.md) | Em vigor |
 | 009 | [Verificação em dois passos (2FA)](009-dois-factores.md) | Em vigor |
+| 010 | [Exportação e eliminação dos dados da conta](010-dados-da-conta.md) | Em vigor |

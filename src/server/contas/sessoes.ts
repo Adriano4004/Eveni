@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type pg from 'pg';
 import type { Config } from '../config.js';
+import { apagarContasPorConfirmar } from './eliminacao.js';
 
 export const DURACAO_SESSAO_DIAS = 30;
 // Renova o prazo da sessão no máximo uma vez por hora, para não escrever na base de dados a cada pedido.
@@ -95,41 +96,6 @@ export async function terminarTodasAsSessoes(pool: pg.Pool | pg.PoolClient, util
 }
 
 // Apaga sessões expiradas e contadores de tentativas antigos. Corre periodicamente (ver index.ts).
-export const DIAS_PARA_CONFIRMAR = 7;
-
-// Contas que nunca confirmaram o e-mail são apagadas ao fim de DIAS_PARA_CONFIRMAR dias, para que
-// ninguém fique para sempre com o e-mail de outra pessoa. Uma conta por confirmar não pode criar
-// conteúdo nem ter outros membros, por isso apaga-se com o seu espaço pessoal e nada mais se perde.
-async function apagarContasPorConfirmar(pool: pg.Pool): Promise<number> {
-  const cliente = await pool.connect();
-  try {
-    await cliente.query('begin');
-    const { rows } = await cliente.query<{ id: string }>(
-      `select id from users
-        where email_verified_at is null and created_at < now() - make_interval(days => $1)
-        for update`,
-      [DIAS_PARA_CONFIRMAR],
-    );
-    const ids = rows.map((r) => r.id);
-    if (ids.length > 0) {
-      await cliente.query(
-        `delete from workspaces w
-          where w.id in (select workspace_id from workspace_members where user_id = any($1::uuid[]) and role = 'owner')
-            and not exists (select 1 from workspace_members o where o.workspace_id = w.id and o.user_id <> all($1::uuid[]))`,
-        [ids],
-      );
-      await cliente.query('delete from users where id = any($1::uuid[])', [ids]);
-    }
-    await cliente.query('commit');
-    return ids.length;
-  } catch (erro) {
-    await cliente.query('rollback');
-    throw erro;
-  } finally {
-    cliente.release();
-  }
-}
-
 export async function limparExpirados(pool: pg.Pool): Promise<{ sessoes: number; tentativas: number; ligacoes: number; contas: number }> {
   const sessoes = await pool.query('delete from sessions where expires_at < now()');
   // Nenhuma janela de limitação passa de 1 hora: um dia de margem chega.
@@ -139,6 +105,6 @@ export async function limparExpirados(pool: pg.Pool): Promise<{ sessoes: number;
     "delete from email_tokens where expires_at < now() - interval '1 day' or used_at < now() - interval '1 day'",
   );
   await pool.query('delete from login_challenges where expires_at < now()');
-  const contas = await apagarContasPorConfirmar(pool);
+  const contas = await apagarContasPorConfirmar({ pool });
   return { sessoes: sessoes.rowCount ?? 0, tentativas: tentativas.rowCount ?? 0, ligacoes: ligacoes.rowCount ?? 0, contas };
 }

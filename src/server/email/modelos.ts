@@ -61,3 +61,22 @@ export function emailAvisoConta(para: string, assunto: string, corpo: string, ur
     html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(corpo)], { texto: botao, url: urlRecuperar }, [escaparHtml(e.seNaoFoiVoce)]),
   };
 }
+
+// Sem ligação para recuperar a conta: já não existe.
+export function emailContaEliminada(para: string): MensagemEmail {
+  const c = e.contaEliminada;
+  const p = (t: string) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#18181b">${escaparHtml(t)}</p>`;
+  return {
+    para,
+    assunto: c.assunto,
+    texto: [e.confirmar.ola, '', c.corpo, '', e.rodape].join('\n'),
+    html: `<!doctype html><html lang="pt-PT"><body style="margin:0;padding:24px;background:#f6f5fb;font-family:Arial,sans-serif">
+<div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:12px;padding:28px">
+<p style="margin:0 0 24px;font-size:22px;font-weight:800;font-style:italic;color:#000000">EVENI</p>
+${p(e.confirmar.ola)}
+${p(c.corpo)}
+</div>
+<p style="text-align:center;font-size:12px;color:#71717a;margin-top:16px">${escaparHtml(e.rodape)}</p>
+</body></html>`,
+  };
+}

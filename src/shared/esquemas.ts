@@ -77,6 +77,20 @@ export const confirmarDoisFactores = z.object({
   codigo: z.string({ error: m.codigoOuRecuperacaoInvalido }).trim().min(6, m.codigoOuRecuperacaoInvalido).max(20, m.codigoOuRecuperacaoInvalido),
 });
 
+// Código do 2FA para acções sobre os dados: só obrigatório (e verificado no servidor) quando o 2FA está activo.
+const codigoSeActivo = z.string().trim().max(20, m.codigoOuRecuperacaoInvalido).optional().transform((v) => (v ? v : undefined));
+
+export const exportarDados = z.object({ palavraPasse: palavraPasseActual, codigo: codigoSeActivo });
+
+export const eliminarConta = z.object({
+  palavraPasse: palavraPasseActual,
+  codigo: codigoSeActivo,
+  confirmacao: z
+    .string({ error: m.escrevaEliminar })
+    .trim()
+    .refine((v) => v.toUpperCase() === 'ELIMINAR', m.escrevaEliminar),
+});
+
 export interface InicioDoisFactores {
   segredo: string;
   qr: string;
