@@ -36,18 +36,17 @@ export async function criarSessao(
   definirCookie(config, resposta, token, expira);
 }
 
+// Opções comuns a todos os cookies do Eveni (sessão e entrada a meio do 2FA).
+export function opcoesCookie(config: Config) {
+  return { httpOnly: true, secure: config.APP_ENV !== 'local', sameSite: 'lax' as const, path: '/' };
+}
+
 function definirCookie(config: Config, resposta: FastifyReply, token: string, expira: Date) {
-  resposta.setCookie(nomeCookie(config), token, {
-    httpOnly: true,
-    secure: config.APP_ENV !== 'local',
-    sameSite: 'lax',
-    path: '/',
-    expires: expira,
-  });
+  resposta.setCookie(nomeCookie(config), token, { ...opcoesCookie(config), expires: expira });
 }
 
 export function apagarCookie(config: Config, resposta: FastifyReply) {
-  resposta.clearCookie(nomeCookie(config), { path: '/', httpOnly: true, secure: config.APP_ENV !== 'local', sameSite: 'lax' });
+  resposta.clearCookie(nomeCookie(config), opcoesCookie(config));
 }
 
 export interface SessaoValida {
@@ -88,7 +87,9 @@ export async function terminarSessao(pool: pg.Pool, tokenHash: string): Promise<
   await pool.query('delete from sessions where token_hash = $1', [tokenHash]);
 }
 
+// Termina as sessões e também as entradas a meio (palavra-passe certa, à espera do código do 2FA).
 export async function terminarTodasAsSessoes(pool: pg.Pool | pg.PoolClient, utilizadorId: string): Promise<number> {
+  await pool.query('delete from login_challenges where user_id = $1', [utilizadorId]);
   const { rowCount } = await pool.query('delete from sessions where user_id = $1', [utilizadorId]);
   return rowCount ?? 0;
 }
@@ -137,6 +138,7 @@ export async function limparExpirados(pool: pg.Pool): Promise<{ sessoes: number;
   const ligacoes = await pool.query(
     "delete from email_tokens where expires_at < now() - interval '1 day' or used_at < now() - interval '1 day'",
   );
+  await pool.query('delete from login_challenges where expires_at < now()');
   const contas = await apagarContasPorConfirmar(pool);
   return { sessoes: sessoes.rowCount ?? 0, tentativas: tentativas.rowCount ?? 0, ligacoes: ligacoes.rowCount ?? 0, contas };
 }

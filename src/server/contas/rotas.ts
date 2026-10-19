@@ -11,6 +11,7 @@ import type { EnviarEmail } from '../email/index.js';
 import { emailConfirmacao } from '../email/modelos.js';
 import type { criarGuardas } from './acesso.js';
 import { criarTokenConfirmacao, urlConfirmacao } from './confirmacao.js';
+import { iniciarDesafio, registarRotasDoisFactores } from './dois-factores.js';
 import { apagarCookie, criarSessao, lerSessao, terminarSessao, terminarTodasAsSessoes } from './sessoes.js';
 
 const m = mensagens.contas;
@@ -27,6 +28,7 @@ export function registarRotasContas(
 ) {
   const { pool } = base;
   const { exigirSessao } = guardas;
+  registarRotasDoisFactores(app, config, base, enviarEmail, guardas, obterEu);
 
   app.post('/api/auth/registo', async (pedido, resposta) => {
     await limitar(pool, `registo-ip:${pedido.ip}`, LIMITES.registoPorIp);
@@ -90,8 +92,8 @@ export function registarRotasContas(
       throw new ErroHttp(429, m.contaBloqueada);
     }
 
-    const { rows } = await pool.query<{ id: string; password_hash: string }>(
-      'select id, password_hash from users where email = $1',
+    const { rows } = await pool.query<{ id: string; password_hash: string; dois_factores: boolean }>(
+      'select id, password_hash, totp_enabled_at is not null as dois_factores from users where email = $1',
       [dados.email],
     );
     const utilizador = rows[0];
@@ -101,6 +103,14 @@ export function registarRotasContas(
     if (!utilizador || !certa) {
       await auditar(pool, 'sessao.entrar_falhado', { utilizadorId: utilizador?.id, ip: pedido.ip });
       throw new ErroHttp(401, m.credenciaisInvalidas);
+    }
+
+    if (utilizador.dois_factores) {
+      // Palavra-passe certa, mas falta o código: ainda não há sessão. O bloqueio por e-mail e IP só
+      // é limpo depois do código certo (ver dois-factores.ts).
+      await iniciarDesafio(pool, config, resposta, utilizador.id);
+      await auditar(pool, 'sessao.2fa_pedido', { utilizadorId: utilizador.id, ip: pedido.ip });
+      return { doisFactores: true };
     }
 
     await limparTentativas(pool, chaveEmailIp);
@@ -142,8 +152,9 @@ export function registarRotasContas(
       workspace_id: string;
       workspace_name: string;
       plan_code: Eu['espaco']['plano'];
+      dois_factores: boolean;
     }>(
-      `select u.id, u.name, u.email, u.email_verified_at, w.id as workspace_id, w.name as workspace_name, w.plan_code
+      `select u.id, u.name, u.email, u.email_verified_at, u.totp_enabled_at is not null as dois_factores, w.id as workspace_id, w.name as workspace_name, w.plan_code
          from users u
          join workspace_members wm on wm.user_id = u.id
          join workspaces w on w.id = wm.workspace_id
@@ -159,6 +170,7 @@ export function registarRotasContas(
       nome: l.name,
       email: l.email,
       emailConfirmado: l.email_verified_at !== null,
+      doisFactores: l.dois_factores,
       espaco: { id: l.workspace_id, nome: l.workspace_name, plano: l.plan_code },
     };
   }

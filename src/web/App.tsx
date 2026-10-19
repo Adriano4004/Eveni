@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
+import { EcraDoisFactores } from './ecras-dois-factores.js';
 import { EcraMudarPalavraPasse, EcraRecuperar, EcraRedefinir } from './ecras-palavra-passe.js';
 import { EcraConfirmarEmail, EcraEntrar, EcraInicio, EcraRegisto } from './ecras.js';
 import { navegar, useCaminho } from './navegacao.js';
@@ -90,6 +91,7 @@ export function App() {
   }
   if (estado.tipo === 'com-sessao') {
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
+    if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;
     return <EcraInicio eu={estado.eu} aoSair={() => setEstado({ tipo: 'anonimo' })} />;
   }
   if (caminho === '/registo') return <EcraRegisto aoEntrar={entrou} />;

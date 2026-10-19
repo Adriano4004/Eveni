@@ -17,6 +17,20 @@ export async function registarTentativa(pool: pg.Pool, chave: string, janelaSegu
   return rows[0]?.count ?? 1;
 }
 
+// Quantas tentativas houve na janela actual, sem registar nenhuma.
+export async function contarTentativas(pool: pg.Pool, chave: string, janelaSegundos: number): Promise<number> {
+  const { rows } = await pool.query<{ count: number }>(
+    'select count from rate_limits where key = $1 and window_start >= now() - make_interval(secs => $2)',
+    [chave, janelaSegundos],
+  );
+  return rows[0]?.count ?? 0;
+}
+
+// Desfaz uma tentativa registada (ex.: contou-se antes de verificar e afinal estava certa).
+export async function descontarTentativa(pool: pg.Pool, chave: string): Promise<void> {
+  await pool.query('update rate_limits set count = greatest(count - 1, 0) where key = $1', [chave]);
+}
+
 export async function limparTentativas(pool: pg.Pool, chave: string): Promise<void> {
   await pool.query('delete from rate_limits where key = $1', [chave]);
 }
@@ -42,6 +56,12 @@ export const LIMITES = {
   redefinirPorIp: { max: 30, janela: 15 * 60 },
   // Tentativas de adivinhar a palavra-passe actual com a sessão de outra pessoa (ex.: telemóvel perdido).
   mudarPorConta: { max: 10, janela: 60 * 60 },
+  // Códigos errados do 2FA na entrada, somando todas as entradas a meio. Por conta e IP (quem sabe a
+  // palavra-passe e ataca de um sítio não bloqueia o dono noutro) e por conta no total. Com 3 códigos
+  // válidos de cada vez em 1 000 000, 20 erros por hora dão ~1 hipótese em 16 000 por hora.
+  codigosErradosPorContaEIp: { max: 5, janela: 60 * 60 },
+  codigosErradosPorConta: { max: 20, janela: 60 * 60 },
+  gerirDoisFactores: { max: 10, janela: 60 * 60 },
 } as const;
 
 // Regista a tentativa e recusa com 429 quando passa do limite.

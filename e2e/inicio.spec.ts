@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import pg from 'pg';
+import { codigoHotp, deBase32, passoActual } from '../src/server/seguranca/totp.js';
 import { envValido } from '../tests/ajuda.js';
 
 const PALAVRA_PASSE = 'Kizomba-2026-evento';
@@ -217,6 +218,61 @@ test('mudar a palavra-passe a partir da página inicial', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Olá, Ivo' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Olá, Ivo' })).toBeVisible();
+});
+
+test('activar a verificação em dois passos e entrar com o código', async ({ page }) => {
+  const email = `joana.${Date.now()}@exemplo.ao`;
+  await page.goto('/registo');
+  await page.getByLabel('Nome').fill('Joana');
+  await page.getByLabel('E-mail', { exact: true }).fill(email);
+  await page.getByLabel('Palavra-passe', { exact: true }).fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Joana' })).toBeVisible();
+  // O 2FA só se activa com o e-mail confirmado.
+  await page.goto(`/confirmar-email?token=${await criarLigacaoDeConfirmacao(email)}`);
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByRole('button', { name: 'Gerir verificação em dois passos' }).click();
+  await page.getByRole('button', { name: 'Activar', exact: true }).click();
+
+  // O teste faz de aplicação autenticadora, a partir da chave mostrada no ecrã.
+  const segredo = (await page.locator('.chave').innerText()).replace(/\s/g, '');
+  const codigo = (desvio: number) => codigoHotp(deBase32(segredo), passoActual() + desvio);
+  await expect(page.locator('img.qr')).toBeVisible();
+  await page.getByLabel('Código de 6 dígitos').fill(codigo(-1));
+  await page.getByLabel('Palavra-passe', { exact: true }).fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Activar verificação em dois passos' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Guarde os códigos de recuperação' })).toBeVisible();
+  const codigos = await page.getByRole('list', { name: 'Guarde os códigos de recuperação' }).getByRole('listitem').allInnerTexts();
+  expect(codigos).toHaveLength(10);
+  await page.getByRole('button', { name: 'Já guardei os códigos' }).click();
+  await expect(page.getByText('A verificação em dois passos está activa na sua conta.')).toBeVisible();
+
+  await page.getByRole('link', { name: 'Voltar ao início' }).click();
+  await expect(page.getByText('Activa', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Terminar sessão', exact: true }).click();
+
+  // Entrar: palavra-passe e depois o código.
+  await page.getByLabel('E-mail', { exact: true }).fill(email);
+  await page.getByLabel('Palavra-passe', { exact: true }).fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page.getByRole('heading', { name: 'Verificação em dois passos' })).toBeVisible();
+  await page.getByLabel('Código de 6 dígitos').fill('000000');
+  await page.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(page.getByText('Código incorrecto').first()).toBeVisible();
+  await page.getByLabel('Código de 6 dígitos').fill(codigo(0));
+  await page.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Joana' })).toBeVisible();
+
+  // Sem o telemóvel: um código de recuperação.
+  await page.getByRole('button', { name: 'Terminar sessão', exact: true }).click();
+  await page.getByLabel('E-mail', { exact: true }).fill(email);
+  await page.getByLabel('Palavra-passe', { exact: true }).fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await page.getByRole('button', { name: /usar um código de recuperação/ }).click();
+  await page.getByLabel('Código de recuperação').fill(codigos[0]!);
+  await page.getByRole('button', { name: 'Confirmar' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Joana' })).toBeVisible();
 });
 
 // Os e-mails reais só existem nos logs do servidor: os testes criam ligações conhecidas na base de dados.

@@ -55,6 +55,33 @@ export const mudarPalavraPasse = z.object({
   palavraPasse: palavraPasseNova,
 });
 
+const codigoTotp = z.string({ error: m.codigoInvalido }).trim().regex(/^\d{6}$/, m.codigoInvalido);
+const codigoRecuperacao = z
+  .string({ error: m.codigoRecuperacaoInvalido })
+  .trim()
+  .min(10, m.codigoRecuperacaoInvalido)
+  .max(20, m.codigoRecuperacaoInvalido);
+const palavraPasseActual = z.string({ error: m.palavraPasseObrigatoria }).min(1, m.palavraPasseObrigatoria).max(200, m.palavraPasseLonga);
+
+// Segundo passo da entrada: o código da aplicação ou um código de recuperação.
+// Um dos dois campos: o erro aparece junto ao campo que a pessoa preencheu.
+export const entrarDoisFactores = z
+  .object({ codigo: codigoTotp.optional(), codigoRecuperacao: codigoRecuperacao.optional() })
+  .refine((d) => (d.codigo === undefined) !== (d.codigoRecuperacao === undefined), { message: m.codigoInvalido, path: ['codigo'] });
+
+export const activarDoisFactores = z.object({ palavraPasse: palavraPasseActual, codigo: codigoTotp });
+
+// Desactivar ou gerar novos códigos: palavra-passe e um código (da aplicação ou de recuperação).
+export const confirmarDoisFactores = z.object({
+  palavraPasse: palavraPasseActual,
+  codigo: z.string({ error: m.codigoOuRecuperacaoInvalido }).trim().min(6, m.codigoOuRecuperacaoInvalido).max(20, m.codigoOuRecuperacaoInvalido),
+});
+
+export interface InicioDoisFactores {
+  segredo: string;
+  qr: string;
+}
+
 export type CodigoPlano = 'singular' | 'empresarial' | 'grandes';
 
 // Resposta de GET /api/auth/eu. Nunca inclui hashes, tokens ou segredos.
@@ -63,5 +90,6 @@ export interface Eu {
   nome: string;
   email: string;
   emailConfirmado: boolean;
+  doisFactores: boolean;
   espaco: { id: string; nome: string; plano: CodigoPlano };
 }

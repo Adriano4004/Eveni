@@ -266,3 +266,64 @@ h1 {
   color: #05603a;
   line-height: 1.5;
 }
+
+/* Botão com aspecto de ligação (acções na mesma página). */
+.ligacao {
+  font: inherit;
+  font-weight: 600;
+  color: var(--cor-marca-escura);
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.qr {
+  display: block;
+  width: 200px;
+  height: 200px;
+  margin: 8px auto 16px;
+  background: #ffffff;
+  padding: 8px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-borda);
+}
+
+.chave {
+  display: block;
+  margin: 4px 0 16px;
+  padding: 10px 12px;
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  border: 1px dashed var(--cor-borda);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  overflow-wrap: normal;
+}
+
+.codigos {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+
+.seccao {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.seccao h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
