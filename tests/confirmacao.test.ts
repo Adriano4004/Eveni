@@ -23,44 +23,60 @@ afterAll(async () => {
   await base.fechar();
 });
 
-const confirmar = (token: unknown, ip?: string) => c.post('/api/auth/confirmar-email', { token }, undefined, ip);
+// Cookie da última conta registada: a confirmação exige sessão na conta que recebeu o e-mail.
+let ultimoCookie: string | undefined;
+async function registar(email?: string, nome?: string) {
+  const r = await c.registar(email, nome);
+  if (r.statusCode === 201) ultimoCookie = cookieDe(r);
+  return r;
+}
+const confirmar = (token: unknown, cookie = ultimoCookie, ip?: string) => c.post('/api/auth/confirmar-email', { token }, cookie, ip);
 
 describe('e-mail de confirmação no registo', () => {
   it('envia um e-mail em português com a ligação para o endereço público da aplicação', async () => {
-    await c.registar('ana@exemplo.ao', 'Ana Domingos');
+    await registar('ana@exemplo.ao', 'Ana Domingos');
     expect(c.emails).toHaveLength(1);
     const email = c.emails[0]!;
     expect(email.para).toBe('ana@exemplo.ao');
     expect(email.assunto).toBe('Confirme o seu e-mail no Eveni');
-    expect(email.texto).toContain('Olá, Ana Domingos');
+    expect(email.texto).toContain('Olá,');
     expect(email.texto).toContain('http://localhost:3000/confirmar-email?token=');
     expect(email.html).toContain('href="http://localhost:3000/confirmar-email?token=');
   });
 
-  it('escapa o nome no HTML do e-mail', async () => {
-    await c.registar('ana@exemplo.ao', '<script>alert(1)</script>');
-    expect(c.emails[0]!.html).not.toContain('<script>');
-    expect(c.emails[0]!.html).toContain('&lt;script&gt;');
+  it('o e-mail não inclui o nome escrito no registo (pode não ser o dono do endereço a escrevê-lo)', async () => {
+    await registar('ana@exemplo.ao', 'Clique aqui: https://site-falso.example');
+    expect(c.emails[0]!.texto).not.toContain('site-falso');
+    expect(c.emails[0]!.html).not.toContain('site-falso');
+  });
+
+  it('recusa nomes com quebras de linha ou caracteres de controlo', async () => {
+    for (const nome of ['Ana\nClique aqui', 'Ana\u0000', 'Ana\u202Eetnac']) {
+      const r = await c.registar('ana@exemplo.ao', nome);
+      expect(r.statusCode).toBe(400);
+      expect(r.json().campos.nome).toBe('O nome tem caracteres inválidos.');
+    }
   });
 
   it('não envia e-mail se o registo falhar', async () => {
-    await c.registar('ana@exemplo.ao');
-    await c.registar('ana@exemplo.ao');
+    await registar('ana@exemplo.ao');
+    await registar('ana@exemplo.ao');
     expect(c.emails).toHaveLength(1);
   });
 
   it('a base de dados guarda só o hash do token', async () => {
-    await c.registar();
+    await registar();
     const { rows } = await base.pool.query('select token_hash from email_tokens');
     expect(rows[0].token_hash).not.toBe(c.tokenDoUltimoEmail());
   });
 });
 
 describe('confirmar o e-mail', () => {
-  it('a ligação confirma o e-mail, mesmo aberta noutro aparelho sem sessão', async () => {
-    const cookie = cookieDe(await c.registar());
+  it('a ligação confirma o e-mail, também noutro aparelho depois de entrar na conta', async () => {
+    const cookie = cookieDe(await registar());
     expect((await c.eu(cookie)).json().emailConfirmado).toBe(false);
-    const r = await confirmar(c.tokenDoUltimoEmail());
+    const noTelemovel = cookieDe(await c.post('/api/auth/entrar', { email: 'ana@exemplo.ao', palavraPasse: 'Kizomba-2026-evento' }));
+    const r = await confirmar(c.tokenDoUltimoEmail(), noTelemovel);
     expect(r.statusCode).toBe(200);
     expect((await c.eu(cookie)).json().emailConfirmado).toBe(true);
     const { rows } = await base.pool.query("select count(*)::int as n from audit_log where action = 'conta.email_confirmado'");
@@ -68,7 +84,7 @@ describe('confirmar o e-mail', () => {
   });
 
   it('cada ligação só pode ser usada uma vez', async () => {
-    await c.registar();
+    await registar();
     const token = c.tokenDoUltimoEmail();
     expect((await confirmar(token)).statusCode).toBe(200);
     const segunda = await confirmar(token);
@@ -77,35 +93,56 @@ describe('confirmar o e-mail', () => {
   });
 
   it('pedidos em paralelo com a mesma ligação só a usam uma vez', async () => {
-    await c.registar();
+    await registar();
     const token = c.tokenDoUltimoEmail();
     const respostas = await Promise.all(Array.from({ length: 5 }, () => confirmar(token)));
     expect(respostas.filter((r) => r.statusCode === 200)).toHaveLength(1);
   });
 
   it('recusa ligações expiradas', async () => {
-    await c.registar();
+    await registar();
     await base.pool.query("update email_tokens set expires_at = now() - interval '1 second'");
     expect((await confirmar(c.tokenDoUltimoEmail())).statusCode).toBe(400);
   });
 
   it.each([['inventado'], [''], [123], ['x'.repeat(500)]])('recusa tokens inválidos (%#)', async (token) => {
-    await c.registar();
+    await registar();
     expect((await confirmar(token)).statusCode).toBe(400);
     expect((await c.eu(cookieDe(await c.post('/api/auth/entrar', { email: 'ana@exemplo.ao', palavraPasse: 'Kizomba-2026-evento' })))).json().emailConfirmado).toBe(false);
   });
 
-  it('a ligação de uma pessoa nunca confirma a conta de outra', async () => {
-    const daAna = cookieDe(await c.registar('ana@exemplo.ao'));
-    const doBruno = cookieDe(await c.registar('bruno@exemplo.ao', 'Bruno'));
-    await confirmar(c.tokenDoUltimoEmail());
-    expect((await c.eu(doBruno)).json().emailConfirmado).toBe(true);
+  it('sem sessão, a ligação não confirma nada nem é gasta', async () => {
+    await registar();
+    const token = c.tokenDoUltimoEmail();
+    expect((await confirmar(token, '')).statusCode).toBe(401);
+    expect((await confirmar(token)).statusCode).toBe(200);
+  });
+
+  it('a ligação de uma conta usada com a sessão de outra é recusada, sem ser gasta', async () => {
+    const daAna = cookieDe(await registar('ana@exemplo.ao'));
+    const doBruno = cookieDe(await registar('bruno@exemplo.ao', 'Bruno'));
+    const tokenDoBruno = c.tokenDoUltimoEmail();
+    const r = await confirmar(tokenDoBruno, daAna);
+    expect(r.statusCode).toBe(400);
+    expect(r.json().mensagem).toContain('pertence a outra conta');
     expect((await c.eu(daAna)).json().emailConfirmado).toBe(false);
+    expect((await confirmar(tokenDoBruno, doBruno)).statusCode).toBe(200);
+  });
+
+  it('quem regista o e-mail de outra pessoa não consegue que ela lhe confirme a conta', async () => {
+    // O atacante cria a conta com o e-mail da vítima; a vítima recebe a ligação e abre-a sem sessão.
+    const doAtacante = cookieDe(await registar('vitima@exemplo.ao', 'Atacante'));
+    const token = c.tokenDoUltimoEmail();
+    expect((await confirmar(token, '')).statusCode).toBe(401);
+    // A vítima não sabe a palavra-passe do atacante, por isso não consegue entrar para confirmar.
+    expect((await c.post('/api/auth/entrar', { email: 'vitima@exemplo.ao', palavraPasse: 'palpite-123456' })).statusCode).toBe(401);
+    expect((await c.eu(doAtacante)).json().emailConfirmado).toBe(false);
   });
 
   it('limita tentativas de adivinhar ligações por IP', async () => {
-    for (let i = 0; i < 30; i++) await confirmar(`inventado-${i}`, '203.0.113.5');
-    expect((await confirmar('mais-um', '203.0.113.5')).statusCode).toBe(429);
+    await registar();
+    for (let i = 0; i < 30; i++) await confirmar(`inventado-${i}`, ultimoCookie, '203.0.113.5');
+    expect((await confirmar('mais-um', ultimoCookie, '203.0.113.5')).statusCode).toBe(429);
   });
 });
 
@@ -115,7 +152,7 @@ describe('reenviar a confirmação', () => {
   });
 
   it('envia uma ligação nova e invalida a anterior', async () => {
-    const cookie = cookieDe(await c.registar());
+    const cookie = cookieDe(await registar());
     const antiga = c.tokenDoUltimoEmail();
     expect((await c.post('/api/auth/reenviar-confirmacao', {}, cookie)).statusCode).toBe(204);
     expect(c.emails).toHaveLength(2);
@@ -126,21 +163,21 @@ describe('reenviar a confirmação', () => {
   });
 
   it('no máximo 3 reenvios por hora, para não encher a caixa de correio de ninguém', async () => {
-    const cookie = cookieDe(await c.registar());
+    const cookie = cookieDe(await registar());
     for (let i = 0; i < 3; i++) expect((await c.post('/api/auth/reenviar-confirmacao', {}, cookie)).statusCode).toBe(204);
     expect((await c.post('/api/auth/reenviar-confirmacao', {}, cookie)).statusCode).toBe(429);
     expect(c.emails).toHaveLength(4);
   });
 
   it('com o e-mail já confirmado, não envia nada nem gasta o limite', async () => {
-    const cookie = cookieDe(await c.registar());
+    const cookie = cookieDe(await registar());
     await confirmar(c.tokenDoUltimoEmail());
     for (let i = 0; i < 5; i++) expect((await c.post('/api/auth/reenviar-confirmacao', {}, cookie)).statusCode).toBe(204);
     expect(c.emails).toHaveLength(1);
   });
 
   it('reenvios em simultâneo deixam só uma ligação válida', async () => {
-    const cookie = cookieDe(await c.registar());
+    const cookie = cookieDe(await registar());
     await Promise.all([1, 2, 3].map(() => c.post('/api/auth/reenviar-confirmacao', {}, cookie)));
     const { rows } = await base.pool.query("select count(*)::int as n from email_tokens where used_at is null");
     expect(rows[0].n).toBe(1);
@@ -153,7 +190,7 @@ describe('quem não confirmou o e-mail entra mas não cria', () => {
   });
 
   it('com e-mail por confirmar: 403 com explicação', async () => {
-    const cookie = cookieDe(await c.registar());
+    const cookie = cookieDe(await registar());
     expect((await c.eu(cookie)).statusCode).toBe(200);
     const r = await c.post('/api/teste/criar-evento', {}, cookie);
     expect(r.statusCode).toBe(403);
@@ -161,7 +198,7 @@ describe('quem não confirmou o e-mail entra mas não cria', () => {
   });
 
   it('depois de confirmar: pode criar', async () => {
-    const cookie = cookieDe(await c.registar());
+    const cookie = cookieDe(await registar());
     await confirmar(c.tokenDoUltimoEmail());
     expect((await c.post('/api/teste/criar-evento', {}, cookie)).statusCode).toBe(200);
   });
@@ -169,9 +206,9 @@ describe('quem não confirmou o e-mail entra mas não cria', () => {
 
 describe('limpeza periódica', () => {
   it('apaga ligações expiradas ou usadas há mais de um dia, e mantém as válidas', async () => {
-    await c.registar('ana@exemplo.ao');
-    await c.registar('bruno@exemplo.ao', 'Bruno');
-    await c.registar('carla@exemplo.ao', 'Carla');
+    await registar('ana@exemplo.ao');
+    await registar('bruno@exemplo.ao', 'Bruno');
+    await registar('carla@exemplo.ao', 'Carla');
     await base.pool.query(`update email_tokens set expires_at = now() - interval '2 days'
       where user_id = (select id from users where email = 'ana@exemplo.ao')`);
     await base.pool.query(`update email_tokens set used_at = now() - interval '2 days'
@@ -181,10 +218,10 @@ describe('limpeza periódica', () => {
   });
 
   it('apaga contas por confirmar há mais de 7 dias, com o espaço pessoal, e mantém as restantes', async () => {
-    await c.registar('antiga@exemplo.ao', 'Antiga');
-    await c.registar('confirmada@exemplo.ao', 'Confirmada');
+    await registar('antiga@exemplo.ao', 'Antiga');
+    await registar('confirmada@exemplo.ao', 'Confirmada');
     await confirmar(c.tokenDoUltimoEmail());
-    await c.registar('recente@exemplo.ao', 'Recente');
+    await registar('recente@exemplo.ao', 'Recente');
     await base.pool.query("update users set created_at = now() - interval '8 days' where email in ('antiga@exemplo.ao', 'confirmada@exemplo.ao')");
 
     expect((await limparExpirados(base.pool)).contas).toBe(1);
@@ -193,6 +230,6 @@ describe('limpeza periódica', () => {
     const { rows: espacos } = await base.pool.query('select name from workspaces order by name');
     expect(espacos.map((e) => e.name)).toEqual(['Espaço de Confirmada', 'Espaço de Recente']);
     // O e-mail fica livre para o verdadeiro dono.
-    expect((await c.registar('antiga@exemplo.ao', 'Dona verdadeira')).statusCode).toBe(201);
+    expect((await registar('antiga@exemplo.ao', 'Dona verdadeira')).statusCode).toBe(201);
   });
 });

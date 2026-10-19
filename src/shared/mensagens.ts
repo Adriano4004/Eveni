@@ -20,6 +20,7 @@ export const mensagens = {
   validacao: {
     nomeObrigatorio: 'Indique o seu nome.',
     nomeLongo: 'O nome é demasiado longo.',
+    nomeInvalido: 'O nome tem caracteres inválidos.',
     emailInvalido: 'Indique um e-mail válido.',
     palavraPasseCurta: 'A palavra-passe tem de ter pelo menos 10 caracteres.',
     palavraPasseLonga: 'A palavra-passe é demasiado longa.',
@@ -34,6 +35,7 @@ export const mensagens = {
     sessaoNecessaria: 'Tem de entrar na sua conta para continuar.',
     emailPorConfirmar: 'Confirme o seu e-mail para continuar. Enviámos-lhe uma ligação.',
     ligacaoInvalida: 'Esta ligação de confirmação é inválida ou já expirou. Peça uma nova.',
+    ligacaoDeOutraConta: 'Esta ligação pertence a outra conta. Termine a sessão e entre com a conta que recebeu o e-mail.',
     nomeEspacoPessoal: (nome: string) => `Espaço de ${nome}`,
   },
   ecras: {
@@ -71,6 +73,7 @@ export const mensagens = {
     },
     confirmar: {
       aConfirmar: 'A confirmar o seu e-mail…',
+      entrarPrimeiro: 'Para confirmar o e-mail, entre na conta que criou.',
       sucessoTitulo: 'E-mail confirmado',
       sucesso: 'Obrigado. A sua conta está activa.',
       erroTitulo: 'Não foi possível confirmar',
@@ -91,11 +94,11 @@ export const mensagens = {
     rodape: 'Eveni — Gestão de eventos',
     confirmar: {
       assunto: 'Confirme o seu e-mail no Eveni',
-      ola: (nome: string) => `Olá, ${nome}`,
-      corpo: 'Para concluir a criação da sua conta no Eveni, confirme o seu endereço de e-mail.',
+      ola: 'Olá,',
+      corpo: 'Para concluir a criação da sua conta no Eveni, confirme o seu endereço de e-mail. Vai ser-lhe pedido que entre na conta.',
       botao: 'Confirmar e-mail',
       validade: 'Esta ligação é válida durante 48 horas.',
-      naoFoiVoce: 'Se não criou uma conta no Eveni, pode ignorar esta mensagem.',
+      naoFoiVoce: 'Se não criou uma conta no Eveni, ignore esta mensagem e não abra a ligação. A conta é apagada automaticamente.',
     },
   },
   planos: {

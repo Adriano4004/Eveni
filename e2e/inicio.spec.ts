@@ -144,6 +144,26 @@ test('se a internet falhar ao confirmar, permite tentar de novo sem voltar ao e-
   await expect(page.getByRole('heading', { name: 'E-mail confirmado' })).toBeVisible();
 });
 
+test('abrir a ligação sem sessão pede para entrar primeiro, e confirma a seguir', async ({ page }) => {
+  const email = `gil.${Date.now()}@exemplo.ao`;
+  await page.goto('/registo');
+  await page.getByLabel('Nome').fill('Gil');
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Gil' })).toBeVisible();
+  await page.getByRole('button', { name: 'Terminar sessão', exact: true }).click();
+
+  const token = await criarLigacaoDeConfirmacao(email);
+  await page.goto(`/confirmar-email?token=${token}`);
+  await expect(page.getByText('Para confirmar o e-mail, entre na conta que criou.')).toBeVisible();
+  await expect(page).toHaveURL(/\/confirmar-email$/);
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page.getByRole('heading', { name: 'E-mail confirmado' })).toBeVisible();
+});
+
 async function criarLigacaoDeConfirmacao(email: string): Promise<string> {
   const token = randomBytes(32).toString('base64url');
   const cliente = new pg.Client({ connectionString: envValido.DATABASE_URL });

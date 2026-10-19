@@ -26,11 +26,12 @@ function Ligacao({ para, children }: { para: string; children: string }) {
   );
 }
 
-export function EcraEntrar({ aoEntrar }: { aoEntrar: (eu: Eu) => void }) {
+export function EcraEntrar({ aoEntrar, aviso }: { aoEntrar: (eu: Eu) => void; aviso?: string }) {
   return (
     <main className="cartao">
       <Logo />
       <h1>{e.entrar.titulo}</h1>
+      {aviso && <p className="cartao__subtitulo">{aviso}</p>}
       <Formulario
         botao={e.entrar.botao}
         aEnviar={e.entrar.aEnviar}
@@ -170,16 +171,15 @@ function AvisoConfirmar({ email }: { email: string }) {
   );
 }
 
-export function EcraConfirmarEmail({ aoConfirmar }: { aoConfirmar: () => void }) {
+export function EcraConfirmarEmail({ token, aoConfirmar }: { token: string; aoConfirmar: () => void }) {
   const c = e.confirmar;
   type Estado = { tipo: 'a-confirmar' } | { tipo: 'confirmado' } | { tipo: 'erro'; mensagem: string; podeRepetir: boolean };
   const [estado, setEstado] = useState<Estado>({ tipo: 'a-confirmar' });
-  // O token sai do endereço logo à entrada, mas fica guardado aqui para se poder repetir o pedido.
-  const token = useRef<string | null>(null);
+  const iniciado = useRef(false);
 
   function confirmar() {
     setEstado({ tipo: 'a-confirmar' });
-    api('POST', '/api/auth/confirmar-email', { token: token.current })
+    api('POST', '/api/auth/confirmar-email', { token })
       .then(() => setEstado({ tipo: 'confirmado' }))
       .catch((falha) =>
         // Sem ligação (estado 0) a ligação não chegou a ser usada: pode tentar-se de novo.
@@ -189,10 +189,8 @@ export function EcraConfirmarEmail({ aoConfirmar }: { aoConfirmar: () => void })
 
   useEffect(() => {
     // Em modo de desenvolvimento o React corre os efeitos duas vezes: a ligação só pode ser gasta uma.
-    if (token.current !== null) return;
-    token.current = new URLSearchParams(location.search).get('token') ?? '';
-    // Tirar o token do endereço, para não ficar no histórico do browser.
-    history.replaceState(null, '', '/confirmar-email');
+    if (iniciado.current) return;
+    iniciado.current = true;
     confirmar();
   }, []);
 

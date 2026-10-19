@@ -25,7 +25,13 @@ export const palavraPasseNova = z
   .refine((v) => !ePalavraPasseComum(v), m.palavraPasseComum);
 
 export const registo = z.object({
-  nome: z.string({ error: m.nomeObrigatorio }).trim().min(1, m.nomeObrigatorio).max(120, m.nomeLongo),
+  nome: z
+    .string({ error: m.nomeObrigatorio })
+    .trim()
+    .min(1, m.nomeObrigatorio)
+    .max(120, m.nomeLongo)
+    // Sem quebras de linha nem caracteres de controlo: o nome aparece em ecrãs, PDF e notificações.
+    .refine((v) => !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(v), m.nomeInvalido),
   email,
   palavraPasse: palavraPasseNova,
 });
