@@ -263,6 +263,16 @@ describe('protecção contra pedidos forjados (CSRF)', () => {
     expect(r.statusCode).toBe(403);
   });
 
+  it.each(['/api//auth/sair-de-todos', '//api/auth/sair-de-todos', '/api/auth/sair-de-todos?x=1', '/qualquer-coisa'])(
+    'a verificação de origem não depende da forma do caminho (%s)',
+    async (url) => {
+      const cookie = cookieDe(await registar());
+      const r = await app.inject({ method: 'POST', url, headers: { origin: 'https://site-malicioso.example', cookie } });
+      expect(r.statusCode).toBe(403);
+      expect((await eu(cookie)).statusCode).toBe(200);
+    },
+  );
+
   it('recusa pedidos vindos de outro site', async () => {
     const cookie = cookieDe(await registar());
     const r = await app.inject({
