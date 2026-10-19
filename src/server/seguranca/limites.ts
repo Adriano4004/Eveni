@@ -1,4 +1,6 @@
 import type pg from 'pg';
+import { mensagens } from '../../shared/mensagens.js';
+import { ErroHttp } from '../erros.js';
 
 // Limitação de pedidos com janela fixa, guardada no PostgreSQL para funcionar com várias instâncias.
 
@@ -30,4 +32,14 @@ export const LIMITES = {
   tentativasPorEmailEIp: { max: 10, janela: 60 * 60 },
   // Tentativas por conta, de todos os IPs somados: trava ataques distribuídos.
   tentativasPorEmail: { max: 50, janela: 60 * 60 },
+  confirmarPorIp: { max: 30, janela: 15 * 60 },
+  // Por conta: evita usar o Eveni para encher a caixa de correio de alguém.
+  reenviarConfirmacao: { max: 3, janela: 60 * 60 },
 } as const;
+
+// Regista a tentativa e recusa com 429 quando passa do limite.
+export async function limitar(pool: pg.Pool, chave: string, limite: { max: number; janela: number }): Promise<void> {
+  if ((await registarTentativa(pool, chave, limite.janela)) > limite.max) {
+    throw new ErroHttp(429, mensagens.erros.demasiadosPedidos);
+  }
+}

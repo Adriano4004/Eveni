@@ -35,7 +35,7 @@ async function arrancar() {
   // De hora a hora, apagar sessões expiradas e contadores de tentativas antigos.
   const limpeza = setInterval(() => {
     limparExpirados(base.pool)
-      .then((r) => console.log(`[limpeza] sessões expiradas: ${r.sessoes}, contadores antigos: ${r.tentativas}`))
+      .then((r) => console.log(`[limpeza] sessões expiradas: ${r.sessoes}, contadores antigos: ${r.tentativas}, ligações de e-mail: ${r.ligacoes}, contas por confirmar apagadas: ${r.contas}`))
       .catch((erro) => console.error('[limpeza] falhou:', erro));
   }, 60 * 60 * 1000);
   limpeza.unref();

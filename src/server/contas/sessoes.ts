@@ -53,6 +53,7 @@ export function apagarCookie(config: Config, resposta: FastifyReply) {
 export interface SessaoValida {
   tokenHash: string;
   utilizadorId: string;
+  emailConfirmado: boolean;
 }
 
 // Lê o cookie e devolve a sessão se existir e não tiver expirado.
@@ -66,8 +67,10 @@ export async function lerSessao(
   const token = pedido.cookies[nomeCookie(config)];
   if (!token || token.length > 100) return null;
   const tokenHash = hashToken(token);
-  const { rows } = await pool.query<{ user_id: string; last_seen_at: Date }>(
-    'select user_id, last_seen_at from sessions where token_hash = $1 and expires_at > now()',
+  const { rows } = await pool.query<{ user_id: string; last_seen_at: Date; email_confirmado: boolean }>(
+    `select s.user_id, s.last_seen_at, u.email_verified_at is not null as email_confirmado
+       from sessions s join users u on u.id = s.user_id
+      where s.token_hash = $1 and s.expires_at > now()`,
     [tokenHash],
   );
   const linha = rows[0];
@@ -78,7 +81,7 @@ export async function lerSessao(
     // Sem isto, o browser apagava o cookie 30 dias depois da entrada, mesmo com uso diário.
     definirCookie(config, resposta, token, expira);
   }
-  return { tokenHash, utilizadorId: linha.user_id };
+  return { tokenHash, utilizadorId: linha.user_id, emailConfirmado: linha.email_confirmado };
 }
 
 export async function terminarSessao(pool: pg.Pool, tokenHash: string): Promise<void> {
@@ -91,9 +94,49 @@ export async function terminarTodasAsSessoes(pool: pg.Pool | pg.PoolClient, util
 }
 
 // Apaga sessões expiradas e contadores de tentativas antigos. Corre periodicamente (ver index.ts).
-export async function limparExpirados(pool: pg.Pool): Promise<{ sessoes: number; tentativas: number }> {
+export const DIAS_PARA_CONFIRMAR = 7;
+
+// Contas que nunca confirmaram o e-mail são apagadas ao fim de DIAS_PARA_CONFIRMAR dias, para que
+// ninguém fique para sempre com o e-mail de outra pessoa. Uma conta por confirmar não pode criar
+// conteúdo nem ter outros membros, por isso apaga-se com o seu espaço pessoal e nada mais se perde.
+async function apagarContasPorConfirmar(pool: pg.Pool): Promise<number> {
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('begin');
+    const { rows } = await cliente.query<{ id: string }>(
+      `select id from users
+        where email_verified_at is null and created_at < now() - make_interval(days => $1)
+        for update`,
+      [DIAS_PARA_CONFIRMAR],
+    );
+    const ids = rows.map((r) => r.id);
+    if (ids.length > 0) {
+      await cliente.query(
+        `delete from workspaces w
+          where w.id in (select workspace_id from workspace_members where user_id = any($1::uuid[]) and role = 'owner')
+            and not exists (select 1 from workspace_members o where o.workspace_id = w.id and o.user_id <> all($1::uuid[]))`,
+        [ids],
+      );
+      await cliente.query('delete from users where id = any($1::uuid[])', [ids]);
+    }
+    await cliente.query('commit');
+    return ids.length;
+  } catch (erro) {
+    await cliente.query('rollback');
+    throw erro;
+  } finally {
+    cliente.release();
+  }
+}
+
+export async function limparExpirados(pool: pg.Pool): Promise<{ sessoes: number; tentativas: number; ligacoes: number; contas: number }> {
   const sessoes = await pool.query('delete from sessions where expires_at < now()');
   // Nenhuma janela de limitação passa de 1 hora: um dia de margem chega.
   const tentativas = await pool.query("delete from rate_limits where window_start < now() - interval '1 day'");
-  return { sessoes: sessoes.rowCount ?? 0, tentativas: tentativas.rowCount ?? 0 };
+  // Ligações de e-mail expiradas ou já usadas há mais de um dia deixam de ter utilidade.
+  const ligacoes = await pool.query(
+    "delete from email_tokens where expires_at < now() - interval '1 day' or used_at < now() - interval '1 day'",
+  );
+  const contas = await apagarContasPorConfirmar(pool);
+  return { sessoes: sessoes.rowCount ?? 0, tentativas: tentativas.rowCount ?? 0, ligacoes: ligacoes.rowCount ?? 0, contas };
 }

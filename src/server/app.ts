@@ -5,7 +5,10 @@ import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
 import { mensagens } from '../shared/mensagens.js';
 import type { Config } from './config.js';
+import { criarGuardas } from './contas/acesso.js';
+import { registarRotasConfirmacao } from './contas/confirmacao.js';
 import { registarRotasContas } from './contas/rotas.js';
+import { criarEnvioDeEmail, type EnviarEmail } from './email/index.js';
 import type { BaseDeDados } from './db/index.js';
 import { ErroHttp } from './erros.js';
 import { protegerOrigem } from './seguranca/origem.js';
@@ -13,6 +16,8 @@ import { protegerOrigem } from './seguranca/origem.js';
 export interface Dependencias {
   config: Config;
   base: BaseDeDados;
+  // Substituível nos testes, para verificar os e-mails sem os enviar.
+  enviarEmail?: EnviarEmail;
   // Pasta com os ecrãs já compilados (vite build). Opcional nos testes.
   pastaWeb?: string;
 }
@@ -25,7 +30,7 @@ export function eRotaDeEcra(metodo: string, url: string): boolean {
   return !ultimo.includes('.');
 }
 
-export async function criarApp({ config, base, pastaWeb }: Dependencias) {
+export async function criarApp({ config, base, pastaWeb, enviarEmail = criarEnvioDeEmail(config) }: Dependencias) {
   const app = Fastify({
     logger: config.NODE_ENV === 'test' ? false : { level: 'info' },
     // Confiar só nos proxies do alojamento (TRUST_PROXY_HOPS), para que um cliente não consiga
@@ -71,7 +76,9 @@ export async function criarApp({ config, base, pastaWeb }: Dependencias) {
 
   await app.register(cookie);
   protegerOrigem(app, config);
-  registarRotasContas(app, config, base);
+  const guardas = criarGuardas(config, base);
+  registarRotasContas(app, config, base, enviarEmail, guardas);
+  registarRotasConfirmacao(app, config, base, enviarEmail, guardas);
 
   app.get('/health', async (_pedido, resposta) => {
     const bdOk = await base.verificar();

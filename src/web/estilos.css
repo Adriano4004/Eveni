@@ -214,3 +214,38 @@ h1 {
   margin: 2px 0 0;
   font-weight: 600;
 }
+
+.aviso {
+  margin: 0 0 20px;
+  padding: 16px;
+  border-radius: var(--raio);
+  border: 1.5px solid #c7c0fb;
+  background: #f1efff;
+}
+
+.aviso h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.aviso p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.aviso p:last-child {
+  margin-bottom: 0;
+}
+
+.aviso__erro {
+  color: var(--cor-erro);
+}
+
+.botao--compacto {
+  width: auto;
+  min-height: 44px;
+  margin-top: 0;
+  padding: 8px 16px;
+  background: var(--cor-superficie);
+}

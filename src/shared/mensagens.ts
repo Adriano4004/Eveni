@@ -32,6 +32,8 @@ export const mensagens = {
     credenciaisInvalidas: 'E-mail ou palavra-passe incorrectos.',
     contaBloqueada: 'Demasiadas tentativas falhadas. Por segurança, aguarde uma hora antes de tentar de novo.',
     sessaoNecessaria: 'Tem de entrar na sua conta para continuar.',
+    emailPorConfirmar: 'Confirme o seu e-mail para continuar. Enviámos-lhe uma ligação.',
+    ligacaoInvalida: 'Esta ligação de confirmação é inválida ou já expirou. Peça uma nova.',
     nomeEspacoPessoal: (nome: string) => `Espaço de ${nome}`,
   },
   ecras: {
@@ -67,7 +69,34 @@ export const mensagens = {
       aSair: 'A terminar sessão…',
       erroSair: 'Não foi possível terminar a sessão. Verifique a internet e tente novamente.',
     },
+    confirmar: {
+      aConfirmar: 'A confirmar o seu e-mail…',
+      sucessoTitulo: 'E-mail confirmado',
+      sucesso: 'Obrigado. A sua conta está activa.',
+      erroTitulo: 'Não foi possível confirmar',
+      continuar: 'Continuar',
+      tentarDeNovo: 'Tentar de novo',
+    },
+    avisoConfirmar: {
+      titulo: 'Confirme o seu e-mail',
+      texto: (email: string) =>
+        `Enviámos uma ligação para ${email}. Abra-a para activar a conta. Até lá, não poderá criar eventos. Contas não confirmadas são apagadas ao fim de 7 dias.`,
+      reenviar: 'Reenviar e-mail',
+      aReenviar: 'A reenviar…',
+      reenviado: 'Enviámos um novo e-mail. Verifique também a pasta de spam.',
+    },
     carregar: 'A carregar…',
+  },
+  emails: {
+    rodape: 'Eveni — Gestão de eventos',
+    confirmar: {
+      assunto: 'Confirme o seu e-mail no Eveni',
+      ola: (nome: string) => `Olá, ${nome}`,
+      corpo: 'Para concluir a criação da sua conta no Eveni, confirme o seu endereço de e-mail.',
+      botao: 'Confirmar e-mail',
+      validade: 'Esta ligação é válida durante 48 horas.',
+      naoFoiVoce: 'Se não criou uma conta no Eveni, pode ignorar esta mensagem.',
+    },
   },
   planos: {
     singular: 'Singular',

@@ -92,3 +92,23 @@ export const auditLog = pgTable(
   },
   (t) => [index('audit_log_utilizador').on(t.userId), index('audit_log_data').on(t.createdAt)],
 );
+
+// Ligações de uso único enviadas por e-mail (confirmação de e-mail; mais tarde, recuperação de palavra-passe).
+// Guarda-se só o hash do token, como nas sessões.
+export const emailTokens = pgTable(
+  'email_tokens',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    purpose: text('purpose').notNull(),
+    createdAt: criadoEm(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('email_tokens_utilizador').on(t.userId, t.purpose),
+    check('email_tokens_finalidade_valida', sql`${t.purpose} in ('confirmar_email')`),
+  ],
+);
