@@ -83,12 +83,25 @@ export function registarRotasPalavraPasse(
       if (!utilizadorId) return null;
       // Quem recebeu a ligação no e-mail provou que o e-mail é seu: fica também confirmado. Isto
       // devolve ao verdadeiro dono um e-mail que outra pessoa tenha registado sem confirmar.
+      const { rows: antes } = await cliente.query<{ confirmado: boolean }>(
+        'select email_verified_at is not null as confirmado from users where id = $1 for update',
+        [utilizadorId],
+      );
       const { rows } = await cliente.query<{ email: string }>(
         `update users set password_hash = $2, email_verified_at = coalesce(email_verified_at, now()), updated_at = now()
           where id = $1 returning email`,
         [utilizadorId, hash],
       );
       const email = rows[0]!.email;
+      if (!antes[0]!.confirmado) {
+        // Conta que nunca tinha provado ser do dono do e-mail: tudo o que lá foi configurado (como o
+        // 2FA) pode ser de quem a registou indevidamente. O verdadeiro dono recebe-a limpa.
+        await cliente.query(
+          'update users set totp_secret = null, totp_pending_secret = null, totp_enabled_at = null, totp_last_step = null where id = $1',
+          [utilizadorId],
+        );
+        await cliente.query('delete from recovery_codes where user_id = $1', [utilizadorId]);
+      }
       await terminarTodasAsSessoes(cliente, utilizadorId);
       await cliente.query("delete from email_tokens where user_id = $1 and purpose = 'recuperar_palavra_passe' and used_at is null", [utilizadorId]);
       await limparBloqueioDesteIp(cliente, email, pedido.ip);

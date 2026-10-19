@@ -227,6 +227,10 @@ test('activar a verificação em dois passos e entrar com o código', async ({ p
   await page.getByLabel('E-mail', { exact: true }).fill(email);
   await page.getByLabel('Palavra-passe', { exact: true }).fill(PALAVRA_PASSE);
   await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Joana' })).toBeVisible();
+  // O 2FA só se activa com o e-mail confirmado.
+  await page.goto(`/confirmar-email?token=${await criarLigacaoDeConfirmacao(email)}`);
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Gerir verificação em dois passos' }).click();
   await page.getByRole('button', { name: 'Activar', exact: true }).click();
 

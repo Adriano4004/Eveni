@@ -17,7 +17,14 @@ function cookieDesafio(r: { cookies: { name: string; value: string }[] }): strin
   return `${k.name}=${k.value}`;
 }
 
+// O 2FA só se activa com o e-mail confirmado.
+async function confirmarEmail(cookie: string) {
+  await c.post('/api/auth/reenviar-confirmacao', {}, cookie);
+  expect((await c.post('/api/auth/confirmar-email', { token: c.tokenDoUltimoEmail() }, cookie)).statusCode).toBe(200);
+}
+
 async function activar2fa(cookie: string) {
+  await confirmarEmail(cookie);
   const inicio = await c.post('/api/conta/2fa/iniciar', {}, cookie);
   const { segredo } = inicio.json();
   const r = await c.post('/api/conta/2fa/activar', { palavraPasse: PALAVRA_PASSE, codigo: codigo(segredo, -1) }, cookie);
@@ -42,8 +49,17 @@ afterAll(async () => {
 });
 
 describe('activar', () => {
+  it('com o e-mail por confirmar, não deixa activar (quem registou o e-mail de outra pessoa não a pode trancar fora)', async () => {
+    const cookie = cookieDe(await c.registar());
+    const r = await c.post('/api/conta/2fa/iniciar', {}, cookie);
+    expect(r.statusCode).toBe(403);
+    expect(r.json().mensagem).toContain('Confirme o seu e-mail');
+    expect((await c.post('/api/conta/2fa/activar', { palavraPasse: PALAVRA_PASSE, codigo: '123456' }, cookie)).statusCode).toBe(403);
+  });
+
   it('gera um código QR e uma chave; só fica activo depois de um código certo', async () => {
     const cookie = cookieDe(await c.registar());
+    await confirmarEmail(cookie);
     const inicio = await c.post('/api/conta/2fa/iniciar', {}, cookie);
     expect(inicio.statusCode).toBe(200);
     expect(inicio.json().qr).toMatch(/^data:image\/svg\+xml;base64,/);
@@ -72,6 +88,7 @@ describe('activar', () => {
 
   it('exige a palavra-passe: quem roubou uma sessão aberta não consegue activar', async () => {
     const cookie = cookieDe(await c.registar());
+    await confirmarEmail(cookie);
     const { segredo } = (await c.post('/api/conta/2fa/iniciar', {}, cookie)).json();
     const r = await c.post('/api/conta/2fa/activar', { palavraPasse: 'palpite-123456', codigo: codigo(segredo) }, cookie);
     expect(r.statusCode).toBe(400);
@@ -162,6 +179,14 @@ describe('entrar com 2FA', () => {
     for (let i = 0; i < 6; i++) await errarDe('203.0.113.7');
     const r = await segundoPasso({ codigo: codigo(segredo, 1) }, cookieDesafio(await entrar(PALAVRA_PASSE, '198.51.100.20')), '198.51.100.20');
     expect(r.statusCode).toBe(200);
+  });
+
+  it('pedidos em paralelo não escapam ao limite de códigos errados', async () => {
+    const desafios = [];
+    for (let i = 0; i < 10; i++) desafios.push(cookieDesafio(await entrar(PALAVRA_PASSE, `203.0.113.${i}`)));
+    const respostas = await Promise.all(desafios.map((d) => segundoPasso({ codigo: '000000' }, d, '203.0.113.7')));
+    expect(respostas.filter((r) => r.statusCode === 401)).toHaveLength(5);
+    expect(respostas.filter((r) => r.statusCode === 429)).toHaveLength(5);
   });
 
   it('um ataque distribuído pára aos 20 códigos errados por hora na conta', async () => {
@@ -282,4 +307,21 @@ it('o aviso de código de recuperação usado diz quantos restam, no singular e 
   expect(corpo(9)).toContain('Restam 9 códigos');
   expect(corpo(1)).toContain('Resta 1 código por usar.');
   expect(corpo(0)).toContain('Já não restam códigos');
+});
+
+it('recuperar uma conta que nunca foi confirmada entrega-a ao dono do e-mail sem o 2FA de quem a registou', async () => {
+  // Defesa em profundidade: mesmo que uma conta por confirmar tivesse 2FA (não deve ser possível activá-lo),
+  // o verdadeiro dono, ao recuperar a conta pelo e-mail, recebe-a sem esse 2FA.
+  await c.registar('vitima@exemplo.ao', 'Atacante');
+  await base.pool.query("update users set totp_enabled_at = now(), totp_secret = 'v1.x.y.z'");
+  await base.pool.query("insert into recovery_codes (user_id, code_hash) select id, 'h' from users");
+  await c.post('/api/auth/recuperar', { email: 'vitima@exemplo.ao' });
+  const { esperarSegundoPlano } = await import('../src/server/segundo-plano.js');
+  await esperarSegundoPlano();
+  await c.post('/api/auth/redefinir', { token: c.tokenDoUltimoEmail('redefinir-palavra-passe'), palavraPasse: 'Semba-e-kuduro-77' });
+  const r = await c.post('/api/auth/entrar', { email: 'vitima@exemplo.ao', palavraPasse: 'Semba-e-kuduro-77' });
+  expect(r.statusCode).toBe(200);
+  expect(r.json().doisFactores).toBe(false);
+  const { rows } = await base.pool.query('select count(*)::int as n from recovery_codes');
+  expect(rows[0].n).toBe(0);
 });

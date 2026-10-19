@@ -26,6 +26,11 @@ export async function contarTentativas(pool: pg.Pool, chave: string, janelaSegun
   return rows[0]?.count ?? 0;
 }
 
+// Desfaz uma tentativa registada (ex.: contou-se antes de verificar e afinal estava certa).
+export async function descontarTentativa(pool: pg.Pool, chave: string): Promise<void> {
+  await pool.query('update rate_limits set count = greatest(count - 1, 0) where key = $1', [chave]);
+}
+
 export async function limparTentativas(pool: pg.Pool, chave: string): Promise<void> {
   await pool.query('delete from rate_limits where key = $1', [chave]);
 }

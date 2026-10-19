@@ -10,7 +10,7 @@ import type { EnviarEmail } from '../email/index.js';
 import { emailAvisoConta } from '../email/modelos.js';
 import { ErroHttp, validar } from '../erros.js';
 import { criarCifra } from '../seguranca/cifra.js';
-import { LIMITES, contarTentativas, limitar, limparTentativas, registarTentativa } from '../seguranca/limites.js';
+import { LIMITES, descontarTentativa, limitar, limparTentativas, registarTentativa } from '../seguranca/limites.js';
 import { verificarPalavraPasse } from '../seguranca/palavras-passe.js';
 import { gerarSegredo, urlOtpauth, verificarTotp } from '../seguranca/totp.js';
 import type { criarGuardas } from './acesso.js';
@@ -155,13 +155,14 @@ export function registarRotasDoisFactores(
     if (!desafio) throw new ErroHttp(401, m.desafioExpirado);
     const utilizadorId = desafio.user_id;
     // Limites de códigos errados, somando todas as entradas a meio: quem sabe a palavra-passe não pode
-    // recomeçar a entrada para ter tentativas infinitas. Só os erros contam (entradas certas não gastam).
+    // recomeçar a entrada para ter tentativas infinitas. A tentativa conta-se antes de verificar (de
+    // forma atómica, para pedidos em paralelo não escaparem) e é descontada se o código estiver certo:
+    // só os erros gastam o limite.
     const chaveContaIp = `entrar-2fa-erros:${utilizadorId}:${pedido.ip}`;
     const chaveConta = `entrar-2fa-erros:${utilizadorId}`;
-    if (
-      (await contarTentativas(pool, chaveContaIp, LIMITES.codigosErradosPorContaEIp.janela)) >= LIMITES.codigosErradosPorContaEIp.max ||
-      (await contarTentativas(pool, chaveConta, LIMITES.codigosErradosPorConta.janela)) >= LIMITES.codigosErradosPorConta.max
-    ) {
+    const porContaIp = await registarTentativa(pool, chaveContaIp, LIMITES.codigosErradosPorContaEIp.janela);
+    const porConta = await registarTentativa(pool, chaveConta, LIMITES.codigosErradosPorConta.janela);
+    if (porContaIp > LIMITES.codigosErradosPorContaEIp.max || porConta > LIMITES.codigosErradosPorConta.max) {
       throw new ErroHttp(429, m.contaBloqueada);
     }
 
@@ -171,8 +172,6 @@ export function registarRotasDoisFactores(
         ? await usarCodigoTotp(pool, utilizadorId, dados.codigo)
         : await usarCodigoRecuperacao(pool, utilizadorId, dados.codigoRecuperacao!);
     if (!certo) {
-      await registarTentativa(pool, chaveContaIp, LIMITES.codigosErradosPorContaEIp.janela);
-      await registarTentativa(pool, chaveConta, LIMITES.codigosErradosPorConta.janela);
       await auditar(pool, 'sessao.2fa_falhado', { utilizadorId, ip: pedido.ip, detalhes: { metodo } });
       throw new ErroHttp(401, m.codigoErrado, { [metodo === 'aplicacao' ? 'codigo' : 'codigoRecuperacao']: m.codigoErrado });
     }
@@ -180,6 +179,7 @@ export function registarRotasDoisFactores(
     await pool.query('delete from login_challenges where token_hash = $1', [hashToken(token)]);
     resposta.clearCookie(nomeCookieDesafio(config), opcoesCookie(config));
     await limparTentativas(pool, chaveContaIp);
+    await descontarTentativa(pool, chaveConta);
     await limparTentativas(pool, `entrar-email-ip:${desafio.email}:${pedido.ip}`);
     const anterior = await lerSessao(pool, config, pedido);
     if (anterior) await terminarSessao(pool, anterior.tokenHash);
@@ -194,7 +194,9 @@ export function registarRotasDoisFactores(
   });
 
   // Gera o segredo e o código QR. Só fica activo depois de a pessoa provar que o configurou.
-  app.post('/api/conta/2fa/iniciar', { preHandler: guardas.exigirSessao }, async (pedido): Promise<InicioDoisFactores> => {
+  // Só com o e-mail confirmado: quem registou o e-mail de outra pessoa não pode activar o 2FA nessa
+  // conta para impedir o verdadeiro dono de a recuperar.
+  app.post('/api/conta/2fa/iniciar', { preHandler: guardas.exigirEmailConfirmado }, async (pedido): Promise<InicioDoisFactores> => {
     const { utilizadorId } = pedido.sessao!;
     await limitar(pool, `conta-2fa:${utilizadorId}`, LIMITES.gerirDoisFactores);
     const { rows } = await pool.query<{ email: string; totp_enabled_at: Date | null }>('select email, totp_enabled_at from users where id = $1', [
@@ -211,7 +213,7 @@ export function registarRotasDoisFactores(
   // Activar exige a palavra-passe: quem roubar uma sessão aberta não consegue activar o 2FA com o
   // seu telemóvel e deixar o dono de fora.
   // Termina as outras sessões: quem activa o 2FA por desconfiar de uma sessão roubada fica protegido logo.
-  app.post('/api/conta/2fa/activar', { preHandler: guardas.exigirSessao }, async (pedido) => {
+  app.post('/api/conta/2fa/activar', { preHandler: guardas.exigirEmailConfirmado }, async (pedido) => {
     const dados = validar(activarDoisFactores, pedido.body);
     const { utilizadorId, email, activo } = await confirmarIdentidade(pedido, dados.palavraPasse);
     if (activo) throw new ErroHttp(409, m.doisFactoresJaActivo);
