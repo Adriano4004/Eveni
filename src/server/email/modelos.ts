@@ -17,12 +17,14 @@ ${notas.map((n) => `<p style="margin:0 0 8px;font-size:14px;line-height:1.5;colo
 </body></html>`;
 }
 
-export function emailConfirmacao(para: string, nome: string, url: string): MensagemEmail {
+// Sem o nome da pessoa: o endereço ainda não está confirmado, e quem se registou pode não ser o dono
+// do e-mail. Incluir texto escolhido por essa pessoa permitiria enviar mensagens enganadoras em nome do Eveni.
+export function emailConfirmacao(para: string, url: string): MensagemEmail {
   const c = e.confirmar;
   return {
     para,
     assunto: c.assunto,
-    texto: [c.ola(nome), '', c.corpo, '', `${c.botao}: ${url}`, '', c.validade, c.naoFoiVoce, '', e.rodape].join('\n'),
-    html: moldeHtml([escaparHtml(c.ola(nome)), escaparHtml(c.corpo)], { texto: c.botao, url }, [escaparHtml(c.validade), escaparHtml(c.naoFoiVoce)]),
+    texto: [c.ola, '', c.corpo, '', `${c.botao}: ${url}`, '', c.validade, c.naoFoiVoce, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(c.ola), escaparHtml(c.corpo)], { texto: c.botao, url }, [escaparHtml(c.validade), escaparHtml(c.naoFoiVoce)]),
   };
 }
