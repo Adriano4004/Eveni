@@ -1,5 +1,5 @@
 import { type FormEvent, type ReactNode, useState } from 'react';
-import { ErroApi } from './api.js';
+import { ErroApi, mensagemDeErro } from './api.js';
 
 interface Props {
   botao: string;
@@ -23,13 +23,10 @@ export function Formulario({ botao, aEnviar, enviar, children }: Props) {
     try {
       await enviar(dados);
     } catch (erro) {
-      if (erro instanceof ErroApi) {
-        setErros(erro.campos);
-        // Se o erro já aparece junto a um campo, não o repetir no topo.
-        if (Object.keys(erro.campos).length === 0) setErroGeral(erro.message);
-      } else {
-        throw erro;
-      }
+      const campos = erro instanceof ErroApi ? erro.campos : {};
+      setErros(campos);
+      // Se o erro já aparece junto a um campo, não o repetir no topo.
+      if (Object.keys(campos).length === 0) setErroGeral(mensagemDeErro(erro));
     } finally {
       setAEnviar(false);
     }

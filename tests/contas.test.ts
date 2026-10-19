@@ -1,50 +1,22 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { criarApp } from '../src/server/app.js';
 import type { Config } from '../src/server/config.js';
 import { limparExpirados } from '../src/server/contas/sessoes.js';
 import { aplicarMigracoes, criarBaseDeDados } from '../src/server/db/index.js';
-import { configTeste, limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
+import { limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
+import { cookieDe, criarCliente, PALAVRA_PASSE } from './cliente.js';
 
 const base = criarBaseDeDados(URL_BD_TESTE);
-const ORIGEM = 'http://localhost:3000';
-const PALAVRA_PASSE = 'Kizomba-2026-evento';
+let cliente: Awaited<ReturnType<typeof criarCliente>>;
 let app: FastifyInstance;
 
-// Com os ecrãs compilados, como em produção (a ordem de registo dos plugins já causou um erro).
-const pastaWeb = mkdtempSync(join(tmpdir(), 'eveni-web-'));
-writeFileSync(join(pastaWeb, 'index.html'), '<!doctype html><title>Eveni</title>');
-
 async function novaApp(extra: Partial<Config> = {}) {
-  return criarApp({ config: configTeste(extra), base, pastaWeb });
+  cliente = await criarCliente(base, extra);
+  return cliente.app;
 }
-
-function cookieDe(resposta: LightMyRequestResponse): string {
-  const c = resposta.cookies.find((k) => k.name.endsWith('eveni_sessao'));
-  if (!c) throw new Error('sem cookie de sessão');
-  return `${c.name}=${c.value}`;
-}
-
-function post(url: string, payload: object = {}, cookie?: string, ip = '198.51.100.1') {
-  return app.inject({
-    method: 'POST',
-    url,
-    payload,
-    remoteAddress: ip,
-    headers: { origin: ORIGEM, ...(cookie ? { cookie } : {}) },
-  });
-}
-
-function eu(cookie?: string) {
-  return app.inject({ method: 'GET', url: '/api/auth/eu', headers: cookie ? { cookie } : {} });
-}
-
-async function registar(email = 'ana@exemplo.ao', nome = 'Ana Domingos') {
-  return post('/api/auth/registo', { nome, email, palavraPasse: PALAVRA_PASSE });
-}
+const post = (...a: Parameters<typeof cliente.post>) => cliente.post(...a);
+const eu = (cookie?: string) => cliente.eu(cookie);
+const registar = (email?: string, nome?: string) => cliente.registar(email, nome);
 
 beforeAll(async () => {
   await aplicarMigracoes(base, 'drizzle');
@@ -238,7 +210,7 @@ describe('sessões', () => {
     await registar('bruno@exemplo.ao', 'Bruno');
     await base.pool.query("update sessions set expires_at = now() - interval '1 minute' where user_id = (select id from users where email = 'bruno@exemplo.ao')");
     await base.pool.query("insert into rate_limits values ('antigo', 3, now() - interval '2 days')");
-    expect(await limparExpirados(base.pool)).toEqual({ sessoes: 1, tentativas: 1 });
+    expect(await limparExpirados(base.pool)).toEqual({ sessoes: 1, tentativas: 1, ligacoes: 0, contas: 0 });
     expect((await eu(valida)).statusCode).toBe(200);
   });
 

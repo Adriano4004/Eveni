@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
-import { api } from './api.js';
+import { api, ErroApi, mensagemDeErro } from './api.js';
 import { Campo } from './Campo.js';
 import { Formulario } from './Formulario.js';
 import { navegar } from './navegacao.js';
@@ -106,6 +106,7 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
     <main className="cartao">
       <Logo />
       <h1>{e.inicio.ola(eu.nome)}</h1>
+      {!eu.emailConfirmado && <AvisoConfirmar email={eu.email} />}
       <p className="cartao__subtitulo">{e.inicio.emConstrucao}</p>
       <dl className="detalhes">
         <div>
@@ -128,6 +129,103 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
       <button className="botao botao--secundario" type="button" onClick={() => sair(true)} disabled={aSair}>
         {e.inicio.sairDeTodos}
       </button>
+    </main>
+  );
+}
+
+function AvisoConfirmar({ email }: { email: string }) {
+  const a = e.avisoConfirmar;
+  const [estado, setEstado] = useState<'parado' | 'a-enviar' | 'enviado'>('parado');
+  const [erro, setErro] = useState<string>();
+
+  async function reenviar() {
+    setEstado('a-enviar');
+    setErro(undefined);
+    try {
+      await api('POST', '/api/auth/reenviar-confirmacao');
+      setEstado('enviado');
+    } catch (falha) {
+      setErro(mensagemDeErro(falha));
+      setEstado('parado');
+    }
+  }
+
+  return (
+    <section className="aviso" aria-labelledby="aviso-confirmar-titulo">
+      <h2 id="aviso-confirmar-titulo">{a.titulo}</h2>
+      <p>{a.texto(email)}</p>
+      {estado === 'enviado' ? (
+        <p role="status">{a.reenviado}</p>
+      ) : (
+        <button className="botao botao--secundario botao--compacto" type="button" onClick={reenviar} disabled={estado === 'a-enviar'}>
+          {estado === 'a-enviar' ? a.aReenviar : a.reenviar}
+        </button>
+      )}
+      {erro && (
+        <p className="aviso__erro" role="alert">
+          {erro}
+        </p>
+      )}
+    </section>
+  );
+}
+
+export function EcraConfirmarEmail({ aoConfirmar }: { aoConfirmar: () => void }) {
+  const c = e.confirmar;
+  type Estado = { tipo: 'a-confirmar' } | { tipo: 'confirmado' } | { tipo: 'erro'; mensagem: string; podeRepetir: boolean };
+  const [estado, setEstado] = useState<Estado>({ tipo: 'a-confirmar' });
+  // O token sai do endereço logo à entrada, mas fica guardado aqui para se poder repetir o pedido.
+  const token = useRef<string | null>(null);
+
+  function confirmar() {
+    setEstado({ tipo: 'a-confirmar' });
+    api('POST', '/api/auth/confirmar-email', { token: token.current })
+      .then(() => setEstado({ tipo: 'confirmado' }))
+      .catch((falha) =>
+        // Sem ligação (estado 0) a ligação não chegou a ser usada: pode tentar-se de novo.
+        setEstado({ tipo: 'erro', mensagem: mensagemDeErro(falha), podeRepetir: falha instanceof ErroApi && falha.estado === 0 }),
+      );
+  }
+
+  useEffect(() => {
+    // Em modo de desenvolvimento o React corre os efeitos duas vezes: a ligação só pode ser gasta uma.
+    if (token.current !== null) return;
+    token.current = new URLSearchParams(location.search).get('token') ?? '';
+    // Tirar o token do endereço, para não ficar no histórico do browser.
+    history.replaceState(null, '', '/confirmar-email');
+    confirmar();
+  }, []);
+
+  return (
+    <main className="cartao">
+      <Logo />
+      {estado.tipo === 'a-confirmar' && <p role="status">{c.aConfirmar}</p>}
+      {estado.tipo === 'confirmado' && (
+        <>
+          <h1>{c.sucessoTitulo}</h1>
+          <p className="cartao__subtitulo">{c.sucesso}</p>
+          <button className="botao" type="button" onClick={aoConfirmar}>
+            {c.continuar}
+          </button>
+        </>
+      )}
+      {estado.tipo === 'erro' && (
+        <>
+          <h1>{c.erroTitulo}</h1>
+          <p className="cartao__subtitulo" role="alert">
+            {estado.mensagem}
+          </p>
+          {estado.podeRepetir ? (
+            <button className="botao" type="button" onClick={confirmar}>
+              {c.tentarDeNovo}
+            </button>
+          ) : (
+            <button className="botao" type="button" onClick={aoConfirmar}>
+              {c.continuar}
+            </button>
+          )}
+        </>
+      )}
     </main>
   );
 }

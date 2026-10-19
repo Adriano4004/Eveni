@@ -30,3 +30,8 @@ export async function api<T>(metodo: 'GET' | 'POST', caminho: string, corpo?: un
   }
   return dados as T;
 }
+
+// Mensagem a mostrar ao utilizador para qualquer falha de um pedido.
+export function mensagemDeErro(falha: unknown): string {
+  return falha instanceof ErroApi ? falha.message : mensagens.erros.interno;
+}

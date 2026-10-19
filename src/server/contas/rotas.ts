@@ -1,46 +1,41 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { type Eu, entrar, registo } from '../../shared/esquemas.js';
 import { mensagens } from '../../shared/mensagens.js';
 import type { Config } from '../config.js';
 import type { BaseDeDados } from '../db/index.js';
 import { ErroHttp, validar } from '../erros.js';
-import { LIMITES, limparTentativas, registarTentativa } from '../seguranca/limites.js';
+import { LIMITES, limitar, limparTentativas, registarTentativa } from '../seguranca/limites.js';
 import { gerarHash, obterHashFicticio, verificarPalavraPasse } from '../seguranca/palavras-passe.js';
 import { auditar } from './auditoria.js';
-import { type SessaoValida, apagarCookie, criarSessao, lerSessao, terminarSessao, terminarTodasAsSessoes } from './sessoes.js';
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    sessao?: SessaoValida;
-  }
-}
+import type { EnviarEmail } from '../email/index.js';
+import { emailConfirmacao } from '../email/modelos.js';
+import type { criarGuardas } from './acesso.js';
+import { criarTokenConfirmacao, urlConfirmacao } from './confirmacao.js';
+import { apagarCookie, criarSessao, lerSessao, terminarSessao, terminarTodasAsSessoes } from './sessoes.js';
 
 const m = mensagens.contas;
 
 // Código de erro do PostgreSQL para violação de unicidade.
 const VIOLACAO_UNICIDADE = '23505';
 
-export function registarRotasContas(app: FastifyInstance, config: Config, base: BaseDeDados) {
+export function registarRotasContas(
+  app: FastifyInstance,
+  config: Config,
+  base: BaseDeDados,
+  enviarEmail: EnviarEmail,
+  guardas: ReturnType<typeof criarGuardas>,
+) {
   const { pool } = base;
-
-  async function exigirSessao(pedido: FastifyRequest, resposta: FastifyReply) {
-    const sessao = await lerSessao(pool, config, pedido, resposta);
-    if (!sessao) throw new ErroHttp(401, m.sessaoNecessaria);
-    pedido.sessao = sessao;
-  }
-
-  async function limitarPorIp(chave: string, limite: { max: number; janela: number }, ip: string) {
-    const tentativas = await registarTentativa(pool, `${chave}:${ip}`, limite.janela);
-    if (tentativas > limite.max) throw new ErroHttp(429, mensagens.erros.demasiadosPedidos);
-  }
+  const { exigirSessao } = guardas;
 
   app.post('/api/auth/registo', async (pedido, resposta) => {
-    await limitarPorIp('registo-ip', LIMITES.registoPorIp, pedido.ip);
+    await limitar(pool, `registo-ip:${pedido.ip}`, LIMITES.registoPorIp);
     const dados = validar(registo, pedido.body);
     const hash = await gerarHash(dados.palavraPasse);
 
     const cliente = await pool.connect();
     let utilizadorId: string;
+    let tokenConfirmacao: string;
     try {
       await cliente.query('begin');
       const { rows } = await cliente.query<{ id: string }>(
@@ -56,6 +51,7 @@ export function registarRotasContas(app: FastifyInstance, config: Config, base: 
         espaco.rows[0]!.id,
         utilizadorId,
       ]);
+      tokenConfirmacao = await criarTokenConfirmacao(cliente, utilizadorId);
       await auditar(cliente, 'conta.registo', { utilizadorId, ip: pedido.ip });
       await criarSessao(cliente, config, resposta, utilizadorId, pedido);
       await cliente.query('commit');
@@ -69,11 +65,13 @@ export function registarRotasContas(app: FastifyInstance, config: Config, base: 
       cliente.release();
     }
 
+    // Depois do commit: o e-mail só sai se a conta ficou mesmo criada. Não bloqueia a resposta.
+    enviarEmail(emailConfirmacao(dados.email, dados.nome, urlConfirmacao(config, tokenConfirmacao)));
     return resposta.code(201).send(await obterEu(utilizadorId));
   });
 
   app.post('/api/auth/entrar', async (pedido, resposta) => {
-    await limitarPorIp('entrar-ip', LIMITES.entrarPorIp, pedido.ip);
+    await limitar(pool, `entrar-ip:${pedido.ip}`, LIMITES.entrarPorIp);
     const dados = validar(entrar, pedido.body);
     const chaveEmailIp = `entrar-email-ip:${dados.email}:${pedido.ip}`;
     const chaveEmail = `entrar-email:${dados.email}`;

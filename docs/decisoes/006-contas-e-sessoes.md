@@ -16,7 +16,7 @@ Escolhas técnicas da primeira parte da Fase 1. Seguem as regras de segurança d
 | IP do cliente | Confia-se só nos proxies do alojamento (`TRUST_PROXY_HOPS`, 1 no Railway) | Sem isto, o IP podia ser falsificado e os limites contornados |
 | Limpeza | De hora a hora apagam-se as sessões expiradas e os contadores com mais de um dia | As tabelas não crescem sem fim |
 | Mensagens de entrada | "E-mail ou palavra-passe incorrectos" em ambos os casos, com o mesmo tempo de resposta | Não revela que e-mails têm conta |
-| Registo com e-mail existente | Por agora diz que o e-mail já tem conta | Provisório: com a confirmação de e-mail (PR seguinte), o registo passa a responder sempre igual e avisa o dono por e-mail, sem revelar a conta |
+| Registo com e-mail existente | Diz que o e-mail já tem conta. Ver decisão 007 | Esconder isto obrigaria a confirmar o e-mail antes de entrar, o que contraria a regra "quem não confirmou entra e vê a aplicação" |
 | Espaço de trabalho | Criado no registo, com o nome "Espaço de {nome}", no plano Singular, com a pessoa como `owner` | Modelo de domínio do `CLAUDE.md`, secção 7 |
 | Auditoria | Registo, entradas, falhas, bloqueios e saídas ficam em `audit_log`. Ao eliminar a conta, o registo fica sem ligação à pessoa | Exigido pela secção 5, regra 14 |
 | Acesso à base de dados | SQL parametrizado escrito à mão; o Drizzle só gere o esquema e as migrações | Consultas explícitas e fáceis de rever |
