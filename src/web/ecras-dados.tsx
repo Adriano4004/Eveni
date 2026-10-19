@@ -31,7 +31,12 @@ export function EcraDados({ eu, aoEliminar }: { eu: Eu; aoEliminar: () => void }
             setExportado(true);
           }}
         >
-          {(erros) => <Campo rotulo={d.palavraPasse} nome="palavraPasse" tipo="password" autoComplete="current-password" erro={erros.palavraPasse} />}
+          {(erros) => (
+            <>
+              <Campo rotulo={d.palavraPasse} nome="palavraPasse" tipo="password" autoComplete="current-password" erro={erros.palavraPasse} />
+              {eu.doisFactores && <Campo rotulo={d.codigo} nome="codigo" autoComplete="one-time-code" erro={erros.codigo} />}
+            </>
+          )}
         </Formulario>
       </section>
 

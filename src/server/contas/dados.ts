@@ -134,12 +134,34 @@ export function registarRotasDados(
     return utilizador;
   }
 
-  // POST (não GET): pede a palavra-passe, para que uma sessão esquecida aberta não baste para levar os dados.
+  // Com 2FA activo, as acções sobre os dados também pedem um código. Conta para os mesmos limites de
+  // códigos errados da entrada (a tentativa conta antes de verificar e é descontada se estiver certa), e
+  // cada falha fica na auditoria (fora de qualquer transacção, que seria desfeita).
+  const chaveErros = (utilizadorId: string) => `entrar-2fa-erros:${utilizadorId}`;
+
+  async function contarTentativaCodigo(utilizadorId: string) {
+    const erros = await registarTentativa(pool, chaveErros(utilizadorId), LIMITES.codigosErradosPorConta.janela);
+    if (erros > LIMITES.codigosErradosPorConta.max) throw new ErroHttp(429, m.contaBloqueada);
+  }
+
+  async function codigoErrado(utilizadorId: string, ip: string): Promise<never> {
+    await auditar(pool, 'conta.dados_confirmacao_falhada', { utilizadorId, ip, detalhes: { motivo: 'codigo' } });
+    throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { codigo: m.codigoErrado });
+  }
+
+  // POST (não GET): pede a palavra-passe (e o código do 2FA, se activo), para que uma sessão esquecida
+  // aberta não baste para levar os dados.
   app.post('/api/conta/exportar', { preHandler: guardas.exigirSessao }, async (pedido, resposta) => {
     const { utilizadorId } = pedido.sessao!;
     await limitar(pool, `dados-conta:${utilizadorId}`, LIMITES.dadosConta);
-    const { palavraPasse } = validar(esquemaExportar, pedido.body);
-    await confirmarPalavraPasse(utilizadorId, palavraPasse, pedido.ip);
+    const { palavraPasse, codigo } = validar(esquemaExportar, pedido.body);
+    const utilizador = await confirmarPalavraPasse(utilizadorId, palavraPasse, pedido.ip);
+    if (utilizador.dois_factores) {
+      await contarTentativaCodigo(utilizadorId);
+      const certo = codigo !== undefined && (await segundoFactor.usarCodigo(pool, utilizadorId, codigo));
+      if (!certo) await codigoErrado(utilizadorId, pedido.ip);
+      await descontarTentativa(pool, chaveErros(utilizadorId));
+    }
     const dados = await exportarDados(pool, utilizadorId);
     await auditar(pool, 'conta.exportada', { utilizadorId, ip: pedido.ip });
     const dia = dados.geradoEm.slice(0, 10);
@@ -155,13 +177,7 @@ export function registarRotasDados(
     const dados = validar(esquemaEliminar, pedido.body);
     const utilizador = await confirmarPalavraPasse(utilizadorId, dados.palavraPasse, pedido.ip);
 
-    // O código do 2FA conta para os mesmos limites de códigos errados da entrada, e cada falha fica na
-    // auditoria (fora da transacção, que é desfeita).
-    const chaveErros = `entrar-2fa-erros:${utilizadorId}`;
-    if (utilizador.dois_factores) {
-      const erros = await registarTentativa(pool, chaveErros, LIMITES.codigosErradosPorConta.janela);
-      if (erros > LIMITES.codigosErradosPorConta.max) throw new ErroHttp(429, m.contaBloqueada);
-    }
+    if (utilizador.dois_factores) await contarTentativaCodigo(utilizadorId);
     const resultado = await emTransaccao(pool, async (cliente) => {
       if (utilizador.dois_factores) {
         const certo = dados.codigo !== undefined && (await segundoFactor.usarCodigo(cliente, utilizadorId, dados.codigo));
@@ -170,11 +186,8 @@ export function registarRotasDados(
       if ((await espacosPartilhados(cliente, utilizadorId)) > 0) return 'espaco-partilhado' as const;
       return (await eliminarContaCompleta(cliente, utilizadorId)) ? ('eliminada' as const) : ('ja-nao-existe' as const);
     });
-    if (resultado === 'codigo-errado') {
-      await auditar(pool, 'conta.dados_confirmacao_falhada', { utilizadorId, ip: pedido.ip, detalhes: { motivo: 'codigo' } });
-      throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { codigo: m.codigoErrado });
-    }
-    if (utilizador.dois_factores) await descontarTentativa(pool, chaveErros);
+    if (resultado === 'codigo-errado') await codigoErrado(utilizadorId, pedido.ip);
+    if (utilizador.dois_factores) await descontarTentativa(pool, chaveErros(utilizadorId));
     if (resultado === 'espaco-partilhado') throw new ErroHttp(409, m.espacoComMembros);
     if (resultado === 'ja-nao-existe') throw new ErroHttp(401, m.sessaoNecessaria);
 

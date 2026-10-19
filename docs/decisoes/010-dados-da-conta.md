@@ -6,7 +6,7 @@ Cumpre a Lei n.º 22/11 (Protecção de Dados Pessoais) e o `CLAUDE.md`, secçã
 
 | Tema | Decisão | Porquê |
 |---|---|---|
-| Exportar | Ficheiro JSON com conta, espaços de trabalho, sessões e histórico de acessos; pede a palavra-passe | Uma sessão esquecida aberta não basta para levar os dados de alguém |
+| Exportar | Ficheiro JSON com conta, espaços de trabalho, sessões e histórico de acessos; pede a palavra-passe e, com 2FA activo, um código | Uma sessão esquecida aberta não basta para levar os dados de alguém |
 | O que não se exporta | Hashes, segredo do 2FA, códigos de recuperação, tokens | São segredos, não dados sobre a pessoa |
 | Eliminar | Pede a palavra-passe, o código do 2FA (se activo) e escrever ELIMINAR; apaga a conta, os espaços de que é a única dona, sessões, ligações, códigos, o histórico de acessos e os contadores de tentativas que incluem o e-mail | Eliminação completa; acção irreversível com tripla confirmação |
 | Depois de eliminar | Fica só um registo "conta.eliminada" sem nada que identifique a pessoa; segue um e-mail de confirmação | Prova de que a eliminação aconteceu, sem guardar dados pessoais |

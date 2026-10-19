@@ -139,7 +139,7 @@ export const mensagens = {
       titulo: 'Os meus dados',
       exportarTitulo: 'Descarregar os meus dados',
       exportarExplicacao:
-        'Um ficheiro com todos os dados que o Eveni guarda sobre si: conta, espaço de trabalho, sessões e histórico de acessos. Por segurança, confirme a palavra-passe.',
+        'Um ficheiro com todos os dados que o Eveni guarda sobre si: conta, espaço de trabalho, sessões e histórico de acessos. Por segurança, confirme a palavra-passe (e o código da verificação em dois passos, se a tiver activa).',
       palavraPasse: 'Palavra-passe',
       exportar: 'Descarregar ficheiro',
       aExportar: 'A preparar o ficheiro…',

@@ -95,6 +95,21 @@ describe('exportar os meus dados', () => {
     expect(historico.map((a: { accao: string }) => a.accao)).not.toContain('sessao.bloqueada');
   });
 
+  it('com 2FA activo, exige também um código', async () => {
+    const cookie = cookieDe(await c.registar());
+    await c.post('/api/auth/reenviar-confirmacao', {}, cookie);
+    await c.post('/api/auth/confirmar-email', { token: c.tokenDoUltimoEmail() }, cookie);
+    const { segredo } = (await c.post('/api/conta/2fa/iniciar', {}, cookie)).json();
+    const codigo = (d: number) => codigoHotp(deBase32(segredo), passoActual() + d);
+    await c.post('/api/conta/2fa/activar', { palavraPasse: PALAVRA_PASSE, codigo: codigo(-1) }, cookie);
+
+    expect((await exportar(PALAVRA_PASSE, cookie)).json().campos.codigo).toBeDefined();
+    expect((await c.post('/api/conta/exportar', { palavraPasse: PALAVRA_PASSE, codigo: '000000' }, cookie)).statusCode).toBe(400);
+    const { rows } = await base.pool.query("select count(*)::int as n from audit_log where action = 'conta.dados_confirmacao_falhada'");
+    expect(rows[0].n).toBe(2);
+    expect((await c.post('/api/conta/exportar', { palavraPasse: PALAVRA_PASSE, codigo: codigo(0) }, cookie)).statusCode).toBe(200);
+  });
+
   it('fica na auditoria', async () => {
     await exportar(PALAVRA_PASSE, cookieDe(await c.registar()));
     const { rows } = await base.pool.query("select count(*)::int as n from audit_log where action = 'conta.exportada'");
