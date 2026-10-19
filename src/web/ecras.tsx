@@ -8,11 +8,11 @@ import { navegar } from './navegacao.js';
 
 const e = mensagens.ecras;
 
-function Logo() {
+export function Logo() {
   return <img className="logo" src="/eveni-logo.png" alt={`${mensagens.app.nome} — ${mensagens.app.slogan}`} width={320} height={123} />;
 }
 
-function Ligacao({ para, children }: { para: string; children: string }) {
+export function Ligacao({ para, children }: { para: string; children: string }) {
   return (
     <a
       href={para}
@@ -45,6 +45,9 @@ export function EcraEntrar({ aoEntrar, aviso }: { aoEntrar: (eu: Eu) => void; av
         )}
       </Formulario>
       <p className="cartao__rodape">
+        <Ligacao para="/recuperar">{e.entrar.esqueceu}</Ligacao>
+      </p>
+      <p className="cartao__rodape cartao__rodape--junto">
         {e.entrar.semConta} <Ligacao para="/registo">{e.entrar.ligacaoRegisto}</Ligacao>
       </p>
     </main>
@@ -124,6 +127,9 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
           {erro}
         </p>
       )}
+      <button className="botao botao--secundario botao--primeiro" type="button" onClick={() => navegar('/conta/palavra-passe')}>
+        {e.inicio.mudarPalavraPasse}
+      </button>
       <button className="botao" type="button" onClick={() => sair(false)} disabled={aSair}>
         {aSair ? e.inicio.aSair : e.inicio.sair}
       </button>

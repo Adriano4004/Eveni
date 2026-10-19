@@ -39,11 +39,11 @@ export async function criarCliente(base: BaseDeDados, extra: Partial<Config> = {
     get,
     eu: (cookie?: string) => get('/api/auth/eu', cookie),
     registar: (email = 'ana@exemplo.ao', nome = 'Ana Domingos') => post('/api/auth/registo', { nome, email, palavraPasse: PALAVRA_PASSE }),
-    // Extrai o token da ligação de confirmação do último e-mail enviado.
-    tokenDoUltimoEmail(): string {
+    // Extrai o token da ligação (de confirmação, por omissão) do último e-mail enviado.
+    tokenDoUltimoEmail(caminho = 'confirmar-email'): string {
       const texto = emails.at(-1)?.texto ?? '';
-      const token = /confirmar-email\?token=([\w%-]+)/.exec(texto)?.[1];
-      if (!token) throw new Error('nenhuma ligação de confirmação no último e-mail');
+      const token = new RegExp(`${caminho}\\?token=([\\w%-]+)`).exec(texto)?.[1];
+      if (!token) throw new Error(`nenhuma ligação ${caminho} no último e-mail`);
       return decodeURIComponent(token);
     },
   };

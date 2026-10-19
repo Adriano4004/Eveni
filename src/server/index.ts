@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { criarApp } from './app.js';
 import { ConfigInvalida, lerConfig } from './config.js';
 import { limparExpirados } from './contas/sessoes.js';
+import { esperarSegundoPlano } from './segundo-plano.js';
 import { aplicarMigracoes, criarBaseDeDados } from './db/index.js';
 
 // Raiz do projecto, quer a correr com tsx (src/server/) quer compilado (dist/server/server/).
@@ -46,6 +47,7 @@ async function arrancar() {
     aEncerrar = true;
     Promise.resolve()
       .then(() => app.close())
+      .then(() => esperarSegundoPlano())
       .then(() => base.fechar())
       .then(() => process.exit(0))
       .catch((erro) => {

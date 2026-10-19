@@ -28,3 +28,25 @@ export function emailConfirmacao(para: string, url: string): MensagemEmail {
     html: moldeHtml([escaparHtml(c.ola), escaparHtml(c.corpo)], { texto: c.botao, url }, [escaparHtml(c.validade), escaparHtml(c.naoFoiVoce)]),
   };
 }
+
+export function emailRecuperacao(para: string, url: string): MensagemEmail {
+  const r = e.recuperar;
+  return {
+    para,
+    assunto: r.assunto,
+    texto: [e.confirmar.ola, '', r.corpo, '', `${r.botao}: ${url}`, '', r.validade, r.naoFoiVoce, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(r.corpo)], { texto: r.botao, url }, [escaparHtml(r.validade), escaparHtml(r.naoFoiVoce)]),
+  };
+}
+
+// sessoes: 'todas' (recuperação pela ligação) ou 'outras' (mudança com sessão iniciada, que mantém essa).
+export function emailPalavraPasseAlterada(para: string, urlRecuperar: string, sessoes: 'todas' | 'outras'): MensagemEmail {
+  const a = e.alterada;
+  const corpo = sessoes === 'todas' ? a.corpoTodas : a.corpoOutras;
+  return {
+    para,
+    assunto: a.assunto,
+    texto: [e.confirmar.ola, '', corpo, '', `${a.botao}: ${urlRecuperar}`, '', a.naoFoiVoce, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(corpo)], { texto: a.botao, url: urlRecuperar }, [escaparHtml(a.naoFoiVoce)]),
+  };
+}

@@ -35,6 +35,13 @@ export const LIMITES = {
   confirmarPorIp: { max: 30, janela: 15 * 60 },
   // Por conta: evita usar o Eveni para encher a caixa de correio de alguém.
   reenviarConfirmacao: { max: 3, janela: 60 * 60 },
+  recuperarPorIp: { max: 10, janela: 60 * 60 },
+  // Por e-mail: acima disto responde-se igual, mas não se envia (não encher a caixa de ninguém).
+  recuperarPorEmailEIp: { max: 3, janela: 60 * 60 },
+  recuperarPorEmail: { max: 10, janela: 60 * 60 },
+  redefinirPorIp: { max: 30, janela: 15 * 60 },
+  // Tentativas de adivinhar a palavra-passe actual com a sessão de outra pessoa (ex.: telemóvel perdido).
+  mudarPorConta: { max: 10, janela: 60 * 60 },
 } as const;
 
 // Regista a tentativa e recusa com 429 quando passa do limite.

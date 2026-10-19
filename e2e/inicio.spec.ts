@@ -164,15 +164,73 @@ test('abrir a ligação sem sessão pede para entrar primeiro, e confirma a segu
   await expect(page.getByRole('heading', { name: 'E-mail confirmado' })).toBeVisible();
 });
 
-async function criarLigacaoDeConfirmacao(email: string): Promise<string> {
+test('recuperar a palavra-passe a partir do ecrã de entrada', async ({ page }) => {
+  const email = `helena.${Date.now()}@exemplo.ao`;
+  const nova = 'Semba-e-kuduro-77';
+  await page.goto('/registo');
+  await page.getByLabel('Nome').fill('Helena');
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Helena' })).toBeVisible();
+  await page.getByRole('button', { name: 'Terminar sessão', exact: true }).click();
+
+  await page.getByRole('link', { name: 'Esqueceu-se da palavra-passe?' }).click();
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByRole('button', { name: 'Enviar ligação' }).click();
+  await expect(page.getByRole('status')).toContainText('Se existir uma conta com este e-mail');
+
+  const token = await criarLigacao(email, 'recuperar_palavra_passe');
+  await page.goto(`/redefinir-palavra-passe?token=${token}`);
+  await expect(page).toHaveURL(/\/redefinir-palavra-passe$/);
+  // Recarregar a página não perde a ligação.
+  await page.reload();
+  await page.getByLabel('Nova palavra-passe').fill(nova);
+  await page.getByRole('button', { name: 'Guardar palavra-passe' }).click();
+  await expect(page.getByRole('heading', { name: 'Palavra-passe alterada' })).toBeVisible();
+  await page.getByRole('button', { name: 'Entrar' }).click();
+
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByLabel('Palavra-passe').fill(nova);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Helena' })).toBeVisible();
+});
+
+test('mudar a palavra-passe a partir da página inicial', async ({ page }) => {
+  await page.goto('/registo');
+  await page.getByLabel('Nome').fill('Ivo');
+  await page.getByLabel('E-mail').fill(`ivo.${Date.now()}@exemplo.ao`);
+  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await page.getByRole('button', { name: 'Mudar palavra-passe' }).click();
+
+  await page.getByLabel('Palavra-passe actual').fill('errada-123456');
+  await page.getByLabel('Nova palavra-passe').fill('Semba-e-kuduro-77');
+  await page.getByRole('button', { name: 'Mudar palavra-passe' }).click();
+  await expect(page.getByText('A palavra-passe actual não está correcta.')).toBeVisible();
+
+  await page.getByLabel('Palavra-passe actual').fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Mudar palavra-passe' }).click();
+  await expect(page.getByRole('status')).toContainText('Palavra-passe alterada');
+  // A sessão neste aparelho continua.
+  await page.getByRole('link', { name: 'Voltar ao início' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Ivo' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Olá, Ivo' })).toBeVisible();
+});
+
+// Os e-mails reais só existem nos logs do servidor: os testes criam ligações conhecidas na base de dados.
+async function criarLigacao(email: string, finalidade: 'confirmar_email' | 'recuperar_palavra_passe'): Promise<string> {
   const token = randomBytes(32).toString('base64url');
   const cliente = new pg.Client({ connectionString: envValido.DATABASE_URL });
   await cliente.connect();
   await cliente.query(
     `insert into email_tokens (token_hash, user_id, purpose, expires_at)
-     select $1, id, 'confirmar_email', now() + interval '1 hour' from users where email = $2`,
-    [createHash('sha256').update(token).digest('hex'), email],
+     select $1, id, $3, now() + interval '1 hour' from users where email = $2`,
+    [createHash('sha256').update(token).digest('hex'), email, finalidade],
   );
   await cliente.end();
   return token;
 }
+
+const criarLigacaoDeConfirmacao = (email: string) => criarLigacao(email, 'confirmar_email');
