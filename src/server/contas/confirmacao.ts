@@ -1,30 +1,21 @@
-import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import { z } from 'zod';
 import { mensagens } from '../../shared/mensagens.js';
 import type { Config } from '../config.js';
-import type { BaseDeDados } from '../db/index.js';
+import { type BaseDeDados, emTransaccao } from '../db/index.js';
 import type { EnviarEmail } from '../email/index.js';
 import { emailConfirmacao } from '../email/modelos.js';
 import { ErroHttp, validar } from '../erros.js';
 import { LIMITES, limitar } from '../seguranca/limites.js';
 import type { criarGuardas } from './acesso.js';
 import { auditar } from './auditoria.js';
-import { hashToken } from './sessoes.js';
+import { criarLigacao, gastarLigacao, ligacaoValida } from './ligacoes.js';
 
-const VALIDADE_HORAS = 48;
+const VALIDADE_MINUTOS = 48 * 60;
 
-// Cria uma ligação de confirmação nova e invalida as anteriores ainda por usar.
-export async function criarTokenConfirmacao(cliente: pg.Pool | pg.PoolClient, utilizadorId: string): Promise<string> {
-  const token = randomBytes(32).toString('base64url');
-  await cliente.query("delete from email_tokens where user_id = $1 and purpose = 'confirmar_email' and used_at is null", [utilizadorId]);
-  await cliente.query(
-    `insert into email_tokens (token_hash, user_id, purpose, expires_at)
-     values ($1, $2, 'confirmar_email', now() + make_interval(hours => $3))`,
-    [hashToken(token), utilizadorId, VALIDADE_HORAS],
-  );
-  return token;
+export function criarTokenConfirmacao(cliente: pg.Pool | pg.PoolClient, utilizadorId: string): Promise<string> {
+  return criarLigacao(cliente, utilizadorId, 'confirmar_email', VALIDADE_MINUTOS);
 }
 
 export function urlConfirmacao(config: Config, token: string): string {
@@ -54,26 +45,16 @@ export function registarRotasConfirmacao(
     const utilizadorSessao = pedido.sessao!.utilizadorId;
 
     // Ligação válida mas de outra conta: avisar, sem a gastar.
-    const { rows: donos } = await pool.query<{ user_id: string }>(
-      "select user_id from email_tokens where token_hash = $1 and purpose = 'confirmar_email' and used_at is null and expires_at > now()",
-      [hashToken(token)],
-    );
-    if (donos[0] && donos[0].user_id !== utilizadorSessao) throw new ErroHttp(400, mensagens.contas.ligacaoDeOutraConta);
+    const dono = await ligacaoValida(pool, token, 'confirmar_email');
+    if (dono && dono !== utilizadorSessao) throw new ErroHttp(400, mensagens.contas.ligacaoDeOutraConta);
 
-    // Marca a ligação como usada e confirma o e-mail numa só operação: pedidos repetidos ou em
-    // paralelo com a mesma ligação não a conseguem usar duas vezes.
-    const { rows } = await pool.query<{ user_id: string }>(
-      `with usada as (
-         update email_tokens set used_at = now()
-          where token_hash = $1 and user_id = $2 and purpose = 'confirmar_email' and used_at is null and expires_at > now()
-          returning user_id
-       )
-       update users set email_verified_at = coalesce(email_verified_at, now()), updated_at = now()
-        where id = (select user_id from usada)
-        returning id as user_id`,
-      [hashToken(token), utilizadorSessao],
-    );
-    const utilizadorId = rows[0]?.user_id;
+    const utilizadorId = await emTransaccao(pool, async (cliente) => {
+      const id = await gastarLigacao(cliente, token, 'confirmar_email', utilizadorSessao);
+      if (id) {
+        await cliente.query('update users set email_verified_at = coalesce(email_verified_at, now()), updated_at = now() where id = $1', [id]);
+      }
+      return id;
+    });
     if (!utilizadorId) throw new ErroHttp(400, mensagens.contas.ligacaoInvalida);
     await auditar(pool, 'conta.email_confirmado', { utilizadorId, ip: pedido.ip });
     return { confirmado: true };

@@ -2,17 +2,39 @@ import { useEffect, useState } from 'react';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
+import { EcraMudarPalavraPasse, EcraRecuperar, EcraRedefinir } from './ecras-palavra-passe.js';
 import { EcraConfirmarEmail, EcraEntrar, EcraInicio, EcraRegisto } from './ecras.js';
 import { navegar, useCaminho } from './navegacao.js';
 
-// O token da ligação de confirmação é lido uma vez, à entrada, e tirado do endereço para não ficar no
-// histórico do browser. Fica guardado aqui enquanto a pessoa entra na conta, se ainda não tiver sessão.
-const tokenConfirmacao = (() => {
-  if (location.pathname !== '/confirmar-email') return '';
-  const token = new URLSearchParams(location.search).get('token') ?? '';
-  history.replaceState(null, '', '/confirmar-email');
-  return token;
-})();
+// Os tokens das ligações enviadas por e-mail são lidos à entrada e tirados do endereço, para não ficarem
+// no histórico do browser. Ficam guardados neste separador (sessionStorage), para que recarregar a
+// página (ex.: puxar para baixo no Android) não perca a ligação.
+function lerToken(caminho: string): string {
+  if (location.pathname !== caminho) return '';
+  const chave = `eveni-token:${caminho}`;
+  const doEndereco = new URLSearchParams(location.search).get('token');
+  history.replaceState(null, '', caminho);
+  try {
+    if (doEndereco) sessionStorage.setItem(chave, doEndereco);
+    return doEndereco ?? sessionStorage.getItem(chave) ?? '';
+  } catch {
+    return doEndereco ?? '';
+  }
+}
+
+function esquecerToken(caminho: string) {
+  try {
+    sessionStorage.removeItem(`eveni-token:${caminho}`);
+  } catch {
+    // sem armazenamento disponível: nada a esquecer
+  }
+}
+const tokenConfirmacao = lerToken('/confirmar-email');
+const tokenRedefinir = lerToken('/redefinir-palavra-passe');
+
+// Ecrãs só para quem não tem sessão, e ecrãs acessíveis com ou sem sessão.
+const SO_ANONIMO = new Set(['/entrar', '/registo', '/recuperar']);
+const QUALQUER = new Set(['/confirmar-email', '/redefinir-palavra-passe']);
 
 type Estado = { tipo: 'a-carregar' } | { tipo: 'anonimo' } | { tipo: 'com-sessao'; eu: Eu };
 
@@ -29,17 +51,28 @@ export function App() {
 
   useEffect(carregarEu, []);
 
-  // Sem sessão só se pode estar em /entrar ou /registo; com sessão, não faz sentido lá estar.
   useEffect(() => {
-    if (caminho === '/confirmar-email') return; // acessível com ou sem sessão
-    if (estado.tipo === 'anonimo' && caminho !== '/registo') navegar('/entrar');
-    if (estado.tipo === 'com-sessao' && (caminho === '/entrar' || caminho === '/registo')) navegar('/');
+    if (QUALQUER.has(caminho)) return;
+    if (estado.tipo === 'anonimo' && !SO_ANONIMO.has(caminho)) navegar('/entrar');
+    if (estado.tipo === 'com-sessao' && SO_ANONIMO.has(caminho)) navegar('/');
   }, [estado, caminho]);
 
   const entrou = (eu: Eu) => setEstado({ tipo: 'com-sessao', eu });
 
   if (estado.tipo === 'a-carregar') {
     return <p className="a-carregar">{mensagens.ecras.carregar}</p>;
+  }
+  if (caminho === '/redefinir-palavra-passe') {
+    return (
+      <EcraRedefinir
+        token={tokenRedefinir}
+        aoAlterar={() => {
+          esquecerToken('/redefinir-palavra-passe');
+          // O servidor terminou as sessões desta conta; se o browser tinha sessão de outra conta, mantém-se.
+          carregarEu();
+        }}
+      />
+    );
   }
   if (caminho === '/confirmar-email') {
     // A confirmação exige sessão na conta que recebeu o e-mail (ver servidor): entrar primeiro.
@@ -48,6 +81,7 @@ export function App() {
       <EcraConfirmarEmail
         token={tokenConfirmacao}
         aoConfirmar={() => {
+          esquecerToken('/confirmar-email');
           navegar('/');
           carregarEu();
         }}
@@ -55,7 +89,10 @@ export function App() {
     );
   }
   if (estado.tipo === 'com-sessao') {
+    if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     return <EcraInicio eu={estado.eu} aoSair={() => setEstado({ tipo: 'anonimo' })} />;
   }
-  return caminho === '/registo' ? <EcraRegisto aoEntrar={entrou} /> : <EcraEntrar aoEntrar={entrou} />;
+  if (caminho === '/registo') return <EcraRegisto aoEntrar={entrou} />;
+  if (caminho === '/recuperar') return <EcraRecuperar />;
+  return <EcraEntrar aoEntrar={entrou} />;
 }

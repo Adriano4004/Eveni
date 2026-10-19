@@ -109,6 +109,6 @@ export const emailTokens = pgTable(
   },
   (t) => [
     index('email_tokens_utilizador').on(t.userId, t.purpose),
-    check('email_tokens_finalidade_valida', sql`${t.purpose} in ('confirmar_email')`),
+    check('email_tokens_finalidade_valida', sql`${t.purpose} in ('confirmar_email', 'recuperar_palavra_passe')`),
   ],
 );

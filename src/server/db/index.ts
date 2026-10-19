@@ -49,3 +49,19 @@ export async function aplicarMigracoes(base: BaseDeDados, pasta: string) {
     cliente.release();
   }
 }
+
+// Corre o trabalho numa transacção: tudo ou nada.
+export async function emTransaccao<T>(pool: pg.Pool, trabalho: (cliente: pg.PoolClient) => Promise<T>): Promise<T> {
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('begin');
+    const resultado = await trabalho(cliente);
+    await cliente.query('commit');
+    return resultado;
+  } catch (erro) {
+    await cliente.query('rollback');
+    throw erro;
+  } finally {
+    cliente.release();
+  }
+}

@@ -249,3 +249,20 @@ h1 {
   padding: 8px 16px;
   background: var(--cor-superficie);
 }
+
+.cartao__rodape--junto {
+  margin-top: 8px;
+}
+
+.botao--primeiro {
+  margin: 0 0 12px;
+}
+
+.sucesso {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: var(--raio);
+  background: #ecfdf3;
+  color: #05603a;
+  line-height: 1.5;
+}

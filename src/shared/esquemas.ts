@@ -43,6 +43,18 @@ export const entrar = z.object({
 });
 export type Entrar = z.infer<typeof entrar>;
 
+export const recuperar = z.object({ email });
+
+export const redefinir = z.object({
+  token: z.string().min(1).max(100),
+  palavraPasse: palavraPasseNova,
+});
+
+export const mudarPalavraPasse = z.object({
+  palavraPasseActual: z.string({ error: m.palavraPasseObrigatoria }).min(1, m.palavraPasseObrigatoria).max(200, m.palavraPasseLonga),
+  palavraPasse: palavraPasseNova,
+});
+
 export type CodigoPlano = 'singular' | 'empresarial' | 'grandes';
 
 // Resposta de GET /api/auth/eu. Nunca inclui hashes, tokens ou segredos.
