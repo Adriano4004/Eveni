@@ -50,3 +50,14 @@ export function emailPalavraPasseAlterada(para: string, urlRecuperar: string, se
     html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(corpo)], { texto: a.botao, url: urlRecuperar }, [escaparHtml(a.naoFoiVoce)]),
   };
 }
+
+// Aviso de segurança sobre a conta, com ligação para a recuperar se não foi o dono.
+export function emailAvisoConta(para: string, assunto: string, corpo: string, urlRecuperar: string): MensagemEmail {
+  const botao = e.alterada.botao;
+  return {
+    para,
+    assunto,
+    texto: [e.confirmar.ola, '', corpo, '', `${e.seNaoFoiVoce} ${urlRecuperar}`, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(corpo)], { texto: botao, url: urlRecuperar }, [escaparHtml(e.seNaoFoiVoce)]),
+  };
+}

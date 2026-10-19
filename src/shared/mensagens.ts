@@ -21,6 +21,9 @@ export const mensagens = {
     nomeObrigatorio: 'Indique o seu nome.',
     nomeLongo: 'O nome é demasiado longo.',
     nomeInvalido: 'O nome tem caracteres inválidos.',
+    codigoInvalido: 'Indique o código de 6 dígitos da aplicação.',
+    codigoRecuperacaoInvalido: 'Indique um código de recuperação (10 letras e números, por exemplo ABCDE-FGHJK).',
+    codigoOuRecuperacaoInvalido: 'Indique o código de 6 dígitos da aplicação ou um código de recuperação.',
     emailInvalido: 'Indique um e-mail válido.',
     palavraPasseCurta: 'A palavra-passe tem de ter pelo menos 10 caracteres.',
     palavraPasseLonga: 'A palavra-passe é demasiado longa.',
@@ -40,6 +43,11 @@ export const mensagens = {
     palavraPasseIgual: 'A nova palavra-passe tem de ser diferente da actual.',
     recuperacaoPedida:
       'Se existir uma conta com este e-mail, enviámos uma ligação para definir uma nova palavra-passe. A ligação é válida durante 1 hora. Verifique também a pasta de spam.',
+    codigoErrado: 'Código incorrecto. Verifique a aplicação e tente de novo.',
+    desafioExpirado: 'A entrada expirou. Volte a introduzir o e-mail e a palavra-passe.',
+    doisFactoresJaActivo: 'A verificação em dois passos já está activa.',
+    doisFactoresInactivo: 'A verificação em dois passos não está activa.',
+    doisFactoresPorIniciar: 'Comece por gerar o código QR.',
     ligacaoDeOutraConta: 'Esta ligação pertence a outra conta. Termine a sessão e entre com a conta que recebeu o e-mail.',
     nomeEspacoPessoal: (nome: string) => `Espaço de ${nome}`,
   },
@@ -74,6 +82,10 @@ export const mensagens = {
       sair: 'Terminar sessão',
       sairDeTodos: 'Terminar sessão em todos os dispositivos',
       mudarPalavraPasse: 'Mudar palavra-passe',
+      doisFactores: 'Verificação em dois passos',
+      doisFactoresActivo: 'Activa',
+      doisFactoresInactivo: 'Desactivada',
+      gerirDoisFactores: 'Gerir verificação em dois passos',
       confirmarSairDeTodos: 'Vai terminar a sessão em todos os dispositivos, incluindo este. Continuar?',
       aSair: 'A terminar sessão…',
       erroSair: 'Não foi possível terminar a sessão. Verifique a internet e tente novamente.',
@@ -105,6 +117,48 @@ export const mensagens = {
       botao: 'Mudar palavra-passe',
       aEnviar: 'A mudar…',
       sucesso: 'Palavra-passe alterada. As sessões noutros dispositivos foram terminadas.',
+      voltar: 'Voltar ao início',
+    },
+    entrarCodigo: {
+      titulo: 'Verificação em dois passos',
+      subtitulo: 'Abra a aplicação autenticadora no telemóvel e introduza o código de 6 dígitos do Eveni.',
+      codigo: 'Código de 6 dígitos',
+      botao: 'Confirmar',
+      aEnviar: 'A verificar…',
+      usarRecuperacao: 'Não tenho o telemóvel: usar um código de recuperação',
+      subtituloRecuperacao: 'Introduza um dos códigos de recuperação que guardou ao activar a verificação em dois passos. Cada código só serve uma vez.',
+      codigoRecuperacao: 'Código de recuperação',
+      usarAplicacao: 'Usar o código da aplicação',
+      cancelar: 'Cancelar',
+    },
+    doisFactores: {
+      titulo: 'Verificação em dois passos',
+      explicacao:
+        'Além da palavra-passe, o Eveni vai pedir um código de 6 dígitos de uma aplicação no telemóvel (Google Authenticator, Microsoft Authenticator ou Authy). Mesmo que alguém descubra a sua palavra-passe, não consegue entrar sem o telemóvel.',
+      comecar: 'Activar',
+      aGerar: 'A preparar…',
+      passo1: '1. Na aplicação autenticadora, adicione uma conta e leia este código QR.',
+      semCamara: 'Se não conseguir ler o código, introduza esta chave na aplicação:',
+      passo2: '2. Introduza o código de 6 dígitos que a aplicação mostra, e a sua palavra-passe.',
+      codigo: 'Código de 6 dígitos',
+      palavraPasse: 'Palavra-passe',
+      activar: 'Activar verificação em dois passos',
+      aActivar: 'A activar…',
+      activaTitulo: 'Verificação em dois passos activa',
+      codigosTitulo: 'Guarde os códigos de recuperação',
+      codigosExplicacao:
+        'Se perder o telemóvel, cada um destes códigos permite entrar uma vez. Guarde-os num sítio seguro (por exemplo, impressos ou num gestor de palavras-passe). Não voltam a ser mostrados.',
+      copiar: 'Copiar códigos',
+      copiados: 'Códigos copiados.',
+      guardei: 'Já guardei os códigos',
+      estaActiva: 'A verificação em dois passos está activa na sua conta.',
+      desactivarTitulo: 'Desactivar',
+      desactivarExplicacao: 'Para desactivar, ou para gerar códigos de recuperação novos, confirme a palavra-passe e um código da aplicação (ou de recuperação).',
+      codigoOuRecuperacao: 'Código da aplicação ou de recuperação',
+      desactivar: 'Desactivar verificação em dois passos',
+      aDesactivar: 'A desactivar…',
+      novosCodigos: 'Gerar novos códigos de recuperação',
+      desactivada: 'A verificação em dois passos foi desactivada.',
       voltar: 'Voltar ao início',
     },
     confirmar: {
@@ -143,6 +197,26 @@ export const mensagens = {
       validade: 'Esta ligação é válida durante 1 hora e só pode ser usada uma vez.',
       naoFoiVoce: 'Se não fez este pedido, ignore esta mensagem: a sua palavra-passe não muda.',
     },
+    doisFactoresActivado: {
+      assunto: 'Verificação em dois passos activada no Eveni',
+      corpo: 'A verificação em dois passos foi activada na sua conta do Eveni. A partir de agora, ao entrar, vai ser-lhe pedido um código da aplicação autenticadora.',
+    },
+    doisFactoresDesactivado: {
+      assunto: 'Verificação em dois passos desactivada no Eveni',
+      corpo: 'A verificação em dois passos foi desactivada na sua conta do Eveni.',
+    },
+    codigoRecuperacaoUsado: {
+      assunto: 'Foi usado um código de recuperação no Eveni',
+      corpo: (restantes: number) =>
+        `Alguém entrou na sua conta do Eveni com um código de recuperação. ${
+          restantes === 0
+            ? 'Já não restam códigos por usar: gere códigos novos na página da verificação em dois passos, antes que precise deles.'
+            : restantes === 1
+              ? 'Resta 1 código por usar.'
+              : `Restam ${restantes} códigos por usar.`
+        }`,
+    },
+    seNaoFoiVoce: 'Se não foi você, recupere já a conta:',
     alterada: {
       assunto: 'A sua palavra-passe do Eveni foi alterada',
       corpoTodas: 'A palavra-passe da sua conta do Eveni acabou de ser alterada, e todas as sessões abertas foram terminadas.',

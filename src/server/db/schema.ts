@@ -2,7 +2,7 @@
 // Depois de alterar este ficheiro: npm run db:generate, rever a migração criada em drizzle/
 // e escrever o ficheiro de reversão correspondente em drizzle/reverter/.
 import { sql } from 'drizzle-orm';
-import { bigserial, check, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { bigint, bigserial, check, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const criadoEm = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -15,6 +15,13 @@ export const users = pgTable(
     name: text('name').notNull(),
     passwordHash: text('password_hash').notNull(),
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+    // 2FA: segredo cifrado (ver seguranca/cifra.ts). O "pendente" existe entre gerar o código QR e
+    // confirmar o primeiro código; só passa a totp_secret quando a pessoa prova que o configurou.
+    totpSecret: text('totp_secret'),
+    totpPendingSecret: text('totp_pending_secret'),
+    totpEnabledAt: timestamp('totp_enabled_at', { withTimezone: true }),
+    // Último passo de 30 s já usado: o mesmo código não serve duas vezes.
+    totpLastStep: bigint('totp_last_step', { mode: 'number' }),
     createdAt: criadoEm(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -111,4 +118,34 @@ export const emailTokens = pgTable(
     index('email_tokens_utilizador').on(t.userId, t.purpose),
     check('email_tokens_finalidade_valida', sql`${t.purpose} in ('confirmar_email', 'recuperar_palavra_passe')`),
   ],
+);
+
+// Códigos de recuperação do 2FA: uso único, guardados só em hash.
+export const recoveryCodes = pgTable(
+  'recovery_codes',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: text('code_hash').notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: criadoEm(),
+  },
+  (t) => [uniqueIndex('recovery_codes_unico').on(t.userId, t.codeHash)],
+);
+
+// Entrada a meio: palavra-passe certa, falta o código do 2FA. Válida por poucos minutos.
+export const loginChallenges = pgTable(
+  'login_challenges',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    attempts: integer('attempts').notNull().default(0),
+    createdAt: criadoEm(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('login_challenges_utilizador').on(t.userId)],
 );
