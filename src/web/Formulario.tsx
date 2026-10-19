@@ -5,11 +5,13 @@ interface Props {
   botao: string;
   aEnviar: string;
   enviar: (dados: Record<string, string>) => Promise<void>;
+  // Acção irreversível: botão em vermelho.
+  perigo?: boolean;
   children: (erros: Record<string, string>) => ReactNode;
 }
 
 // Formulário com estado de envio, erro geral e erros por campo vindos do servidor.
-export function Formulario({ botao, aEnviar, enviar, children }: Props) {
+export function Formulario({ botao, aEnviar, enviar, children, perigo }: Props) {
   const [aEnviarAgora, setAEnviar] = useState(false);
   const [erroGeral, setErroGeral] = useState<string>();
   const [erros, setErros] = useState<Record<string, string>>({});
@@ -40,7 +42,7 @@ export function Formulario({ botao, aEnviar, enviar, children }: Props) {
         </p>
       )}
       {children(erros)}
-      <button className="botao" type="submit" disabled={aEnviarAgora}>
+      <button className={perigo ? 'botao botao--perigo' : 'botao'} type="submit" disabled={aEnviarAgora}>
         {aEnviarAgora ? aEnviar : botao}
       </button>
     </form>

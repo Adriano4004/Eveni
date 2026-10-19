@@ -22,6 +22,7 @@ export const mensagens = {
     nomeLongo: 'O nome é demasiado longo.',
     nomeInvalido: 'O nome tem caracteres inválidos.',
     codigoInvalido: 'Indique o código de 6 dígitos da aplicação.',
+    escrevaEliminar: 'Escreva ELIMINAR para confirmar.',
     codigoRecuperacaoInvalido: 'Indique um código de recuperação (10 letras e números, por exemplo ABCDE-FGHJK).',
     codigoOuRecuperacaoInvalido: 'Indique o código de 6 dígitos da aplicação ou um código de recuperação.',
     emailInvalido: 'Indique um e-mail válido.',
@@ -48,6 +49,8 @@ export const mensagens = {
     doisFactoresJaActivo: 'A verificação em dois passos já está activa.',
     doisFactoresInactivo: 'A verificação em dois passos não está activa.',
     doisFactoresPorIniciar: 'Comece por gerar o código QR.',
+    espacoComMembros:
+      'Tem um espaço de trabalho com outros membros. Transfira-o para outra pessoa antes de eliminar a conta, para não apagar o trabalho delas.',
     ligacaoDeOutraConta: 'Esta ligação pertence a outra conta. Termine a sessão e entre com a conta que recebeu o e-mail.',
     nomeEspacoPessoal: (nome: string) => `Espaço de ${nome}`,
   },
@@ -86,6 +89,7 @@ export const mensagens = {
       doisFactoresActivo: 'Activa',
       doisFactoresInactivo: 'Desactivada',
       gerirDoisFactores: 'Gerir verificação em dois passos',
+      osMeusDados: 'Os meus dados',
       confirmarSairDeTodos: 'Vai terminar a sessão em todos os dispositivos, incluindo este. Continuar?',
       aSair: 'A terminar sessão…',
       erroSair: 'Não foi possível terminar a sessão. Verifique a internet e tente novamente.',
@@ -130,6 +134,25 @@ export const mensagens = {
       codigoRecuperacao: 'Código de recuperação',
       usarAplicacao: 'Usar o código da aplicação',
       cancelar: 'Cancelar',
+    },
+    dados: {
+      titulo: 'Os meus dados',
+      exportarTitulo: 'Descarregar os meus dados',
+      exportarExplicacao:
+        'Um ficheiro com todos os dados que o Eveni guarda sobre si: conta, espaço de trabalho, sessões e histórico de acessos. Por segurança, confirme a palavra-passe.',
+      palavraPasse: 'Palavra-passe',
+      exportar: 'Descarregar ficheiro',
+      aExportar: 'A preparar o ficheiro…',
+      exportado: 'O ficheiro foi descarregado.',
+      eliminarTitulo: 'Eliminar a conta',
+      eliminarExplicacao:
+        'Apaga a sua conta e todos os dados associados, de forma definitiva. Não é possível desfazer. Se quiser guardar os seus dados, descarregue-os primeiro.',
+      codigo: 'Código da verificação em dois passos',
+      confirmacao: 'Para confirmar, escreva ELIMINAR',
+      eliminar: 'Eliminar a conta definitivamente',
+      aEliminar: 'A eliminar…',
+      eliminada: 'A sua conta e todos os dados foram eliminados.',
+      voltar: 'Voltar ao início',
     },
     doisFactores: {
       titulo: 'Verificação em dois passos',
@@ -217,6 +240,11 @@ export const mensagens = {
         }`,
     },
     seNaoFoiVoce: 'Se não foi você, recupere já a conta:',
+    contaEliminada: {
+      assunto: 'A sua conta do Eveni foi eliminada',
+      corpo:
+        'A sua conta do Eveni e todos os dados associados foram eliminados, a seu pedido. Não guardámos cópia. Se quiser voltar, pode criar uma conta nova a qualquer momento.',
+    },
     alterada: {
       assunto: 'A sua palavra-passe do Eveni foi alterada',
       corpoTodas: 'A palavra-passe da sua conta do Eveni acabou de ser alterada, e todas as sessões abertas foram terminadas.',

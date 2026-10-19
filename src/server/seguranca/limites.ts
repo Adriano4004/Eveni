@@ -62,6 +62,8 @@ export const LIMITES = {
   codigosErradosPorContaEIp: { max: 5, janela: 60 * 60 },
   codigosErradosPorConta: { max: 20, janela: 60 * 60 },
   gerirDoisFactores: { max: 10, janela: 60 * 60 },
+  // Exportar ou eliminar os dados da conta.
+  dadosConta: { max: 10, janela: 60 * 60 },
 } as const;
 
 // Regista a tentativa e recusa com 429 quando passa do limite.

@@ -62,15 +62,9 @@ export async function iniciarDesafio(pool: pg.Pool, config: Config, resposta: Fa
   resposta.setCookie(nomeCookieDesafio(config), token, { ...opcoesCookie(config), expires: expira });
 }
 
-export function registarRotasDoisFactores(
-  app: FastifyInstance,
-  config: Config,
-  base: BaseDeDados,
-  enviarEmail: EnviarEmail,
-  guardas: ReturnType<typeof criarGuardas>,
-  obterEu: (utilizadorId: string) => Promise<unknown>,
-) {
-  const { pool } = base;
+// Verificação dos códigos do 2FA (aplicação ou recuperação), partilhada com outras acções sensíveis
+// (ex.: eliminar a conta).
+export function criarSegundoFactor(config: Config) {
   const cifra = criarCifra(config.SESSION_SECRET, 'totp');
 
   // Se SESSION_SECRET tiver mudado, o segredo guardado deixa de ser legível: o código da aplicação
@@ -83,7 +77,6 @@ export function registarRotasDoisFactores(
       return null;
     }
   }
-  const urlRecuperar = `${config.APP_URL}/recuperar`;
 
   // Verifica um código da aplicação e regista o passo usado, numa só operação: o mesmo código não
   // entra duas vezes, nem com pedidos em paralelo.
@@ -112,6 +105,27 @@ export function registarRotasDoisFactores(
     );
     return rowCount === 1;
   }
+
+
+  // Código da aplicação (6 dígitos) ou de recuperação, consoante o formato.
+  function usarCodigo(cliente: pg.Pool | pg.PoolClient, utilizadorId: string, codigo: string): Promise<boolean> {
+    return /^\d{6}$/.test(codigo) ? usarCodigoTotp(cliente, utilizadorId, codigo) : usarCodigoRecuperacao(cliente, utilizadorId, codigo);
+  }
+
+  return { cifra, decifrarSegredo, usarCodigoTotp, usarCodigoRecuperacao, usarCodigo };
+}
+
+export function registarRotasDoisFactores(
+  app: FastifyInstance,
+  config: Config,
+  base: BaseDeDados,
+  enviarEmail: EnviarEmail,
+  guardas: ReturnType<typeof criarGuardas>,
+  obterEu: (utilizadorId: string) => Promise<unknown>,
+) {
+  const { pool } = base;
+  const { cifra, decifrarSegredo, usarCodigoTotp, usarCodigoRecuperacao, usarCodigo } = criarSegundoFactor(config);
+  const urlRecuperar = `${config.APP_URL}/recuperar`;
 
   async function codigosRestantes(utilizadorId: string): Promise<number> {
     const { rows } = await pool.query<{ n: number }>('select count(*)::int as n from recovery_codes where user_id = $1 and used_at is null', [
@@ -248,7 +262,7 @@ export function registarRotasDoisFactores(
   // O código já vem sem espaços nas pontas (esquema). Falhas ficam na auditoria (fora da transacção,
   // que é desfeita) antes de responder.
   async function confirmarComCodigo(cliente: pg.PoolClient, utilizadorId: string, codigo: string, ip: string) {
-    const certo = /^\d{6}$/.test(codigo) ? await usarCodigoTotp(cliente, utilizadorId, codigo) : await usarCodigoRecuperacao(cliente, utilizadorId, codigo);
+    const certo = await usarCodigo(cliente, utilizadorId, codigo);
     if (!certo) {
       await auditar(pool, 'conta.2fa_confirmacao_falhada', { utilizadorId, ip, detalhes: { motivo: 'codigo' } });
       throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { codigo: m.codigoErrado });

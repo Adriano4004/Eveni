@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import pg from 'pg';
 import { codigoHotp, deBase32, passoActual } from '../src/server/seguranca/totp.js';
@@ -273,6 +274,38 @@ test('activar a verificação em dois passos e entrar com o código', async ({ p
   await page.getByLabel('Código de recuperação').fill(codigos[0]!);
   await page.getByRole('button', { name: 'Confirmar' }).click();
   await expect(page.getByRole('heading', { name: 'Olá, Joana' })).toBeVisible();
+});
+
+test('descarregar os meus dados e eliminar a conta', async ({ page }) => {
+  const email = `luis.${Date.now()}@exemplo.ao`;
+  await page.goto('/registo');
+  await page.getByLabel('Nome').fill('Luís');
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await page.getByRole('button', { name: 'Os meus dados' }).click();
+
+  const exportar = page.getByRole('region', { name: 'Descarregar os meus dados' });
+  await exportar.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  const [ficheiro] = await Promise.all([page.waitForEvent('download'), exportar.getByRole('button', { name: 'Descarregar ficheiro' }).click()]);
+  expect(ficheiro.suggestedFilename()).toMatch(/^eveni-os-meus-dados-\d{4}-\d{2}-\d{2}\.json$/);
+  const conteudo = JSON.parse(readFileSync(await ficheiro.path(), 'utf8'));
+  expect(conteudo.conta.email).toBe(email);
+  await expect(page.getByRole('status')).toHaveText('O ficheiro foi descarregado.');
+
+  const eliminar = page.getByRole('region', { name: 'Eliminar a conta' });
+  await eliminar.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await eliminar.getByLabel('Para confirmar, escreva ELIMINAR').fill('sim');
+  await eliminar.getByRole('button', { name: 'Eliminar a conta definitivamente' }).click();
+  await expect(page.getByText('Escreva ELIMINAR para confirmar.')).toBeVisible();
+  await eliminar.getByLabel('Para confirmar, escreva ELIMINAR').fill('ELIMINAR');
+  await eliminar.getByRole('button', { name: 'Eliminar a conta definitivamente' }).click();
+
+  await expect(page.getByText('A sua conta e todos os dados foram eliminados.')).toBeVisible();
+  await page.getByLabel('E-mail', { exact: true }).fill(email);
+  await page.getByLabel('Palavra-passe', { exact: true }).fill(PALAVRA_PASSE);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page.getByRole('alert')).toHaveText('E-mail ou palavra-passe incorrectos.');
 });
 
 // Os e-mails reais só existem nos logs do servidor: os testes criam ligações conhecidas na base de dados.

@@ -327,3 +327,21 @@ h1 {
   font-size: 1.1rem;
   font-weight: 800;
 }
+
+.seccao--primeira {
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.seccao--perigo h2 {
+  color: var(--cor-erro);
+}
+
+.botao--perigo {
+  background: var(--cor-erro);
+}
+
+.botao--perigo:hover {
+  background: #912018;
+}

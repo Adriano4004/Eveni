@@ -7,6 +7,7 @@ import { mensagens } from '../shared/mensagens.js';
 import type { Config } from './config.js';
 import { criarGuardas } from './contas/acesso.js';
 import { registarRotasConfirmacao } from './contas/confirmacao.js';
+import { registarRotasDados } from './contas/dados.js';
 import { registarRotasPalavraPasse } from './contas/palavra-passe.js';
 import { registarRotasContas } from './contas/rotas.js';
 import { criarEnvioDeEmail, type EnviarEmail } from './email/index.js';
@@ -81,6 +82,7 @@ export async function criarApp({ config, base, pastaWeb, enviarEmail = criarEnvi
   registarRotasContas(app, config, base, enviarEmail, guardas);
   registarRotasConfirmacao(app, config, base, enviarEmail, guardas);
   registarRotasPalavraPasse(app, config, base, enviarEmail, guardas);
+  registarRotasDados(app, config, base, enviarEmail, guardas);
 
   app.get('/health', async (_pedido, resposta) => {
     const bdOk = await base.verificar();
