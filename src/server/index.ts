@@ -1,10 +1,13 @@
+import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { criarApp } from './app.js';
 import { ConfigInvalida, lerConfig } from './config.js';
 import { aplicarMigracoes, criarBaseDeDados } from './db/index.js';
 
-// Pastas relativas à raiz do projecto, quer a correr com tsx (src/) quer compilado (dist/server/).
-const raiz = fileURLToPath(new URL(import.meta.url.includes('/dist/') ? '../../../' : '../../', import.meta.url));
+// Raiz do projecto, quer a correr com tsx (src/server/) quer compilado (dist/server/server/).
+const pastaDesteFicheiro = dirname(fileURLToPath(import.meta.url));
+const compilado = pastaDesteFicheiro.endsWith(join('dist', 'server', 'server'));
+const raiz = join(pastaDesteFicheiro, compilado ? '../../..' : '../..') + sep;
 
 async function arrancar() {
   let config;
@@ -28,10 +31,18 @@ async function arrancar() {
 
   const app = await criarApp({ config, base, pastaWeb: `${raiz}dist/web` });
 
-  const encerrar = async () => {
-    await app.close();
-    await base.fechar();
-    process.exit(0);
+  let aEncerrar = false;
+  const encerrar = () => {
+    if (aEncerrar) return;
+    aEncerrar = true;
+    Promise.resolve()
+      .then(() => app.close())
+      .then(() => base.fechar())
+      .then(() => process.exit(0))
+      .catch((erro) => {
+        console.error('[encerrar] falhou:', erro);
+        process.exit(1);
+      });
   };
   process.on('SIGTERM', encerrar);
   process.on('SIGINT', encerrar);

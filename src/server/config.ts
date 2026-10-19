@@ -7,7 +7,11 @@ const esquema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     // Distingue o staging da produção, que correm ambos com NODE_ENV=production.
-    APP_ENV: z.enum(['local', 'staging', 'production']).default('local'),
+    // Obrigatório e sem valor por omissão: um serviço de produção sem APP_ENV não pode
+    // escapar às verificações de produção.
+    APP_ENV: z.enum(['local', 'staging', 'production'], {
+      error: 'APP_ENV em falta ou inválido (local, staging ou production).',
+    }),
     PORT: z.coerce.number().int().positive().default(3000),
     DATABASE_URL: z
       .string({ error: 'DATABASE_URL em falta (ligação ao PostgreSQL).' })

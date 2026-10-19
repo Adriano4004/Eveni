@@ -24,6 +24,11 @@ describe('validação da configuração no arranque', () => {
     expect(problemas(semUrl).join(' ')).toContain('APP_URL');
   });
 
+  it('recusa arrancar sem APP_ENV (não pode escapar às verificações de produção)', () => {
+    const { APP_ENV: _, ...semAmbiente } = envValido;
+    expect(problemas(semAmbiente).join(' ')).toContain('APP_ENV');
+  });
+
   it('trata variáveis vazias como em falta', () => {
     expect(problemas({ ...envValido, APP_URL: '' }).join(' ')).toContain('APP_URL');
   });

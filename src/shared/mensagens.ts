@@ -13,6 +13,8 @@ export const mensagens = {
   },
   erros: {
     naoEncontrado: 'Página não encontrada.',
+    pedidoInvalido: 'O pedido não é válido.',
+    demasiadosPedidos: 'Demasiados pedidos. Aguarde um pouco e tente novamente.',
     interno: 'Ocorreu um erro inesperado. Tente novamente dentro de momentos.',
   },
 } as const;

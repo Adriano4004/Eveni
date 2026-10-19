@@ -13,11 +13,20 @@ export interface Dependencias {
   pastaWeb?: string;
 }
 
+export function eRotaDeEcra(metodo: string, url: string): boolean {
+  if (metodo !== 'GET' && metodo !== 'HEAD') return false;
+  const caminho = url.split('?')[0] ?? '';
+  if (caminho === '/api' || caminho.startsWith('/api/')) return false;
+  const ultimo = caminho.split('/').pop() ?? '';
+  return !ultimo.includes('.');
+}
+
 export async function criarApp({ config, base, pastaWeb }: Dependencias) {
   const app = Fastify({
     logger: config.NODE_ENV === 'test' ? false : { level: 'info' },
-    // O Railway está atrás de um proxy: confiar no cabeçalho X-Forwarded-For.
-    trustProxy: true,
+    // O Railway põe um único proxy à frente da aplicação: confiar só nesse salto,
+    // para que um cliente não consiga falsificar o IP (importante para a limitação de pedidos).
+    trustProxy: (_endereco: string, salto: number) => salto < 1,
   });
 
   await app.register(helmet, {
@@ -47,9 +56,10 @@ export async function criarApp({ config, base, pastaWeb }: Dependencias) {
 
   if (pastaWeb && existsSync(pastaWeb)) {
     await app.register(fastifyStatic, { root: pastaWeb, wildcard: false });
-    // Qualquer rota que não seja da API devolve a aplicação web (o React trata da navegação).
+    // Rotas de ecrã (sem extensão, fora da API) devolvem a aplicação web; o React trata da navegação.
+    // Ficheiros em falta (ex.: /assets/antigo.js depois de um deploy) dão 404, não HTML.
     app.setNotFoundHandler((pedido, resposta) => {
-      if (pedido.method === 'GET' && !pedido.url.startsWith('/api/')) {
+      if (eRotaDeEcra(pedido.method, pedido.url)) {
         return resposta.sendFile('index.html');
       }
       return resposta.code(404).send({ mensagem: mensagens.erros.naoEncontrado });
@@ -65,7 +75,10 @@ export async function criarApp({ config, base, pastaWeb }: Dependencias) {
       pedido.log.error(erro);
       return resposta.code(codigo).send({ mensagem: mensagens.erros.interno });
     }
-    return resposta.code(codigo).send({ mensagem: erro.message });
+    // As mensagens internas do Fastify vêm em inglês e com detalhes técnicos: não as mostrar.
+    pedido.log.info({ err: erro }, 'pedido recusado');
+    const mensagem = codigo === 429 ? mensagens.erros.demasiadosPedidos : codigo === 404 ? mensagens.erros.naoEncontrado : mensagens.erros.pedidoInvalido;
+    return resposta.code(codigo).send({ mensagem });
   });
 
   return app;
