@@ -1,0 +1,1136 @@
+{
+  "codigo": "T04",
+  "nome": "Festival / Concerto",
+  "descricao": "Comprador: produtor cultural, promotor, agência · Horizonte típico: 8 meses · Evento com bilheteira paga",
+  "tarefas": [
+    {
+      "id": "T04-001",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Definir conceito artístico e público-alvo",
+      "papel": "Gestor",
+      "inicio": -240,
+      "fim": -240,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-002",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Definir data e verificar época das chuvas",
+      "papel": "Gestor",
+      "inicio": -240,
+      "fim": -240,
+      "critica": true,
+      "nota": "Luanda: época das chuvas de Novembro a Abril. Evento ao ar livre nesse período exige cobertura contratada ou plano B a sério — não boa vontade."
+    },
+    {
+      "id": "T04-003",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Verificar calendário de espectáculos concorrentes",
+      "papel": "Gestor",
+      "inicio": -235,
+      "fim": -235,
+      "critica": false,
+      "nota": "Duas grandes noites na mesma semana dividem o mesmo público e o mesmo dinheiro."
+    },
+    {
+      "id": "T04-004",
+      "fase": "Pré Produção",
+      "categoria": "Artístico",
+      "titulo": "Definir cabeça-de-cartaz",
+      "papel": "Gestor",
+      "inicio": -230,
+      "fim": -230,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-005",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Orçamento preliminar",
+      "papel": "Financeiro",
+      "inicio": -230,
+      "fim": -230,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-006",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Definir modelo de receita",
+      "papel": "Financeiro",
+      "inicio": -225,
+      "fim": -225,
+      "critica": true,
+      "nota": "Bilheteira, patrocínio e bar. O bar é receita, não despesa — entregá-lo ao fornecedor em troca de conveniência é abdicar de margem."
+    },
+    {
+      "id": "T04-007",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Calcular ponto de equilíbrio em bilhetes",
+      "papel": "Financeiro",
+      "inicio": -225,
+      "fim": -225,
+      "critica": true,
+      "nota": "Quantos bilhetes pagam o evento. Se o número passar de 70% da capacidade legal, o modelo não sobrevive a uma noite de chuva. Rever agora, não a D-30."
+    },
+    {
+      "id": "T04-008",
+      "fase": "Pré Produção",
+      "categoria": "Artístico",
+      "titulo": "Sondar disponibilidade do artista",
+      "papel": "Gestor",
+      "inicio": -220,
+      "fim": -220,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-009",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Negociar cachê",
+      "papel": "Financeiro",
+      "inicio": -210,
+      "fim": -210,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-010",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Contrato do artista assinado",
+      "papel": "Legal",
+      "inicio": -200,
+      "fim": -200,
+      "critica": true,
+      "nota": "Cachê, rider, hospitality e janela de exclusividade territorial. Sem exclusividade, o artista toca noutro sítio duas semanas antes e mata-te a bilheteira — legalmente."
+    },
+    {
+      "id": "T04-011",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Receber e analisar rider técnico",
+      "papel": "Técnica",
+      "inicio": -195,
+      "fim": -195,
+      "critica": true,
+      "nota": "Analisar ANTES de assinar o contrato, não depois. Um rider pode custar mais do que o cachê, e chega sempre depois de o cachê estar fechado."
+    },
+    {
+      "id": "T04-012",
+      "fase": "Pré Produção",
+      "categoria": "Produção",
+      "titulo": "Receber rider de hospitality",
+      "papel": "Produção",
+      "inicio": -195,
+      "fim": -195,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-013",
+      "fase": "Pré Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Visitar e reservar o recinto",
+      "papel": "Produção",
+      "inicio": -190,
+      "fim": -190,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-014",
+      "fase": "Pré Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Confirmar capacidade legal do recinto",
+      "papel": "Produção",
+      "inicio": -190,
+      "fim": -190,
+      "critica": true,
+      "nota": "Capacidade legal, não capacidade anunciada. É o número que a vistoria vai usar e o tecto real do teu ponto de equilíbrio."
+    },
+    {
+      "id": "T04-015",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Pagamento do sinal do cachê",
+      "papel": "Financeiro",
+      "inicio": -180,
+      "fim": -180,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-016",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Divisas para cachê de artista estrangeiro",
+      "papel": "Financeiro",
+      "inicio": -180,
+      "fim": -60,
+      "critica": true,
+      "nota": "Se o cachê é em divisas, iniciar o processo com o banco a D-180. É a causa mais comum de cancelamento de concertos internacionais em Angola — e não se resolve com pressa."
+    },
+    {
+      "id": "T04-017",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Pedido de licenciamento do espectáculo",
+      "papel": "Legal",
+      "inicio": -150,
+      "fim": -90,
+      "critica": true,
+      "nota": "Decreto 23/2012 — Regulamento de Espectáculos e Divertimentos Públicos, com a redacção dada pelo Decreto 43/2017. Confirmar requisitos e prazos actuais junto da entidade competente antes de submeter."
+    },
+    {
+      "id": "T04-018",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Vistos e autorização de trabalho para artista estrangeiro",
+      "papel": "Produção",
+      "inicio": -150,
+      "fim": -60,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-019",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Dossier de patrocínio",
+      "papel": "Comunicação",
+      "inicio": -150,
+      "fim": -140,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-020",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Lista nominal de patrocinadores-alvo",
+      "papel": "Financeiro",
+      "inicio": -140,
+      "fim": -140,
+      "critica": false,
+      "nota": "Cerveja, telecomunicações e banca são os patrocinadores estruturais do espectáculo em Angola. Abordar os três sectores e aceitar exclusividade por categoria."
+    },
+    {
+      "id": "T04-021",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Abordagem a patrocinadores",
+      "papel": "Financeiro",
+      "inicio": -140,
+      "fim": -60,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-022",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Alfândega para equipamento importado",
+      "papel": "Produção",
+      "inicio": -120,
+      "fim": -120,
+      "critica": true,
+      "nota": "Backline e equipamento de tournée. Contar com o desembaraço, não com a promessa do prazo."
+    },
+    {
+      "id": "T04-023",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Declaração de programação e pagamento de direitos de autor",
+      "papel": "Legal",
+      "inicio": -120,
+      "fim": -120,
+      "critica": true,
+      "nota": "AUDAC, administrada pelas duas associações de gestão colectiva (UNAC-SA e SADIA). Para espectáculo, a cobrança é única, para aquele momento. Há simulador online para estimar o valor a partir dos dados do evento — orçamentar antes, não descobrir depois. O sector tem tido turbulência regulatória; confirmar a entidade em exercício antes de pagar."
+    },
+    {
+      "id": "T04-024",
+      "fase": "Pré Produção",
+      "categoria": "Artístico",
+      "titulo": "Contratar artistas de suporte",
+      "papel": "Gestor",
+      "inicio": -120,
+      "fim": -120,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-025",
+      "fase": "Pré Produção",
+      "categoria": "Artístico",
+      "titulo": "Definir alinhamento do cartaz",
+      "papel": "Gestor",
+      "inicio": -120,
+      "fim": -120,
+      "critica": false,
+      "nota": "Quem toca a que horas. O cabeça-de-cartaz define isto por contrato — ler antes de anunciar."
+    },
+    {
+      "id": "T04-026",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Definir preços de bilhete e escalões",
+      "papel": "Financeiro",
+      "inicio": -110,
+      "fim": -110,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-027",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Contratar bilheteira online",
+      "papel": "Financeiro",
+      "inicio": -100,
+      "fim": -100,
+      "critica": true,
+      "nota": "Multicaixa Express e referência. Exigir cartão internacional exclui o público que queres."
+    },
+    {
+      "id": "T04-028",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Definir pontos de venda física",
+      "papel": "Financeiro",
+      "inicio": -100,
+      "fim": -100,
+      "critica": false,
+      "nota": "Em Angola a venda física ainda é maioria. Escolher pontos por fluxo real, não por conveniência de recolha."
+    },
+    {
+      "id": "T04-029",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Abrir venda de bilhetes",
+      "papel": "Financeiro",
+      "inicio": -90,
+      "fim": -90,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-030",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar palco e estruturas",
+      "papel": "Técnica",
+      "inicio": -90,
+      "fim": -90,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-031",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar som",
+      "papel": "Técnica",
+      "inicio": -90,
+      "fim": -90,
+      "critica": true,
+      "nota": "Contra o rider, não contra o orçamento. Um som abaixo do rider dá ao artista direito contratual de não actuar."
+    },
+    {
+      "id": "T04-032",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Plano de comunicação e divulgação",
+      "papel": "Comunicação",
+      "inicio": -90,
+      "fim": -90,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-033",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar luz",
+      "papel": "Técnica",
+      "inicio": -90,
+      "fim": -90,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-034",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar vídeo e ecrãs",
+      "papel": "Técnica",
+      "inicio": -85,
+      "fim": -85,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-035",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar gerador principal e redundante",
+      "papel": "Técnica",
+      "inicio": -85,
+      "fim": -85,
+      "critica": true,
+      "nota": "Dois. O redundante não é luxo — é o que separa um imprevisto de uma devolução de bilheteira."
+    },
+    {
+      "id": "T04-036",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Produção de cartaz e materiais",
+      "papel": "Comunicação",
+      "inicio": -80,
+      "fim": -80,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-037",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Contratos de patrocínio assinados",
+      "papel": "Legal",
+      "inicio": -60,
+      "fim": -60,
+      "critica": true,
+      "nota": "Assinados. Patrocínio acordado por telefone não paga palco."
+    },
+    {
+      "id": "T04-038",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Campanha de rádio",
+      "papel": "Comunicação",
+      "inicio": -60,
+      "fim": -1,
+      "critica": false,
+      "nota": "A rádio ainda vende bilhetes em Angola. Não é canal antigo, é canal eficaz — e mais barato do que o digital por bilhete vendido."
+    },
+    {
+      "id": "T04-039",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Campanha digital",
+      "papel": "Comunicação",
+      "inicio": -60,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-040",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Monitorizar venda vs ponto de equilíbrio",
+      "papel": "Financeiro",
+      "inicio": -60,
+      "fim": -1,
+      "critica": true,
+      "nota": "Semanalmente, escrito. Se a D-30 estás abaixo de 40% do ponto de equilíbrio, é AGORA que se decide reforçar campanha ou cancelar com dano controlado. A D-7 já não há decisão, só prejuízo."
+    },
+    {
+      "id": "T04-041",
+      "fase": "Pré Produção",
+      "categoria": "Segurança",
+      "titulo": "Contratar segurança privada",
+      "papel": "Segurança",
+      "inicio": -60,
+      "fim": -60,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-042",
+      "fase": "Pré Produção",
+      "categoria": "Transporte",
+      "titulo": "Viagens do artista e equipa",
+      "papel": "Produção",
+      "inicio": -60,
+      "fim": -60,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-043",
+      "fase": "Pré Produção",
+      "categoria": "Alojamento",
+      "titulo": "Alojamento do artista e equipa",
+      "papel": "Produção",
+      "inicio": -60,
+      "fim": -60,
+      "critica": true,
+      "nota": "Contra o rider de hospitality. Ler o rider antes de reservar, não depois de o artista chegar."
+    },
+    {
+      "id": "T04-044",
+      "fase": "Pré Produção",
+      "categoria": "Fornecedores",
+      "titulo": "Contratar bares e catering do público",
+      "papel": "Produção",
+      "inicio": -60,
+      "fim": -60,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-045",
+      "fase": "Pré Produção",
+      "categoria": "Segurança",
+      "titulo": "Pedido de policiamento",
+      "papel": "Segurança",
+      "inicio": -45,
+      "fim": -45,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-046",
+      "fase": "Pré Produção",
+      "categoria": "Segurança",
+      "titulo": "Contratar ambulância e posto médico",
+      "papel": "Segurança",
+      "inicio": -45,
+      "fim": -45,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-047",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Seguro de responsabilidade civil",
+      "papel": "Legal",
+      "inicio": -45,
+      "fim": -45,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-048",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Conferência de imprensa de lançamento",
+      "papel": "Comunicação",
+      "inicio": -45,
+      "fim": -45,
+      "critica": false,
+      "nota": "Reutilizar o template T01."
+    },
+    {
+      "id": "T04-049",
+      "fase": "Pré Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Plano de recinto: palco, bares, WC, saídas",
+      "papel": "Produção",
+      "inicio": -45,
+      "fim": -45,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-050",
+      "fase": "Pré Produção",
+      "categoria": "Fornecedores",
+      "titulo": "Contratar WC móveis",
+      "papel": "Produção",
+      "inicio": -45,
+      "fim": -45,
+      "critica": false,
+      "nota": "Rácio por capacidade legal. É a queixa que sobrevive ao concerto na memória do público."
+    },
+    {
+      "id": "T04-051",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Vistoria dos bombeiros",
+      "papel": "Legal",
+      "inicio": -30,
+      "fim": -30,
+      "critica": true,
+      "nota": "Sem auto de vistoria não há espectáculo. Marcar cedo — a data da vistoria não é tua, é deles."
+    },
+    {
+      "id": "T04-052",
+      "fase": "Pré Produção",
+      "categoria": "Segurança",
+      "titulo": "Plano de evacuação",
+      "papel": "Segurança",
+      "inicio": -30,
+      "fim": -30,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-053",
+      "fase": "Pré Produção",
+      "categoria": "Produção",
+      "titulo": "Plano B de contingência meteorológica",
+      "papel": "Produção",
+      "inicio": -30,
+      "fim": -30,
+      "critica": true,
+      "nota": "Escrito, com o fornecedor de cobertura já contratado e o critério de accionamento definido. 'Se chover vemos' não é plano."
+    },
+    {
+      "id": "T04-054",
+      "fase": "Pré Produção",
+      "categoria": "Fornecedores",
+      "titulo": "Contratar limpeza",
+      "papel": "Produção",
+      "inicio": -30,
+      "fim": -30,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-055",
+      "fase": "Pré Produção",
+      "categoria": "Transporte",
+      "titulo": "Transferes do artista",
+      "papel": "Produção",
+      "inicio": -30,
+      "fim": -30,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-056",
+      "fase": "Pré Produção",
+      "categoria": "Equipa",
+      "titulo": "Contratar staff de bilheteira e controlo",
+      "papel": "Produção",
+      "inicio": -30,
+      "fim": -30,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-057",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Acreditação de imprensa",
+      "papel": "Protocolo",
+      "inicio": -20,
+      "fim": -2,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-058",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Credenciais e pulseiras por zona",
+      "papel": "Protocolo",
+      "inicio": -15,
+      "fim": -15,
+      "critica": false,
+      "nota": "Público, VIP, backstage, palco, imprensa. Cor por zona, não por simpatia. Uma pulseira mal atribuída acaba com alguém no palco."
+    },
+    {
+      "id": "T04-059",
+      "fase": "Pré Produção",
+      "categoria": "Produção",
+      "titulo": "Cumprir rider de hospitality",
+      "papel": "Produção",
+      "inicio": -7,
+      "fim": 0,
+      "critica": false,
+      "nota": "Verificar item a item, com lista. É o que evita a discussão no camarim uma hora antes de abrir portas."
+    },
+    {
+      "id": "T04-060",
+      "fase": "Pré Produção",
+      "categoria": "Equipa",
+      "titulo": "Formação do staff",
+      "papel": "Gestor",
+      "inicio": -3,
+      "fim": -3,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-061",
+      "fase": "Pré Produção",
+      "categoria": "Segurança",
+      "titulo": "Briefing de segurança",
+      "papel": "Segurança",
+      "inicio": -1,
+      "fim": -1,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-062",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Saldo do cachê preparado",
+      "papel": "Financeiro",
+      "inicio": -1,
+      "fim": -1,
+      "critica": true,
+      "nota": "O artista não sobe ao palco sem o saldo. Preparado, disponível, na moeda contratada, e com quem o entrega já designado."
+    },
+    {
+      "id": "T04-063",
+      "fase": "Produção",
+      "categoria": "Técnica",
+      "titulo": "Montagem do palco e estruturas",
+      "papel": "Técnica",
+      "inicio": -2,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-064",
+      "fase": "Produção",
+      "categoria": "Técnica",
+      "titulo": "Montagem de som e luz",
+      "papel": "Técnica",
+      "inicio": -1,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-065",
+      "fase": "Produção",
+      "categoria": "Segurança",
+      "titulo": "Vistoria final de segurança",
+      "papel": "Segurança",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-066",
+      "fase": "Produção",
+      "categoria": "Técnica",
+      "titulo": "Teste de gerador e comutação",
+      "papel": "Técnica",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": "Testar a comutação, não só o arranque. Um gerador que arranca em 40 segundos deixa o palco às escuras durante 40 segundos."
+    },
+    {
+      "id": "T04-067",
+      "fase": "Produção",
+      "categoria": "Técnica",
+      "titulo": "Passagem de som do artista",
+      "papel": "Técnica",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-068",
+      "fase": "Produção",
+      "categoria": "Produção",
+      "titulo": "Recepção do artista",
+      "papel": "Produção",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-069",
+      "fase": "Produção",
+      "categoria": "Financeiro",
+      "titulo": "Pagamento do saldo do cachê",
+      "papel": "Financeiro",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-070",
+      "fase": "Produção",
+      "categoria": "Produção",
+      "titulo": "Abertura de portas",
+      "papel": "Produção",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-071",
+      "fase": "Produção",
+      "categoria": "Segurança",
+      "titulo": "Controlo de acessos e revista",
+      "papel": "Segurança",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-072",
+      "fase": "Produção",
+      "categoria": "Financeiro",
+      "titulo": "Contagem e reconciliação de bilheteira",
+      "papel": "Financeiro",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": "Contagem cruzada no fecho de portas, com duas pessoas. É aqui que a receita desaparece, e desaparece sempre com uma explicação plausível."
+    },
+    {
+      "id": "T04-073",
+      "fase": "Produção",
+      "categoria": "Estratégia",
+      "titulo": "Gestão do alinhamento e horários",
+      "papel": "Gestor",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": "Hora de recolher obrigatória, licença com hora de fim. Passar da hora custa multa e custa a licença seguinte."
+    },
+    {
+      "id": "T04-074",
+      "fase": "Produção",
+      "categoria": "Produção",
+      "titulo": "Gestão de incidentes",
+      "papel": "Produção",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-075",
+      "fase": "Produção",
+      "categoria": "Técnica",
+      "titulo": "Registo vídeo e fotografia",
+      "papel": "Técnica",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": "É o material do relatório ao patrocinador e da campanha do ano seguinte. Não é memória, é activo."
+    },
+    {
+      "id": "T04-076",
+      "fase": "Produção",
+      "categoria": "Financeiro",
+      "titulo": "Fecho de caixa dos bares",
+      "papel": "Financeiro",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-077",
+      "fase": "Produção",
+      "categoria": "Técnica",
+      "titulo": "Desmontagem",
+      "papel": "Técnica",
+      "inicio": 0,
+      "fim": 1,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-078",
+      "fase": "Pós Produção",
+      "categoria": "Técnica",
+      "titulo": "Devolução de equipamento alugado",
+      "papel": "Técnica",
+      "inicio": 1,
+      "fim": 1,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-079",
+      "fase": "Pós Produção",
+      "categoria": "Financeiro",
+      "titulo": "Reconciliação final de bilheteira",
+      "papel": "Financeiro",
+      "inicio": 2,
+      "fim": 2,
+      "critica": true,
+      "nota": "Online, física e cortesias. As cortesias são a fuga que ninguém contabiliza."
+    },
+    {
+      "id": "T04-080",
+      "fase": "Pós Produção",
+      "categoria": "Legal",
+      "titulo": "Declaração final de programação executada",
+      "papel": "Legal",
+      "inicio": 7,
+      "fim": 7,
+      "critica": false,
+      "nota": "O que foi tocado de facto, não o que estava previsto. É o que permite que o direito chegue ao autor certo."
+    },
+    {
+      "id": "T04-081",
+      "fase": "Pós Produção",
+      "categoria": "Financeiro",
+      "titulo": "Saldos a fornecedores",
+      "papel": "Financeiro",
+      "inicio": 7,
+      "fim": 7,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-082",
+      "fase": "Pós Produção",
+      "categoria": "Registo",
+      "titulo": "Clipping e relatório de cobertura",
+      "papel": "Registo",
+      "inicio": 10,
+      "fim": 10,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-083",
+      "fase": "Pós Produção",
+      "categoria": "Financeiro",
+      "titulo": "Relatório para patrocinadores",
+      "papel": "Financeiro",
+      "inicio": 15,
+      "fim": 15,
+      "critica": true,
+      "nota": "Público real, cobertura, exposição de marca, activação. É este documento que renova o patrocínio — não a qualidade do concerto."
+    },
+    {
+      "id": "T04-084",
+      "fase": "Pós Produção",
+      "categoria": "Fornecedores",
+      "titulo": "Avaliação de fornecedores",
+      "papel": "Gestor",
+      "inicio": 15,
+      "fim": 15,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T04-085",
+      "fase": "Pós Produção",
+      "categoria": "Financeiro",
+      "titulo": "Fecho de contas: previsto vs real",
+      "papel": "Financeiro",
+      "inicio": 30,
+      "fim": 30,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T04-086",
+      "fase": "Pós Produção",
+      "categoria": "Estratégia",
+      "titulo": "Relatório final e lições",
+      "papel": "Gestor",
+      "inicio": 30,
+      "fim": 30,
+      "critica": true,
+      "nota": null
+    }
+  ],
+  "rubricas": [
+    {
+      "categoria": "Artístico",
+      "descricao": "Cachê do cabeça-de-cartaz",
+      "obrigatoria": true,
+      "nota": "Sinal + saldo. Se em divisas, iniciar processo bancário a D-180."
+    },
+    {
+      "categoria": "Artístico",
+      "descricao": "Cachês de artistas de suporte",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Artístico",
+      "descricao": "Rider técnico do artista",
+      "obrigatoria": true,
+      "nota": "Rubrica separada do cachê. Pode custar mais do que ele."
+    },
+    {
+      "categoria": "Alimentação/Hospedagem",
+      "descricao": "Rider de hospitality",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Local",
+      "descricao": "Aluguer do recinto",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Palco e estruturas",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Som",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Luz",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Vídeo e ecrãs",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Gerador principal e redundante",
+      "obrigatoria": true,
+      "nota": "Dois. Orçamentar combustível para o dobro das horas previstas."
+    },
+    {
+      "categoria": "Legal",
+      "descricao": "Licenciamento do espectáculo",
+      "obrigatoria": true,
+      "nota": "Decreto 23/2012, alterado pelo Decreto 43/2017."
+    },
+    {
+      "categoria": "Legal",
+      "descricao": "Direitos de autor (AUDAC)",
+      "obrigatoria": true,
+      "nota": "Cobrança única para o espectáculo. Usar o simulador para estimar antes de fechar o orçamento."
+    },
+    {
+      "categoria": "Legal",
+      "descricao": "Seguro de responsabilidade civil",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Legal",
+      "descricao": "Vistos e autorizações de trabalho",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Legal",
+      "descricao": "Alfândega de equipamento importado",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Segurança",
+      "descricao": "Segurança privada",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Segurança",
+      "descricao": "Policiamento",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Segurança",
+      "descricao": "Ambulância e posto médico",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Divulgação",
+      "descricao": "Campanha de rádio",
+      "obrigatoria": true,
+      "nota": "Ainda é o canal que mais bilhetes vende por Kwanza gasto."
+    },
+    {
+      "categoria": "Divulgação",
+      "descricao": "Campanha digital",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Divulgação",
+      "descricao": "Cartazes e materiais",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Divulgação",
+      "descricao": "Comissão da bilheteira online",
+      "obrigatoria": true,
+      "nota": "Percentagem sobre venda. Entra no cálculo do ponto de equilíbrio."
+    },
+    {
+      "categoria": "Transporte",
+      "descricao": "Viagens do artista e equipa",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Alimentação/Hospedagem",
+      "descricao": "Alojamento do artista e equipa",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Transporte",
+      "descricao": "Transferes",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Equipa de trabalho",
+      "descricao": "Staff de bilheteira e controlo",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Outros",
+      "descricao": "WC móveis e limpeza",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Outros",
+      "descricao": "Credenciais e pulseiras",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Outros",
+      "descricao": "Plano B meteorológico (cobertura)",
+      "obrigatoria": false,
+      "nota": "Só se ao ar livre entre Novembro e Abril. Nesse caso, obrigatória."
+    },
+    {
+      "categoria": "Outros",
+      "descricao": "Contingência (15%)",
+      "obrigatoria": true,
+      "nota": null
+    }
+  ],
+  "versao": "85a27f8f9014"
+}
