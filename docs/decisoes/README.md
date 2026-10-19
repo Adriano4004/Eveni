@@ -10,3 +10,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 003 | [Planos e preços](003-planos.md) | Aprovada (com ponto em aberto) |
 | 004 | [Identidade visual](004-identidade-visual.md) | Aprovada |
 | 005 | [Domínio e e-mail](005-dominio-email.md) | Pendente |
+| 006 | [Contas e sessões](006-contas-e-sessoes.md) | Em vigor |

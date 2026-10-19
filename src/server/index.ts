@@ -2,6 +2,7 @@ import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { criarApp } from './app.js';
 import { ConfigInvalida, lerConfig } from './config.js';
+import { limparExpirados } from './contas/sessoes.js';
 import { aplicarMigracoes, criarBaseDeDados } from './db/index.js';
 
 // Raiz do projecto, quer a correr com tsx (src/server/) quer compilado (dist/server/server/).
@@ -30,6 +31,14 @@ async function arrancar() {
   console.log('[migrate] migrações aplicadas');
 
   const app = await criarApp({ config, base, pastaWeb: `${raiz}dist/web` });
+
+  // De hora a hora, apagar sessões expiradas e contadores de tentativas antigos.
+  const limpeza = setInterval(() => {
+    limparExpirados(base.pool)
+      .then((r) => console.log(`[limpeza] sessões expiradas: ${r.sessoes}, contadores antigos: ${r.tentativas}`))
+      .catch((erro) => console.error('[limpeza] falhou:', erro));
+  }, 60 * 60 * 1000);
+  limpeza.unref();
 
   let aEncerrar = false;
   const encerrar = () => {

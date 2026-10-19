@@ -1,0 +1,99 @@
+import { createHash, randomBytes } from 'node:crypto';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import type pg from 'pg';
+import type { Config } from '../config.js';
+
+export const DURACAO_SESSAO_DIAS = 30;
+// Renova o prazo da sessão no máximo uma vez por hora, para não escrever na base de dados a cada pedido.
+const RENOVAR_APOS_MS = 60 * 60 * 1000;
+
+export function nomeCookie(config: Config): string {
+  // O prefixo __Host- obriga o browser a exigir Secure, Path=/ e nenhum Domain: o cookie não pode ser
+  // definido por subdomínios. Só funciona em https, por isso não se usa no ambiente local.
+  return config.APP_ENV === 'local' ? 'eveni_sessao' : '__Host-eveni_sessao';
+}
+
+export function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+export async function criarSessao(
+  pool: pg.Pool | pg.PoolClient,
+  config: Config,
+  resposta: FastifyReply,
+  utilizadorId: string,
+  pedido: FastifyRequest,
+): Promise<void> {
+  const token = randomBytes(32).toString('base64url');
+  const expira = new Date(Date.now() + DURACAO_SESSAO_DIAS * 24 * 60 * 60 * 1000);
+  await pool.query('insert into sessions (token_hash, user_id, expires_at, ip, user_agent) values ($1, $2, $3, $4, $5)', [
+    hashToken(token),
+    utilizadorId,
+    expira,
+    pedido.ip,
+    (pedido.headers['user-agent'] ?? '').slice(0, 500),
+  ]);
+  definirCookie(config, resposta, token, expira);
+}
+
+function definirCookie(config: Config, resposta: FastifyReply, token: string, expira: Date) {
+  resposta.setCookie(nomeCookie(config), token, {
+    httpOnly: true,
+    secure: config.APP_ENV !== 'local',
+    sameSite: 'lax',
+    path: '/',
+    expires: expira,
+  });
+}
+
+export function apagarCookie(config: Config, resposta: FastifyReply) {
+  resposta.clearCookie(nomeCookie(config), { path: '/', httpOnly: true, secure: config.APP_ENV !== 'local', sameSite: 'lax' });
+}
+
+export interface SessaoValida {
+  tokenHash: string;
+  utilizadorId: string;
+}
+
+// Lê o cookie e devolve a sessão se existir e não tiver expirado.
+// Com `resposta`, renova o prazo na base de dados e no cookie (sessão deslizante).
+export async function lerSessao(
+  pool: pg.Pool,
+  config: Config,
+  pedido: FastifyRequest,
+  resposta?: FastifyReply,
+): Promise<SessaoValida | null> {
+  const token = pedido.cookies[nomeCookie(config)];
+  if (!token || token.length > 100) return null;
+  const tokenHash = hashToken(token);
+  const { rows } = await pool.query<{ user_id: string; last_seen_at: Date }>(
+    'select user_id, last_seen_at from sessions where token_hash = $1 and expires_at > now()',
+    [tokenHash],
+  );
+  const linha = rows[0];
+  if (!linha) return null;
+  if (resposta && Date.now() - linha.last_seen_at.getTime() > RENOVAR_APOS_MS) {
+    const expira = new Date(Date.now() + DURACAO_SESSAO_DIAS * 24 * 60 * 60 * 1000);
+    await pool.query('update sessions set last_seen_at = now(), expires_at = $2 where token_hash = $1', [tokenHash, expira]);
+    // Sem isto, o browser apagava o cookie 30 dias depois da entrada, mesmo com uso diário.
+    definirCookie(config, resposta, token, expira);
+  }
+  return { tokenHash, utilizadorId: linha.user_id };
+}
+
+export async function terminarSessao(pool: pg.Pool, tokenHash: string): Promise<void> {
+  await pool.query('delete from sessions where token_hash = $1', [tokenHash]);
+}
+
+export async function terminarTodasAsSessoes(pool: pg.Pool | pg.PoolClient, utilizadorId: string): Promise<number> {
+  const { rowCount } = await pool.query('delete from sessions where user_id = $1', [utilizadorId]);
+  return rowCount ?? 0;
+}
+
+// Apaga sessões expiradas e contadores de tentativas antigos. Corre periodicamente (ver index.ts).
+export async function limparExpirados(pool: pg.Pool): Promise<{ sessoes: number; tentativas: number }> {
+  const sessoes = await pool.query('delete from sessions where expires_at < now()');
+  // Nenhuma janela de limitação passa de 1 hora: um dia de margem chega.
+  const tentativas = await pool.query("delete from rate_limits where window_start < now() - interval '1 day'");
+  return { sessoes: sessoes.rowCount ?? 0, tentativas: tentativas.rowCount ?? 0 };
+}
