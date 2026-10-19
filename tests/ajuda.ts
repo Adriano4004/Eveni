@@ -14,3 +14,8 @@ export const envValido = {
 export function configTeste(extra: Partial<Config> = {}): Config {
   return { ...lerConfig(envValido), ...extra };
 }
+
+// Apaga os dados de todas as tabelas de produto (mantém o registo de migrações).
+export async function limparBaseDeDados(pool: import('pg').Pool) {
+  await pool.query('truncate users, workspaces, workspace_members, sessions, rate_limits, audit_log restart identity cascade');
+}

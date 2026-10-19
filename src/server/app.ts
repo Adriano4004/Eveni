@@ -1,10 +1,14 @@
 import { existsSync } from 'node:fs';
+import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
 import { mensagens } from '../shared/mensagens.js';
 import type { Config } from './config.js';
+import { registarRotasContas } from './contas/rotas.js';
 import type { BaseDeDados } from './db/index.js';
+import { ErroHttp } from './erros.js';
+import { protegerOrigem } from './seguranca/origem.js';
 
 export interface Dependencias {
   config: Config;
@@ -24,9 +28,28 @@ export function eRotaDeEcra(metodo: string, url: string): boolean {
 export async function criarApp({ config, base, pastaWeb }: Dependencias) {
   const app = Fastify({
     logger: config.NODE_ENV === 'test' ? false : { level: 'info' },
-    // O Railway põe um único proxy à frente da aplicação: confiar só nesse salto,
-    // para que um cliente não consiga falsificar o IP (importante para a limitação de pedidos).
-    trustProxy: (_endereco: string, salto: number) => salto < 1,
+    // Confiar só nos proxies do alojamento (TRUST_PROXY_HOPS), para que um cliente não consiga
+    // falsificar o IP com o cabeçalho X-Forwarded-For (importante para a limitação de pedidos).
+    trustProxy: (_endereco: string, salto: number) => salto < config.TRUST_PROXY_HOPS,
+  });
+
+  // Definido antes de qualquer rota ou plugin: as rotas registadas antes disto usariam o tratamento
+  // de erros por omissão do Fastify (em inglês).
+  // Nunca expor detalhes internos (stack traces, erros da base de dados) ao cliente.
+  app.setErrorHandler((erro: { statusCode?: number; message: string }, pedido, resposta) => {
+    // Erros criados pelo próprio Eveni já trazem uma mensagem pensada para o utilizador.
+    if (erro instanceof ErroHttp) {
+      return resposta.code(erro.statusCode).send({ mensagem: erro.message, ...(erro.campos ? { campos: erro.campos } : {}) });
+    }
+    const codigo = erro.statusCode ?? 500;
+    if (codigo >= 500) {
+      pedido.log.error(erro);
+      return resposta.code(codigo).send({ mensagem: mensagens.erros.interno });
+    }
+    // As mensagens internas do Fastify vêm em inglês e com detalhes técnicos: não as mostrar.
+    pedido.log.info({ err: erro }, 'pedido recusado');
+    const mensagem = codigo === 429 ? mensagens.erros.demasiadosPedidos : codigo === 404 ? mensagens.erros.naoEncontrado : mensagens.erros.pedidoInvalido;
+    return resposta.code(codigo).send({ mensagem });
   });
 
   await app.register(helmet, {
@@ -45,6 +68,10 @@ export async function criarApp({ config, base, pastaWeb }: Dependencias) {
     },
     hsts: config.APP_ENV === 'local' ? false : { maxAge: 31536000, includeSubDomains: true },
   });
+
+  await app.register(cookie);
+  protegerOrigem(app, config);
+  registarRotasContas(app, config, base);
 
   app.get('/health', async (_pedido, resposta) => {
     const bdOk = await base.verificar();
@@ -67,19 +94,6 @@ export async function criarApp({ config, base, pastaWeb }: Dependencias) {
   } else {
     app.setNotFoundHandler((_pedido, resposta) => resposta.code(404).send({ mensagem: mensagens.erros.naoEncontrado }));
   }
-
-  // Nunca expor detalhes internos (stack traces, erros da base de dados) ao cliente.
-  app.setErrorHandler((erro: { statusCode?: number; message: string }, pedido, resposta) => {
-    const codigo = erro.statusCode ?? 500;
-    if (codigo >= 500) {
-      pedido.log.error(erro);
-      return resposta.code(codigo).send({ mensagem: mensagens.erros.interno });
-    }
-    // As mensagens internas do Fastify vêm em inglês e com detalhes técnicos: não as mostrar.
-    pedido.log.info({ err: erro }, 'pedido recusado');
-    const mensagem = codigo === 429 ? mensagens.erros.demasiadosPedidos : codigo === 404 ? mensagens.erros.naoEncontrado : mensagens.erros.pedidoInvalido;
-    return resposta.code(codigo).send({ mensagem });
-  });
 
   return app;
 }

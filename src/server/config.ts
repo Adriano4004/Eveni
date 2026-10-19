@@ -13,6 +13,9 @@ const esquema = z
       error: 'APP_ENV em falta ou inválido (local, staging ou production).',
     }),
     PORT: z.coerce.number().int().positive().default(3000),
+    // Número de proxies do alojamento à frente da aplicação (Railway: 1). Define que IP conta
+    // como o do cliente na limitação de pedidos: valor errado = limites partilhados por todos.
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
     DATABASE_URL: z
       .string({ error: 'DATABASE_URL em falta (ligação ao PostgreSQL).' })
       .startsWith('postgres', 'DATABASE_URL tem de começar por postgres:// ou postgresql://'),

@@ -1,11 +1,36 @@
+import { useEffect, useState } from 'react';
+import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
+import { api } from './api.js';
+import { EcraEntrar, EcraInicio, EcraRegisto } from './ecras.js';
+import { navegar, useCaminho } from './navegacao.js';
+
+type Estado = { tipo: 'a-carregar' } | { tipo: 'anonimo' } | { tipo: 'com-sessao'; eu: Eu };
 
 export function App() {
-  return (
-    <main className="inicio">
-      <img className="inicio__logo" src="/eveni-logo.png" alt={`${mensagens.app.nome} — ${mensagens.app.slogan}`} width={320} height={320} />
-      <h1 className="inicio__titulo">{mensagens.app.emConstrucao}</h1>
-      <p className="inicio__texto">{mensagens.app.emConstrucaoDetalhe}</p>
-    </main>
-  );
+  const caminho = useCaminho();
+  const [estado, setEstado] = useState<Estado>({ tipo: 'a-carregar' });
+
+  useEffect(() => {
+    api<Eu>('GET', '/api/auth/eu')
+      .then((eu) => setEstado({ tipo: 'com-sessao', eu }))
+      // Sem sessão (401) ou sem ligação: mostrar o ecrã de entrada.
+      .catch(() => setEstado({ tipo: 'anonimo' }));
+  }, []);
+
+  // Sem sessão só se pode estar em /entrar ou /registo; com sessão, não faz sentido lá estar.
+  useEffect(() => {
+    if (estado.tipo === 'anonimo' && caminho !== '/registo') navegar('/entrar');
+    if (estado.tipo === 'com-sessao' && (caminho === '/entrar' || caminho === '/registo')) navegar('/');
+  }, [estado, caminho]);
+
+  const entrou = (eu: Eu) => setEstado({ tipo: 'com-sessao', eu });
+
+  if (estado.tipo === 'a-carregar') {
+    return <p className="a-carregar">{mensagens.ecras.carregar}</p>;
+  }
+  if (estado.tipo === 'com-sessao') {
+    return <EcraInicio eu={estado.eu} aoSair={() => setEstado({ tipo: 'anonimo' })} />;
+  }
+  return caminho === '/registo' ? <EcraRegisto aoEntrar={entrou} /> : <EcraEntrar aoEntrar={entrou} />;
 }

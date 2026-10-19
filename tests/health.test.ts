@@ -70,7 +70,7 @@ describe('respostas de erro', () => {
   it('erros do Fastify (ex.: JSON mal formado) respondem em português, sem detalhes internos', async () => {
     const app = await criarApp({ config: configTeste(), base });
     app.post('/api/eco', async () => ({ ok: true }));
-    const resposta = await app.inject({ method: 'POST', url: '/api/eco', headers: { 'content-type': 'application/json' }, payload: '{mal' });
+    const resposta = await app.inject({ method: 'POST', url: '/api/eco', headers: { 'content-type': 'application/json', origin: 'http://localhost:3000' }, payload: '{mal' });
     expect(resposta.statusCode).toBe(400);
     expect(resposta.json()).toEqual({ mensagem: 'O pedido não é válido.' });
     await app.close();
@@ -98,6 +98,14 @@ describe('respostas de erro', () => {
     });
     // Só o último salto (o proxy do Railway) é de confiança.
     expect(resposta.json().ip).toBe('203.0.113.9');
+    await app.close();
+  });
+
+  it('sem proxies (TRUST_PROXY_HOPS=0) ignora o cabeçalho X-Forwarded-For', async () => {
+    const app = await criarApp({ config: configTeste({ TRUST_PROXY_HOPS: 0 }), base });
+    app.get('/api/ip', async (pedido) => ({ ip: pedido.ip }));
+    const resposta = await app.inject({ method: 'GET', url: '/api/ip', remoteAddress: '10.0.0.1', headers: { 'x-forwarded-for': '1.2.3.4' } });
+    expect(resposta.json().ip).toBe('10.0.0.1');
     await app.close();
   });
 });
