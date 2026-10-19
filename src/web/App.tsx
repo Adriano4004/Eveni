@@ -5,6 +5,15 @@ import { api } from './api.js';
 import { EcraConfirmarEmail, EcraEntrar, EcraInicio, EcraRegisto } from './ecras.js';
 import { navegar, useCaminho } from './navegacao.js';
 
+// O token da ligação de confirmação é lido uma vez, à entrada, e tirado do endereço para não ficar no
+// histórico do browser. Fica guardado aqui enquanto a pessoa entra na conta, se ainda não tiver sessão.
+const tokenConfirmacao = (() => {
+  if (location.pathname !== '/confirmar-email') return '';
+  const token = new URLSearchParams(location.search).get('token') ?? '';
+  history.replaceState(null, '', '/confirmar-email');
+  return token;
+})();
+
 type Estado = { tipo: 'a-carregar' } | { tipo: 'anonimo' } | { tipo: 'com-sessao'; eu: Eu };
 
 export function App() {
@@ -29,18 +38,21 @@ export function App() {
 
   const entrou = (eu: Eu) => setEstado({ tipo: 'com-sessao', eu });
 
+  if (estado.tipo === 'a-carregar') {
+    return <p className="a-carregar">{mensagens.ecras.carregar}</p>;
+  }
   if (caminho === '/confirmar-email') {
+    // A confirmação exige sessão na conta que recebeu o e-mail (ver servidor): entrar primeiro.
+    if (estado.tipo === 'anonimo') return <EcraEntrar aoEntrar={entrou} aviso={mensagens.ecras.confirmar.entrarPrimeiro} />;
     return (
       <EcraConfirmarEmail
+        token={tokenConfirmacao}
         aoConfirmar={() => {
           navegar('/');
           carregarEu();
         }}
       />
     );
-  }
-  if (estado.tipo === 'a-carregar') {
-    return <p className="a-carregar">{mensagens.ecras.carregar}</p>;
   }
   if (estado.tipo === 'com-sessao') {
     return <EcraInicio eu={estado.eu} aoSair={() => setEstado({ tipo: 'anonimo' })} />;

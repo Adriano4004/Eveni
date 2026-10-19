@@ -44,23 +44,34 @@ export function registarRotasConfirmacao(
 
   // POST e não GET: alguns programas de e-mail e antivírus abrem as ligações sozinhos para as verificar,
   // e isso não pode gastar a ligação. O ecrã /confirmar-email faz este pedido quando a pessoa a abre.
-  // Não exige sessão: a ligação pode ser aberta noutro aparelho.
-  app.post('/api/auth/confirmar-email', async (pedido) => {
+  //
+  // Exige sessão na própria conta: sem isto, alguém podia registar-se com o e-mail de outra pessoa,
+  // esperar que ela carregasse na ligação e ficar com uma conta confirmada nesse e-mail. Quem recebe
+  // o e-mail sem ter criado a conta não sabe a palavra-passe, por isso não consegue confirmar.
+  app.post('/api/auth/confirmar-email', { preHandler: guardas.exigirSessao }, async (pedido) => {
     await limitar(pool, `confirmar-ip:${pedido.ip}`, LIMITES.confirmarPorIp);
     const { token } = validar(corpoConfirmar, pedido.body);
+    const utilizadorSessao = pedido.sessao!.utilizadorId;
+
+    // Ligação válida mas de outra conta: avisar, sem a gastar.
+    const { rows: donos } = await pool.query<{ user_id: string }>(
+      "select user_id from email_tokens where token_hash = $1 and purpose = 'confirmar_email' and used_at is null and expires_at > now()",
+      [hashToken(token)],
+    );
+    if (donos[0] && donos[0].user_id !== utilizadorSessao) throw new ErroHttp(400, mensagens.contas.ligacaoDeOutraConta);
 
     // Marca a ligação como usada e confirma o e-mail numa só operação: pedidos repetidos ou em
     // paralelo com a mesma ligação não a conseguem usar duas vezes.
     const { rows } = await pool.query<{ user_id: string }>(
       `with usada as (
          update email_tokens set used_at = now()
-          where token_hash = $1 and purpose = 'confirmar_email' and used_at is null and expires_at > now()
+          where token_hash = $1 and user_id = $2 and purpose = 'confirmar_email' and used_at is null and expires_at > now()
           returning user_id
        )
        update users set email_verified_at = coalesce(email_verified_at, now()), updated_at = now()
         where id = (select user_id from usada)
         returning id as user_id`,
-      [hashToken(token)],
+      [hashToken(token), utilizadorSessao],
     );
     const utilizadorId = rows[0]?.user_id;
     if (!utilizadorId) throw new ErroHttp(400, mensagens.contas.ligacaoInvalida);
@@ -77,16 +88,16 @@ export function registarRotasConfirmacao(
     // Numa transacção com a linha do utilizador bloqueada: dois reenvios em simultâneo não podem
     // deixar duas ligações válidas (só a mais recente deve valer).
     const cliente = await pool.connect();
-    let envio: { email: string; nome: string; token: string } | undefined;
+    let envio: { email: string; token: string } | undefined;
     try {
       await cliente.query('begin');
-      const { rows } = await cliente.query<{ email: string; name: string; confirmado: boolean }>(
-        'select email, name, email_verified_at is not null as confirmado from users where id = $1 for update',
+      const { rows } = await cliente.query<{ email: string; confirmado: boolean }>(
+        'select email, email_verified_at is not null as confirmado from users where id = $1 for update',
         [utilizadorId],
       );
       const utilizador = rows[0];
       if (utilizador && !utilizador.confirmado) {
-        envio = { email: utilizador.email, nome: utilizador.name, token: await criarTokenConfirmacao(cliente, utilizadorId) };
+        envio = { email: utilizador.email, token: await criarTokenConfirmacao(cliente, utilizadorId) };
         await auditar(cliente, 'conta.confirmacao_reenviada', { utilizadorId, ip: pedido.ip });
       }
       await cliente.query('commit');
@@ -96,7 +107,7 @@ export function registarRotasConfirmacao(
     } finally {
       cliente.release();
     }
-    if (envio) enviarEmail(emailConfirmacao(envio.email, envio.nome, urlConfirmacao(config, envio.token)));
+    if (envio) enviarEmail(emailConfirmacao(envio.email, urlConfirmacao(config, envio.token)));
     return resposta.code(204).send();
   });
 }

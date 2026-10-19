@@ -66,7 +66,7 @@ export function registarRotasContas(
     }
 
     // Depois do commit: o e-mail só sai se a conta ficou mesmo criada. Não bloqueia a resposta.
-    enviarEmail(emailConfirmacao(dados.email, dados.nome, urlConfirmacao(config, tokenConfirmacao)));
+    enviarEmail(emailConfirmacao(dados.email, urlConfirmacao(config, tokenConfirmacao)));
     return resposta.code(201).send(await obterEu(utilizadorId));
   });
 
