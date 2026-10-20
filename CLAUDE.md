@@ -232,7 +232,7 @@ PDF do projecto com orçamento; modelos "para cliente", "interno", "cronograma";
 
 1. **Stack**: aprovar ou ajustar a recomendação da secção 4.
 2. **Dados da versão anterior**: há utilizadores em teste com projectos reais? Migrar para a nova versão ou começar vazio? A versão antiga mantém-se no ar até a nova a substituir?
-3. **Domínio** do Eveni (necessário para a Resend).
+3. **Domínio** do Eveni (necessário para a Resend). — resolvido: `eveni.ao`; aplicação em `app.eveni.ao` (ver `docs/decisoes/005-dominio-email.md`).
 4. **Planos**: preços e limites de projectos por plano.
 5. **Template T04**: ~~localizar o ficheiro~~ — resolvido: está no Excel (ver `docs/decisoes/011-templates.md`).
 6. **Laço Perfeito**: fronteira com o T02 e eventual migração de clientes.
