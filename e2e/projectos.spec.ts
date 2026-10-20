@@ -350,8 +350,14 @@ test('convidar uma pessoa para a equipa: ligação, criar conta, aceitar e retir
   await expect(dona.getByRole('heading', { name: 'Convites por aceitar' })).toHaveCount(0);
   dona.once('dialog', (d) => d.accept());
   await dona.getByRole('button', { name: 'Retirar' }).click();
-  await expect(dona.getByText(emailConvidado)).toHaveCount(0);
+  await expect(dona.getByText(emailConvidado, { exact: true })).toHaveCount(0);
   await expect(dona.getByText('1 de 10 pessoas')).toBeVisible();
+
+  // O registo de actividade mostra o que aconteceu.
+  const registo = dona.locator('.registo');
+  await expect(registo.getByText('Olga retirou Paulo da equipa')).toBeVisible();
+  await expect(registo.getByText('Paulo entrou na equipa')).toBeVisible();
+  await expect(registo.getByText(`Olga convidou ${emailConvidado} para a equipa`)).toBeVisible();
 });
 
 test('no plano Singular, a equipa explica que não há colaboração', async ({ page }) => {

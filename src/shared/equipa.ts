@@ -50,3 +50,33 @@ export interface InfoConvite {
   email: string;
   expiraEm: string;
 }
+
+export type AccaoRegisto =
+  | 'projecto.criado'
+  | 'projecto.arquivado'
+  | 'projecto.restaurado'
+  | 'projecto.acesso_dado'
+  | 'projecto.acesso_retirado'
+  | 'equipa.convite_criado'
+  | 'equipa.convite_revogado'
+  | 'equipa.convite_aceite'
+  | 'equipa.membro_removido';
+
+// Uma linha do registo de actividade do espaço (só o dono o vê). Os nomes são os actuais; null quando a conta,
+// o projecto ou o convite já não existem.
+export interface EntradaRegisto {
+  id: number;
+  accao: AccaoRegisto;
+  data: string;
+  quem: string | null;
+  projecto: string | null;
+  pessoa: string | null;
+  email: string | null;
+  papel: 'editor' | 'viewer' | null;
+}
+
+export interface Registo {
+  entradas: EntradaRegisto[];
+  // Há entradas mais antigas: pedir com ?antes=<id da última>.
+  mais: boolean;
+}

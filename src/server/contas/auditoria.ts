@@ -36,12 +36,14 @@ export type AccaoAuditada =
 export async function auditar(
   pool: pg.Pool | pg.PoolClient,
   accao: AccaoAuditada,
-  dados: { utilizadorId?: string | null; ip?: string | null; detalhes?: Record<string, unknown> },
+  // espacoId: o espaço de trabalho a que a acção diz respeito (aparece no registo que o dono vê).
+  dados: { utilizadorId?: string | null; ip?: string | null; detalhes?: Record<string, unknown>; espacoId?: string },
 ): Promise<void> {
-  await pool.query('insert into audit_log (user_id, action, ip, details) values ($1, $2, $3, $4)', [
+  await pool.query('insert into audit_log (user_id, action, ip, details, workspace_id) values ($1, $2, $3, $4, $5)', [
     dados.utilizadorId ?? null,
     accao,
     dados.ip ?? null,
     JSON.stringify(dados.detalhes ?? {}),
+    dados.espacoId ?? null,
   ]);
 }

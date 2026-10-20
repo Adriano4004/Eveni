@@ -175,6 +175,30 @@ export const mensagens = {
       mensagemWhatsapp: (espaco: string, ligacao: string) =>
         `Olá! Convidei-o para a equipa «${espaco}» no Eveni. Para aceitar, abra esta ligação: ${ligacao}`,
       limiteAtingido: 'A equipa está completa para o seu plano. Cancele um convite ou retire alguém para convidar outra pessoa.',
+      registo: 'Registo de actividade',
+      registoTexto: 'O que aconteceu na equipa e nos projectos deste espaço, do mais recente para o mais antigo.',
+      registoVazio: 'Ainda não há actividade registada.',
+      verMais: 'Ver mais',
+      aCarregarMais: 'A carregar…',
+      // Nomes que já não existem (conta eliminada, projecto ou convite apagado).
+      alguem: 'Uma conta eliminada',
+      umProjecto: 'um projecto',
+      alguemEquipa: 'uma pessoa',
+      umEmail: 'um e-mail',
+      papeis: { editor: 'editor', viewer: 'leitor' },
+      accoes: {
+        'projecto.criado': (quem: string, r: { projecto: string }) => `${quem} criou o projecto «${r.projecto}»`,
+        'projecto.arquivado': (quem: string, r: { projecto: string }) => `${quem} arquivou o projecto «${r.projecto}»`,
+        'projecto.restaurado': (quem: string, r: { projecto: string }) => `${quem} restaurou o projecto «${r.projecto}»`,
+        'projecto.acesso_dado': (quem: string, r: { projecto: string; pessoa: string; papel: string }) =>
+          `${quem} deu acesso de ${r.papel} a ${r.pessoa} no projecto «${r.projecto}»`,
+        'projecto.acesso_retirado': (quem: string, r: { projecto: string; pessoa: string }) =>
+          `${quem} retirou o acesso de ${r.pessoa} ao projecto «${r.projecto}»`,
+        'equipa.convite_criado': (quem: string, r: { email: string }) => `${quem} convidou ${r.email} para a equipa`,
+        'equipa.convite_revogado': (quem: string, r: { email: string }) => `${quem} cancelou o convite para ${r.email}`,
+        'equipa.convite_aceite': (quem: string) => `${quem} entrou na equipa`,
+        'equipa.membro_removido': (quem: string, r: { pessoa: string }) => `${quem} retirou ${r.pessoa} da equipa`,
+      },
     },
     convite: {
       titulo: 'Convite para uma equipa',
