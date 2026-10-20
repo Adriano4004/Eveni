@@ -106,11 +106,28 @@ describe('registo de actividade', () => {
     expect((await c.get('/api/equipa/registo')).statusCode).toBe(401);
   });
 
+  it('dois donos: cada um só vê a actividade do seu espaço', async () => {
+    const { ana } = await historia();
+    const eva = await contaConfirmada('eva@exemplo.ao', 'Eva Pinto');
+    await c.post('/api/projectos', { template: 'T01', nome: 'Gala da Eva', dataEvento: somarDias(hojeEmLuanda(), 30) }, eva.cookie);
+    const daEva: EntradaRegisto[] = (await c.get('/api/equipa/registo', eva.cookie)).json().entradas;
+    expect(daEva.map(resumo)).toEqual([['projecto.criado', 'Eva Pinto', 'Gala da Eva']]);
+    const daAna = await c.get('/api/equipa/registo', ana.cookie);
+    expect(daAna.body).not.toContain('Gala da Eva');
+    expect(daAna.body).not.toContain('Eva Pinto');
+  });
+
   it('nomes de contas eliminadas aparecem como em falta; o registo do espaço apaga-se com a conta do dono', async () => {
     const { ana, bruno } = await historia();
     await c.post('/api/conta/eliminar', { palavraPasse: PALAVRA_PASSE, confirmacao: 'ELIMINAR' }, bruno.cookie);
     const entradas: EntradaRegisto[] = (await c.get('/api/equipa/registo', ana.cookie)).json().entradas;
     expect(entradas.find((e) => e.accao === 'equipa.membro_removido')!.pessoa).toBeNull();
+    // O que o Bruno fez no espaço da Ana fica, mas anónimo: sem a pessoa nem o IP.
+    const aceite = entradas.find((e) => e.accao === 'equipa.convite_aceite')!;
+    expect(aceite.quem).toBeNull();
+    const { rows } = await base.pool.query("select user_id, ip from audit_log where action = 'equipa.convite_aceite'");
+    expect(rows).toEqual([{ user_id: null, ip: null }]);
+    expect((await base.pool.query('select count(*)::int as n from audit_log where user_id = $1', [bruno.id])).rows[0].n).toBe(0);
 
     await c.post('/api/conta/eliminar', { palavraPasse: PALAVRA_PASSE, confirmacao: 'ELIMINAR' }, ana.cookie);
     expect((await base.pool.query('select count(*)::int as n from audit_log where workspace_id is not null')).rows[0].n).toBe(0);

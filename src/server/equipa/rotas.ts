@@ -106,9 +106,10 @@ export function registarRotasEquipa(
       `select a.id, a.action, a.created_at, u.name as quem, p.name as projecto, m.name as pessoa, i.email, a.details->>'papel' as papel
          from audit_log a
          left join users u on u.id = a.user_id
-         left join projects p on p.id::text = a.details->>'projectoId' and p.workspace_id = a.workspace_id
-         left join users m on m.id::text = a.details->>'membroId'
-         left join invitations i on i.id::text = a.details->>'conviteId' and i.workspace_id = a.workspace_id
+         -- Os IDs nos detalhes foram escritos pelo próprio Eveni (sempre uuid): comparar como uuid usa os índices.
+         left join projects p on p.id = (a.details->>'projectoId')::uuid and p.workspace_id = a.workspace_id
+         left join users m on m.id = (a.details->>'membroId')::uuid
+         left join invitations i on i.id = (a.details->>'conviteId')::uuid and i.workspace_id = a.workspace_id
         where a.workspace_id = $1 and ($2::bigint is null or a.id < $2)
         order by a.id desc
         limit $3`,

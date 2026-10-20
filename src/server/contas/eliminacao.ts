@@ -54,7 +54,15 @@ export async function eliminarContaCompleta(cliente: pg.PoolClient, utilizadorId
     [utilizadorId],
   );
   // Auditoria: os registos da pessoa e os que guardam o e-mail (ex.: bloqueios de entrada).
-  await cliente.query("delete from audit_log where user_id = $1 or details->>'email' = $2", [utilizadorId, email]);
+  // Excepção: o que a pessoa fez em espaços de OUTRAS pessoas (ex.: "entrou na equipa") fica no registo
+  // desses espaços, mas anónimo (sem a pessoa nem o IP): o dono continua a ver o que aconteceu na sua
+  // equipa, como "Uma conta eliminada", sem dados pessoais. Os espaços da própria pessoa já foram apagados
+  // acima, com os registos respectivos.
+  await cliente.query(
+    "delete from audit_log where (user_id = $1 and workspace_id is null) or details->>'email' = $2",
+    [utilizadorId, email],
+  );
+  await cliente.query('update audit_log set user_id = null, ip = null where user_id = $1', [utilizadorId]);
   const chaves = chavesDaConta(email, utilizadorId);
   await cliente.query(
     `delete from rate_limits

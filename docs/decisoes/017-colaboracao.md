@@ -129,6 +129,7 @@ Resultado da revisão de segurança deste PR:
 - **Sem dados técnicos:** não mostra IPs. Ficam guardados na auditoria interna, mas não aparecem aqui.
 - **Quem vê:** só o dono, e só o registo do seu próprio espaço. Um membro nunca vê o registo do espaço onde entrou.
 - **Base de dados:** cada entrada da auditoria passa a guardar o espaço a que diz respeito (migração `0008`). O registo é apagado juntamente com o espaço, quando o dono elimina a conta.
+- **Quando um membro elimina a conta,** o que fez no espaço de outra pessoa (por exemplo, "entrou na equipa") fica no registo desse espaço, mas **anónimo**: sem a pessoa e sem o IP. Aparece como "Uma conta eliminada". O dono continua a ver a história da sua equipa, e os dados pessoais de quem saiu são apagados.
 - **Mantém-se como antes:** as acções de conta (entradas, mudanças de palavra-passe, 2FA, exportação, eliminação) continuam na auditoria interna e na exportação dos dados de cada pessoa. Não aparecem no registo do espaço.
 
 Ainda não existe:
