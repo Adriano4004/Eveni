@@ -36,6 +36,7 @@ export const TABELAS_PESSOAIS = {
   projects: 'exportada (espaços de que a pessoa é dona); apagada com o espaço (cascata)',
   tasks: 'exportada com o projecto; apagada com o projecto (cascata)',
   budget_items: 'exportada com o projecto; apagada com o projecto (cascata)',
+  project_members: 'exportada (acessos da pessoa a projectos de outros espaços: projecto, espaço, papel, desde); apagada com o projecto ou com a conta (cascata)',
 } as const;
 
 export interface Exportacao {
@@ -54,6 +55,8 @@ export interface Exportacao {
   historicoDeAcessos: { accao: string; data: string; ip: string | null; detalhes: Record<string, unknown> }[];
   // Projectos dos espaços de que a pessoa é dona, com tarefas e orçamento.
   projectos: Projecto[];
+  // Projectos de outros espaços a que a pessoa tem acesso (como editora ou leitora).
+  acessosAProjectos: { projectoId: string; projecto: string; espaco: string; papel: string; desde: string }[];
 }
 
 export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promise<Exportacao> {
@@ -90,6 +93,12 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       where wm.user_id = $1 and wm.role = 'owner' order by p.created_at`,
     [utilizadorId],
   );
+  const { rows: acessosProjectos } = await pool.query<{ project_id: string; name: string; espaco: string; role: string; created_at: Date }>(
+    `select pm.project_id, p.name, w.name as espaco, pm.role, pm.created_at
+       from project_members pm join projects p on p.id = pm.project_id join workspaces w on w.id = p.workspace_id
+      where pm.user_id = $1 order by pm.created_at`,
+    [utilizadorId],
+  );
   const projectos: Projecto[] = [];
   for (const { id } of idsProjectos) {
     const projecto = await lerProjecto(pool, id, utilizadorId);
@@ -123,6 +132,13 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
     })),
     historicoDeAcessos: acessos.map((a) => ({ accao: a.action, data: a.created_at.toISOString(), ip: a.ip, detalhes: a.details })),
     projectos,
+    acessosAProjectos: acessosProjectos.map((a) => ({
+      projectoId: a.project_id,
+      projecto: a.name,
+      espaco: a.espaco,
+      papel: a.role,
+      desde: a.created_at.toISOString(),
+    })),
   };
 }
 

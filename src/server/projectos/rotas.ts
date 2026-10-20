@@ -13,6 +13,7 @@ import {
   type Previsao,
   type Projecto,
   type ResumoProjecto,
+  type PapelNoProjecto,
   type TarefaProjecto,
 } from '../../shared/projectos.js';
 import type { Template } from '../../shared/templates.js';
@@ -66,7 +67,7 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const { template, previsao } = prepararCriacao(dados.template, dados.dataEvento);
 
     const resultado = await emTransaccao(pool, async (cliente) => {
-      // O espaço de que a pessoa é dona (os papéis dos outros membros chegam na Fase 4).
+      // Cria-se sempre no espaço de que a pessoa é dona (nunca num espaço de que é só membro).
       // Bloqueia o espaço até ao fim da transacção: dois pedidos em simultâneo não passam ambos o limite.
       const { rows: espacos } = await cliente.query<{ id: string; plan_code: CodigoPlano; plan_started_at: Date }>(
         `select w.id, w.plan_code, w.plan_started_at
@@ -144,11 +145,13 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     return resposta.code(201).send({ id: resultado.projectoId, avisos: previsao.avisos });
   });
 
-  // Só os projectos dos espaços de que a pessoa é membro.
+  // Só os projectos a que a pessoa tem acesso (dono do espaço ou membro do projecto).
   app.get('/api/projectos', { preHandler: guardas.exigirSessao }, async (pedido): Promise<ResumoProjecto[]> => {
     const { rows } = await pool.query(
-      `${SELECCAO_RESUMO}
-        where p.workspace_id in (select workspace_id from workspace_members where user_id = $1)
+      `${seleccaoResumo('$1')}
+        where (p.workspace_id in (select workspace_id from workspace_members where user_id = $1 and role = 'owner')
+               or p.id in (select project_id from project_members where user_id = $1))
+          and papel_no_projecto(p.id, $1) is not null
         order by p.status, p.event_date, p.created_at`,
       [pedido.sessao!.utilizadorId],
     );
@@ -159,7 +162,7 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const parametros = idProjecto.safeParse(pedido.params);
     if (!parametros.success) throw new ErroHttp(404, m.naoEncontrado);
     const projecto = await lerProjecto(pool, parametros.data.id, pedido.sessao!.utilizadorId);
-    // Não existe ou pertence a um espaço de que a pessoa não é membro: a mesma resposta nos dois casos.
+    // Não existe ou a pessoa não tem acesso: a mesma resposta nos dois casos.
     if (!projecto) throw new ErroHttp(404, m.naoEncontrado);
     return projecto;
   });
@@ -178,15 +181,12 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
       const { utilizadorId } = pedido.sessao!;
 
       await emTransaccao(pool, async (cliente) => {
-        const { rows } = await cliente.query<{ status: EstadoProjecto; papel: string }>(
-          `select p.status, wm.role as papel from projects p
-             join workspace_members wm on wm.workspace_id = p.workspace_id and wm.user_id = $2
-            where p.id = $1
-              for update of p`,
+        const { rows } = await cliente.query<{ status: EstadoProjecto; papel: PapelNoProjecto | null }>(
+          'select p.status, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1 for update of p',
           [projectoId, utilizadorId],
         );
         const projecto = rows[0];
-        if (!projecto) throw new ErroHttp(404, m.naoEncontrado);
+        if (!projecto?.papel) throw new ErroHttp(404, m.naoEncontrado);
         if (projecto.papel !== 'owner') throw new ErroHttp(403, m.soDonoArquiva);
         if (projecto.status === novoEstado) return;
         await cliente.query(
@@ -200,16 +200,16 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
         });
       });
 
-      const { rows } = await pool.query<LinhaResumo>(`${SELECCAO_RESUMO} where p.id = $1`, [projectoId]);
+      const { rows } = await pool.query<LinhaResumo>(`${seleccaoResumo('$2')} where p.id = $1`, [projectoId, utilizadorId]);
       return paraResumo(rows[0]!);
     });
   }
 
   // Mudar o estado e/ou o responsável de uma tarefa.
-  // Verifica no servidor, numa só transacção: acesso ao projecto pelo espaço de trabalho, que a tarefa é
-  // desse projecto, que o projecto não está arquivado e que o responsável é membro do mesmo espaço
+  // Verifica no servidor, numa só transacção (regra de acesso: papel_no_projecto, decisão 017): que a pessoa
+  // pode alterar o projecto (dono ou editor; o leitor só consulta), que a tarefa é desse projecto, que o
+  // projecto não está arquivado e que o responsável também pode alterar o projecto
   // (CLAUDE.md, secção 5, regra 5: também os IDs secundários enviados no corpo do pedido).
-  // Por agora, todos os membros do espaço podem alterar; os papéis por projecto chegam na Fase 4.
   app.post('/api/projectos/:id/tarefas/:tarefa', { preHandler: guardas.exigirEmailConfirmado }, async (pedido): Promise<TarefaProjecto> => {
     const parametros = idTarefa.safeParse(pedido.params);
     if (!parametros.success) throw new ErroHttp(404, m.tarefaNaoEncontrada);
@@ -219,24 +219,26 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
 
     await emTransaccao(pool, async (cliente) => {
       // Bloqueia a tarefa e o projecto: arquivar o projecto ao mesmo tempo espera por esta alteração.
-      const { rows } = await cliente.query<{ workspace_id: string; status: EstadoProjecto }>(
-        `select p.workspace_id, p.status from tasks t join projects p on p.id = t.project_id
+      const { rows } = await cliente.query<{ status: EstadoProjecto; papel: PapelNoProjecto | null }>(
+        `select p.status, papel_no_projecto(p.id, $3) as papel from tasks t join projects p on p.id = t.project_id
           where t.id = $1 and t.project_id = $2
-            and exists (select 1 from workspace_members wm where wm.workspace_id = p.workspace_id and wm.user_id = $3)
             for update of t, p`,
         [tarefaId, projectoId, utilizadorId],
       );
       const projecto = rows[0];
       // Tarefa inexistente, de outro projecto ou de um projecto sem acesso: a mesma resposta.
-      if (!projecto) throw new ErroHttp(404, m.tarefaNaoEncontrada);
+      if (!projecto?.papel) throw new ErroHttp(404, m.tarefaNaoEncontrada);
+      if (projecto.papel === 'viewer') throw new ErroHttp(403, m.soLeitura);
       if (projecto.status === 'archived') throw new ErroHttp(409, m.arquivado);
 
+      // O responsável tem de poder alterar este projecto (dono ou editor): um leitor ficaria com uma tarefa
+      // que não consegue marcar como feita. Não basta ser do espaço de trabalho.
       if (dados.responsavelId) {
-        const { rows: membro } = await cliente.query('select 1 from workspace_members where workspace_id = $1 and user_id = $2', [
-          projecto.workspace_id,
+        const { rows: acesso } = await cliente.query<{ papel: string | null }>('select papel_no_projecto($1, $2) as papel', [
+          projectoId,
           dados.responsavelId,
         ]);
-        if (membro.length === 0) throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { responsavelId: mensagens.validacao.responsavelInvalido });
+        if (acesso[0]?.papel !== 'owner' && acesso[0]?.papel !== 'editor') throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { responsavelId: mensagens.validacao.responsavelInvalido });
       }
 
       await cliente.query(
@@ -262,8 +264,10 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
 // O dia de hoje no calendário de Luanda, calculado pela base de dados (igual a hojeEmLuanda()).
 const HOJE_SQL = "(now() at time zone 'Africa/Luanda')::date";
 
-const SELECCAO_RESUMO = `
-  select p.id, p.workspace_id, p.name, p.template_code, p.template_version, p.event_date, p.location, p.status, p.created_at,
+// Resumo do projecto, com o papel de quem está a ver. `utilizador` é o marcador do parâmetro ($1, $2…),
+// nunca um valor vindo do pedido.
+const seleccaoResumo = (utilizador: '$1' | '$2') => `
+  select papel_no_projecto(p.id, ${utilizador}) as papel, p.id, p.workspace_id, p.name, p.template_code, p.template_version, p.event_date, p.location, p.status, p.created_at,
          ${HOJE_SQL}::text as hoje,
          (select count(*)::int from tasks t where t.project_id = p.id) as tarefas,
          (select count(*)::int from tasks t where t.project_id = p.id and t.status = 'done') as concluidas,
@@ -272,6 +276,7 @@ const SELECCAO_RESUMO = `
     from projects p`;
 
 interface LinhaResumo {
+  papel: PapelNoProjecto | null;
   id: string;
   workspace_id: string;
   name: string;
@@ -297,6 +302,7 @@ const paraResumo = (l: LinhaResumo): ResumoProjecto => ({
   tarefas: l.tarefas,
   concluidas: l.concluidas,
   criticasEmAtraso: l.criticas_em_atraso,
+  papel: l.papel!,
 });
 
 const SELECCAO_TAREFAS = `
@@ -342,21 +348,23 @@ const paraTarefa = (t: LinhaTarefa): TarefaProjecto => ({
   concluidaEm: t.completed_at ? t.completed_at.toISOString() : null,
 });
 
-// Autorização na própria consulta: o projecto só é lido se a pessoa for membro do espaço a que pertence.
+// Autorização na própria consulta: o projecto só é lido se a pessoa tiver acesso a ele.
 export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorId: string): Promise<Projecto | null> {
   const { rows } = await pool.query<LinhaResumo>(
-    `${SELECCAO_RESUMO}
-      where p.id = $1 and exists (select 1 from workspace_members wm where wm.workspace_id = p.workspace_id and wm.user_id = $2)`,
+    `${seleccaoResumo('$2')}
+      where p.id = $1 and papel_no_projecto(p.id, $2) is not null`,
     [projectoId, utilizadorId],
   );
   const l = rows[0];
   if (!l) return null;
   const { rows: tarefas } = await pool.query<LinhaTarefa>(`${SELECCAO_TAREFAS} where t.project_id = $1 order by t.position`, [projectoId]);
-  // Só o nome dos membros: nunca o e-mail nem outros dados de outras contas.
-  const { rows: membros } = await pool.query<{ id: string; name: string; role: string }>(
-    `select u.id, u.name, wm.role from workspace_members wm join users u on u.id = wm.user_id
-      where wm.workspace_id = $1 order by u.name, u.id`,
-    [l.workspace_id],
+  // Quem tem acesso ao projecto, com o papel. Só o nome: nunca o e-mail nem outros dados.
+  const { rows: membros } = await pool.query<{ id: string; name: string; papel: PapelNoProjecto }>(
+    `select u.id, u.name, papel_no_projecto($2, u.id) as papel from users u
+      where u.id in (select user_id from workspace_members where workspace_id = $1)
+        and papel_no_projecto($2, u.id) is not null
+      order by u.name, u.id`,
+    [l.workspace_id, projectoId],
   );
   const { rows: itens } = await pool.query<{
     id: string;
@@ -375,8 +383,8 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
     versaoTemplate: l.template_version,
     criadoEm: l.created_at.toISOString(),
     hoje: l.hoje,
-    membros: membros.map((m) => ({ id: m.id, nome: m.name })),
-    podeArquivar: membros.some((m) => m.id === utilizadorId && m.role === 'owner'),
+    membros: membros.map((m) => ({ id: m.id, nome: m.name, papel: m.papel })),
+    podeArquivar: l.papel === 'owner',
     tarefasDoProjecto: tarefas.map(paraTarefa),
     orcamento: itens.map((i) => ({
       id: i.id,

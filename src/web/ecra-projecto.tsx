@@ -70,6 +70,10 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
   if (!projecto) return <p className="a-carregar">{p.carregar}</p>;
 
   const arquivado = projecto.estado === 'archived';
+  // Arquivado ou com acesso só de leitura: nada se altera.
+  const soLeitura = arquivado || projecto.papel === 'viewer';
+  // Um leitor não pode ser responsável: não conseguiria marcar a tarefa como feita.
+  const responsaveis = projecto.membros.filter((m) => m.papel !== 'viewer');
   // Fases pela ordem do template.
   const fases = valoresDistintos(projecto.tarefasDoProjecto, 'fase');
   const visiveis = filtrarTarefas(projecto.tarefasDoProjecto, filtros, utilizadorId);
@@ -101,6 +105,7 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
           {projecto.podeArquivar && <BotaoArquivo projecto={projecto} aoMudar={setProjecto} />}
         </div>
       )}
+      {!arquivado && projecto.papel === 'viewer' && <p className="aviso">{p.leitor}</p>}
       {!arquivado && <AlertaAtrasos tarefas={projecto.tarefasDoProjecto} />}
 
       <section className="seccao" aria-labelledby="titulo-tarefas">
@@ -133,7 +138,7 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
                 <h3>{fase}</h3>
                 <ul className="tarefas">
                   {daFase.map((t) => (
-                    <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={arquivado} alterar={(a) => alterar(t, a)} />
+                    <Tarefa key={t.id} tarefa={t} membros={responsaveis} soLeitura={soLeitura} arquivado={arquivado} alterar={(a) => alterar(t, a)} />
                   ))}
                 </ul>
               </div>
@@ -146,7 +151,7 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
             dataEvento={projecto.dataEvento}
             hoje={projecto.hoje}
             desenharTarefa={(t) => (
-              <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={arquivado} alterar={(a) => alterar(t, a)} />
+              <Tarefa key={t.id} tarefa={t} membros={responsaveis} soLeitura={soLeitura} arquivado={arquivado} alterar={(a) => alterar(t, a)} />
             )}
           />
         )}
@@ -444,12 +449,14 @@ function Calendario({
 
 interface PropsTarefa {
   tarefa: TarefaProjecto;
+  // Quem pode ser responsável (donos e editores do projecto).
   membros: Pessoa[];
   soLeitura: boolean;
+  arquivado: boolean;
   alterar: (alteracao: Alteracao) => Promise<void>;
 }
 
-function Tarefa({ tarefa: t, membros, soLeitura, alterar }: PropsTarefa) {
+function Tarefa({ tarefa: t, membros, soLeitura, arquivado, alterar }: PropsTarefa) {
   const id = useId();
   const [aGuardar, setAGuardar] = useState(false);
   const [erro, setErro] = useState<string>();
@@ -492,7 +499,7 @@ function Tarefa({ tarefa: t, membros, soLeitura, alterar }: PropsTarefa) {
           <span className="tarefa__datas">
             {p.datas(formatarData(t.inicio), formatarData(t.fim))}
             {t.critica && <span className="etiqueta etiqueta--critica">{p.critica}</span>}
-            {t.emAtraso && !soLeitura && <span className="etiqueta etiqueta--atraso">{p.emAtraso}</span>}
+            {t.emAtraso && !arquivado && <span className="etiqueta etiqueta--atraso">{p.emAtraso}</span>}
             {t.estado !== 'pending' && <span className={`etiqueta etiqueta--${t.estado}`}>{p.estadoTarefa[t.estado]}</span>}
             {t.comprimida && <span className="etiqueta">{p.comprimida}</span>}
           </span>

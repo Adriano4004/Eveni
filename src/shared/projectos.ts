@@ -30,6 +30,9 @@ export interface Previsao {
 }
 
 export type EstadoProjecto = 'active' | 'archived';
+// owner = dono do espaço de trabalho (acesso a todos os projectos do espaço); editor e viewer = membros
+// adicionados ao projecto. O viewer só consulta.
+export type PapelNoProjecto = 'owner' | 'editor' | 'viewer';
 export const ESTADOS_TAREFA = ['pending', 'in_progress', 'done'] as const;
 export type EstadoTarefa = (typeof ESTADOS_TAREFA)[number];
 
@@ -44,6 +47,8 @@ export interface ResumoProjecto {
   concluidas: number;
   // Tarefas críticas por concluir cujo prazo (fim) já passou, no calendário de Luanda.
   criticasEmAtraso: number;
+  // O papel de quem está a ver.
+  papel: PapelNoProjecto;
 }
 
 export interface Pessoa {
@@ -86,8 +91,8 @@ export interface Projecto extends ResumoProjecto {
   criadoEm: string;
   // O dia de hoje em Luanda, segundo o servidor (para os ecrãs não dependerem do relógio do telemóvel).
   hoje: string;
-  // Quem pode ser responsável por tarefas: os membros do espaço de trabalho do projecto.
-  membros: Pessoa[];
+  // Quem tem acesso ao projecto. Só donos e editores podem ser responsáveis por tarefas.
+  membros: (Pessoa & { papel: PapelNoProjecto })[];
   // Quem está a ver é dono do espaço de trabalho (pode arquivar e restaurar).
   podeArquivar: boolean;
   tarefasDoProjecto: TarefaProjecto[];

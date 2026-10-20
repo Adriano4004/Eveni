@@ -235,3 +235,24 @@ export const budgetItems = pgTable(
     check('budget_items_valores_positivos', sql`${t.plannedCents} >= 0 and ${t.actualCents} >= 0`),
   ],
 );
+
+// Pessoas com acesso a um projecto, além do dono do espaço (que tem sempre acesso a todos).
+// Membros do espaço sem linha aqui não vêem o projecto (decisão 017).
+export const projectMembers = pgTable(
+  'project_members',
+  {
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.projectId, t.userId] }),
+    index('project_members_utilizador').on(t.userId),
+    check('project_members_papel_valido', sql`${t.role} in ('editor', 'viewer')`),
+  ],
+);

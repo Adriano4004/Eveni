@@ -259,3 +259,44 @@ test('cancelar a confirmação não arquiva', async ({ page }) => {
   await page.reload();
   await expect(page.getByRole('button', { name: 'Arquivar projecto' })).toBeVisible();
 });
+
+test('um leitor vê o projecto mas não o altera; um membro sem acesso não o vê', async ({ browser }) => {
+  const dona = await (await browser.newContext()).newPage();
+  await contaConfirmada(dona, 'Lurdes');
+  await dona.getByRole('button', { name: 'Novo projecto' }).click();
+  await dona.getByLabel('Nome do projecto').fill('Projecto partilhado');
+  await dona.getByLabel('Data do evento').fill(emDias(40));
+  await expect(dona.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await dona.getByRole('button', { name: 'Criar projecto' }).click();
+  await expect(dona.getByRole('heading', { name: 'Projecto partilhado' })).toBeVisible();
+  const projecto = dona.url().split('/').pop()!;
+
+  const leitor = await (await browser.newContext()).newPage();
+  await contaConfirmada(leitor, 'Mario');
+  const outro = await (await browser.newContext()).newPage();
+  await contaConfirmada(outro, 'Nuno');
+
+  // Os convites chegam no próximo PR: por agora, dar acesso directamente na base de dados de teste.
+  const cliente = new pg.Client({ connectionString: envValido.DATABASE_URL });
+  await cliente.connect();
+  for (const [nome, papel] of [['Mario', 'viewer'], ['Nuno', null]] as const) {
+    const { rows } = await cliente.query<{ id: string }>('select id from users where name = $1 order by created_at desc limit 1', [nome]);
+    await cliente.query(
+      "insert into workspace_members (workspace_id, user_id, role) select workspace_id, $1, 'member' from projects where id = $2",
+      [rows[0]!.id, projecto],
+    );
+    if (papel) await cliente.query('insert into project_members (project_id, user_id, role) values ($1, $2, $3)', [projecto, rows[0]!.id, papel]);
+  }
+  await cliente.end();
+
+  await leitor.reload();
+  await leitor.getByRole('link', { name: /Projecto partilhado/ }).click();
+  await expect(leitor.getByText('Tem acesso a este projecto só para consulta.')).toBeVisible();
+  await expect(leitor.getByRole('checkbox', { name: 'Concluída: Validar que existe facto novo' })).toBeDisabled();
+  await expect(leitor.getByRole('button', { name: 'Arquivar projecto' })).toHaveCount(0);
+
+  await outro.reload();
+  await expect(outro.getByRole('link', { name: /Projecto partilhado/ })).toHaveCount(0);
+  await outro.goto(`/projectos/${projecto}`);
+  await expect(outro.getByRole('alert')).toHaveText('Projecto não encontrado.');
+});

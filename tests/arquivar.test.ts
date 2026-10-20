@@ -108,12 +108,13 @@ describe('acesso indevido', () => {
     const ana = await contaConfirmada();
     const bruno = await contaConfirmada('bruno@exemplo.ao', 'Bruno Neto');
     const id = await criarProjecto(ana.cookie);
-    // Situação da Fase 4: o Bruno é membro (não dono) do espaço da Ana.
+    // O Bruno é membro (não dono) do espaço da Ana e editor deste projecto.
     await base.pool.query(
       `insert into workspace_members (workspace_id, user_id, role)
        select workspace_id, $1, 'member' from projects where id = $2`,
       [bruno.id, id],
     );
+    await base.pool.query("insert into project_members (project_id, user_id, role) values ($1, $2, 'editor')", [id, bruno.id]);
     const r = await c.post(`/api/projectos/${id}/arquivar`, {}, bruno.cookie);
     expect(r.statusCode).toBe(403);
     expect(r.json().mensagem).toMatch(/Só o dono/);
