@@ -453,8 +453,10 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
   }>('select id, category, description, required, note, planned_cents, actual_cents from budget_items where project_id = $1 order by position', [
     projectoId,
   ]);
+  const { rows: convidados } = await pool.query<{ n: number }>('select count(*)::int as n from guests where project_id = $1', [projectoId]);
   return {
     ...paraResumo(l),
+    totalConvidados: convidados[0]!.n,
     nomeTemplate: obterTemplate(l.template_code)?.nome ?? l.template_code,
     versaoTemplate: l.template_version,
     criadoEm: l.created_at.toISOString(),

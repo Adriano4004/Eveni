@@ -21,6 +21,7 @@ function chavesDaConta(email: string, utilizadorId: string) {
       `criar-projecto:${utilizadorId}`,
       `prever-projecto:${utilizadorId}`,
       `convidar:${utilizadorId}`,
+      `convidados:${utilizadorId}`,
     ],
     prefixos: [`entrar-email-ip:${email}:`, `recuperar-email-ip:${email}:`, `entrar-2fa-erros:${utilizadorId}:`],
   };

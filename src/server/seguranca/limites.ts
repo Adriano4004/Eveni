@@ -77,6 +77,9 @@ export const LIMITES = {
   // Acima disto o convite cria-se na mesma (partilha-se por WhatsApp), só não sai por e-mail.
   emailsConvitePorEspaco: { max: 10, janela: 24 * 60 * 60 },
   emailsConviteTotal: { max: 40, janela: 24 * 60 * 60 },
+  // Acrescentar, alterar, remover e importar convidados, por conta: generoso (uma lista de casamento
+  // escreve-se à mão, um a um), só trava abusos.
+  alterarConvidados: { max: 1000, janela: 60 * 60 },
 } as const;
 
 // Regista a tentativa e recusa com 429 quando passa do limite.

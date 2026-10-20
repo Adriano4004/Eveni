@@ -64,6 +64,13 @@
       "when": 1792508080194,
       "tag": "0008_registo_espaco",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792523621816,
+      "tag": "0009_convidados",
+      "breakpoints": true
     }
   ]
 }

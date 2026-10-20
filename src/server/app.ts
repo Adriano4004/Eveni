@@ -10,6 +10,7 @@ import { registarRotasConfirmacao } from './contas/confirmacao.js';
 import { registarRotasDados } from './contas/dados.js';
 import { registarRotasPalavraPasse } from './contas/palavra-passe.js';
 import { registarRotasContas } from './contas/rotas.js';
+import { registarRotasConvidados } from './convidados/rotas.js';
 import { criarEnvioDeEmail, type EnviarEmail } from './email/index.js';
 import type { BaseDeDados } from './db/index.js';
 import { ErroHttp } from './erros.js';
@@ -104,6 +105,7 @@ export async function criarApp({ config, base, pastaWeb, enviarEmail = criarEnvi
   registarRotasDados(app, config, base, enviarEmail, guardas);
   registarRotasProjectos(app, base, guardas);
   registarRotasEquipa(app, config, base, enviarEmail, guardas);
+  registarRotasConvidados(app, base, guardas);
 
   app.get('/health', async (_pedido, resposta) => {
     const bdOk = await base.verificar();

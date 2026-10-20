@@ -22,3 +22,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 015 | [Filtros e calendário das tarefas](015-filtros-calendario.md) | Em vigor |
 | 016 | [Arquivar e restaurar projectos](016-arquivar.md) | Em vigor |
 | 017 | [Colaboração: convites e acesso por projecto](017-colaboracao.md) | Em vigor |
+| 018 | [Convidados e RSVP](018-convidados.md) | Em vigor |

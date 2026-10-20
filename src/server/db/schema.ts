@@ -286,3 +286,36 @@ export const invitations = pgTable(
     check('invitations_email_minusculas', sql`${t.email} = lower(${t.email})`),
   ],
 );
+
+// Convidados de um projecto (decisão 018). Dados de terceiros: só nome e contactos.
+// Telemóvel guardado como +<indicativo><número> (ver normalizarTelemovel), e-mail em minúsculas:
+// assim os repetidos detectam-se na base de dados, seja qual for a forma como foram escritos.
+export const guests = pgTable(
+  'guests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    phone: text('phone'),
+    email: text('email'),
+    // Acompanhantes que o organizador permite; e quantos o convidado confirmou.
+    plusOnesAllowed: integer('plus_ones_allowed').notNull().default(0),
+    response: text('response').notNull().default('pending'),
+    plusOnesConfirmed: integer('plus_ones_confirmed').notNull().default(0),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    createdAt: criadoEm(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('guests_projecto').on(t.projectId, t.name),
+    uniqueIndex('guests_telemovel_unico').on(t.projectId, t.phone).where(sql`${t.phone} is not null`),
+    uniqueIndex('guests_email_unico').on(t.projectId, t.email).where(sql`${t.email} is not null`),
+    check('guests_resposta_valida', sql`${t.response} in ('pending', 'yes', 'no')`),
+    check('guests_acompanhantes_validos', sql`${t.plusOnesAllowed} between 0 and 10`),
+    check('guests_confirmados_validos', sql`${t.plusOnesConfirmed} between 0 and ${t.plusOnesAllowed} and (${t.response} = 'yes' or ${t.plusOnesConfirmed} = 0)`),
+    check('guests_email_minusculas', sql`${t.email} = lower(${t.email})`),
+    check('guests_telemovel_formato', sql`${t.phone} ~ '^\\+[0-9]{8,15}$'`),
+  ],
+);

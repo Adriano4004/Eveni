@@ -7,7 +7,9 @@ import { type BaseDeDados, emTransaccao } from '../db/index.js';
 import type { EnviarEmail } from '../email/index.js';
 import { emailContaEliminada } from '../email/modelos.js';
 import { ErroHttp, validar } from '../erros.js';
+import { listarConvidados } from '../convidados/rotas.js';
 import { lerProjecto } from '../projectos/rotas.js';
+import type { Convidado } from '../../shared/convidados.js';
 import type { Projecto } from '../../shared/projectos.js';
 import { LIMITES, descontarTentativa, limitar, registarTentativa } from '../seguranca/limites.js';
 import { verificarPalavraPasse } from '../seguranca/palavras-passe.js';
@@ -38,6 +40,7 @@ export const TABELAS_PESSOAIS = {
   budget_items: 'exportada com o projecto; apagada com o projecto (cascata)',
   invitations: 'exportada (convites enviados e recebidos); apagados os que a pessoa criou e os feitos para o e-mail dela; os antigos são apagados ao fim de 30 dias',
   project_members: 'exportada (acessos da pessoa a projectos de outros espaços: projecto, espaço, papel, desde); apagada com o projecto ou com a conta (cascata)',
+  guests: 'exportada com o projecto (espaços de que a pessoa é dona); apagada com o projecto (cascata)',
 } as const;
 
 export interface Exportacao {
@@ -54,8 +57,8 @@ export interface Exportacao {
   espacosDeTrabalho: { id: string; nome: string; plano: string; papel: string; planoDesde: string; criadoEm: string }[];
   sessoes: { criadaEm: string; ultimaUtilizacao: string; expiraEm: string; ip: string | null; navegador: string | null }[];
   historicoDeAcessos: { accao: string; data: string; ip: string | null; detalhes: Record<string, unknown> }[];
-  // Projectos dos espaços de que a pessoa é dona, com tarefas e orçamento.
-  projectos: Projecto[];
+  // Projectos dos espaços de que a pessoa é dona, com tarefas, orçamento e convidados.
+  projectos: (Projecto & { convidados: Convidado[] })[];
   // Projectos de outros espaços a que a pessoa tem acesso (como editora ou leitora).
   acessosAProjectos: { projectoId: string; projecto: string; espaco: string; papel: string; desde: string }[];
   convitesEnviados: { email: string; criadoEm: string; estado: EstadoConvite }[];
@@ -118,10 +121,10 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       where i.email = $1 and $2 order by i.created_at`,
     [u.email, u.email_verified_at !== null],
   );
-  const projectos: Projecto[] = [];
+  const projectos: Exportacao['projectos'] = [];
   for (const { id } of idsProjectos) {
     const projecto = await lerProjecto(pool, id, utilizadorId);
-    if (projecto) projectos.push(projecto);
+    if (projecto) projectos.push({ ...projecto, convidados: await listarConvidados(pool, id) });
   }
   return {
     geradoEm: new Date().toISOString(),

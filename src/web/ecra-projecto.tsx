@@ -163,6 +163,14 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
         )}
       </section>
 
+      <section className="seccao" aria-labelledby="titulo-convidados">
+        <h2 id="titulo-convidados">{p.convidados}</h2>
+        <p className="campo__ajuda">{p.convidadosTexto(projecto.totalConvidados)}</p>
+        <button className="botao botao--secundario" type="button" onClick={() => navegar(`/projectos/${encodeURIComponent(id)}/convidados`)}>
+          {p.verConvidados}
+        </button>
+      </section>
+
       <section className="seccao" aria-labelledby="titulo-orcamento">
         <h2 id="titulo-orcamento">{p.orcamento}</h2>
         <p className="campo__ajuda">{p.emBreveOrcamento}</p>
