@@ -41,7 +41,27 @@
   - os convidados saem na exportação de dados de quem é dono do espaço, dentro de cada projecto;
   - são apagados com o projecto, isto é, com a conta do dono.
 
-## Próximos PRs desta fase
+## Ligações de RSVP (segundo PR)
 
-2. Ligação de RSVP por convidado (token próprio), partilha por WhatsApp e página pública de resposta.
+- **Uma ligação por convidado** (`/rsvp?token=…`). Responde só por aquele convidado e nunca cria convidados novos (falha da versão anterior).
+- **Como é feita a ligação:**
+  - leva a chave do convidado mais uma assinatura feita com o segredo da aplicação (`SESSION_SECRET`);
+  - quem obtiver só uma cópia da base de dados não consegue responder por ninguém;
+  - **se `SESSION_SECRET` mudar, todas as ligações já enviadas deixam de funcionar.**
+- **Quem obtém a ligação:** só o dono e os editores, com o projecto activo. Os leitores não, porque com ela se responde em nome do convidado.
+- **Na lista e na exportação** a ligação não aparece. Pede-se convidado a convidado, no momento de a partilhar.
+- **"Gerar nova ligação"** troca a chave, e a ligação antiga deixa de funcionar (ex.: foi enviada à pessoa errada).
+- **Partilha:**
+  - botão "Enviar por WhatsApp", que abre a conversa com o número do convidado (ou, sem número, deixa escolher o contacto) com a mensagem já escrita;
+  - botão "Copiar ligação".
+- **Página pública:**
+  - mostra só o nome do evento, a data, o local e o nome do convidado (nada da equipa nem dos outros convidados);
+  - o convidado escolhe "Vou" ou "Não vou" e, se puder levar acompanhantes, quantos;
+  - pode mudar a resposta **até ao dia do evento, inclusive** (calendário de Luanda);
+  - com o projecto arquivado, as respostas fecham;
+  - os pedidos são limitados por endereço IP. O limite é largo, porque muitos convidados da mesma operadora móvel podem partilhar o mesmo IP.
+- **O token não fica registado:** sai da barra de endereço logo à entrada e não é escrito nos logs.
+
+## Próximo PR desta fase
+
 3. Mesas e lugares.

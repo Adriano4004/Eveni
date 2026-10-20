@@ -31,7 +31,7 @@ export interface TotaisConvidados {
 }
 
 export interface ListaConvidados {
-  projecto: { id: string; nome: string };
+  projecto: { id: string; nome: string; dataEvento: string };
   // Dono ou editor, com o projecto activo.
   podeAlterar: boolean;
   convidados: Convidado[];
@@ -153,4 +153,31 @@ export function lerColagem(texto: string): LinhaColada[] {
     resultado.push(linha);
   }
   return resultado;
+}
+
+// Ligação de RSVP de um convidado: só para o dono e os editores, que a partilham (ex.: por WhatsApp).
+export interface LigacaoRsvp {
+  ligacao: string;
+}
+
+// Página pública de RSVP: o que o convidado vê. Só o necessário: nada de outros convidados, da equipa
+// ou do espaço de trabalho.
+export interface InfoRsvp {
+  evento: string;
+  dataEvento: string;
+  local: string | null;
+  convidado: string;
+  // Quantos acompanhantes pode levar.
+  acompanhantes: number;
+  resposta: Resposta;
+  acompanhantesConfirmados: number;
+  // Pode responder ou mudar a resposta até ao dia do evento (inclusive), se o projecto estiver activo.
+  aberto: boolean;
+}
+
+// Texto da mensagem de WhatsApp com a ligação de RSVP.
+// Endereço wa.me: para o número do convidado se o tiver, senão o WhatsApp pede para escolher o contacto.
+export function enderecoWhatsapp(telemovel: string | null, texto: string): string {
+  const numero = telemovel ? telemovel.replace(/^\+/, '') : '';
+  return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
 }

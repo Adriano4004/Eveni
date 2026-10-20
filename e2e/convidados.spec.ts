@@ -111,3 +111,61 @@ test('não é possível ver os convidados do projecto de outra pessoa', async ({
   await expect(outra.getByRole('alert')).toHaveText('Projecto não encontrado.');
   await expect(outra.getByText('Convidado secreto')).toHaveCount(0);
 });
+
+test('RSVP: o organizador partilha a ligação e o convidado responde sem conta', async ({ browser }) => {
+  const dona = await (await browser.newContext()).newPage();
+  await contaConfirmada(dona, 'Laura');
+  await projectoNovo(dona, 'Casamento <b>L & M</b>');
+  await dona.getByRole('button', { name: 'Ver convidados' }).click();
+  const formulario = dona.locator('details', { has: dona.getByRole('heading', { name: 'Acrescentar convidado' }) });
+  await formulario.getByLabel('Nome').fill('Tio Zeca');
+  await formulario.getByLabel('Telemóvel').fill('923 456 789');
+  await formulario.getByLabel('Acompanhantes permitidos').fill('2');
+  await formulario.getByRole('button', { name: 'Acrescentar convidado' }).click();
+
+  const tio = dona.locator('.convidado', { hasText: 'Tio Zeca' });
+  await tio.locator('summary').click();
+  await tio.getByRole('button', { name: 'Mostrar a ligação' }).click();
+  const ligacao = (await tio.locator('.ligacao-convite').textContent())!;
+  expect(ligacao).toMatch(/\/rsvp\?token=[0-9a-f]{32}[\w-]{22}$/);
+  const whatsapp = await tio.getByRole('link', { name: 'Enviar por WhatsApp' }).getAttribute('href');
+  expect(whatsapp).toContain('https://wa.me/244923456789?text=');
+  expect(decodeURIComponent(whatsapp!)).toContain(`Olá, Tio Zeca! Está convidado(a) para Casamento <b>L & M</b>`);
+
+  // O convidado abre a ligação noutro telemóvel, sem conta.
+  const convidado = await (await browser.newContext()).newPage();
+  await convidado.goto(new URL(ligacao).pathname + new URL(ligacao).search);
+  await expect(convidado.getByText('Olá, Tio Zeca')).toBeVisible();
+  await expect(convidado.getByRole('heading', { name: 'Casamento <b>L & M</b>' })).toBeVisible();
+  // O token sai da barra de endereço.
+  expect(convidado.url()).not.toContain('token=');
+  await convidado.getByRole('button', { name: 'Confirmar resposta' }).click();
+  await expect(convidado.getByText('Escolha "Vou" ou "Não vou".')).toBeVisible();
+  await convidado.getByRole('button', { name: 'Vou', exact: true }).click();
+  await convidado.getByLabel('Quantos acompanhantes leva? (até 2)').selectOption('1');
+  await convidado.getByRole('button', { name: 'Confirmar resposta' }).click();
+  await expect(convidado.getByText('Registámos que vai, com 1 acompanhante. Obrigado!')).toBeVisible();
+
+  // Recarregar não perde a ligação; muda de ideias.
+  await convidado.reload();
+  await expect(convidado.getByText('Registámos que vai, com 1 acompanhante. Obrigado!')).toBeVisible();
+  await convidado.getByRole('button', { name: 'Mudar a resposta' }).click();
+  await convidado.getByRole('button', { name: 'Não vou' }).click();
+  await convidado.getByRole('button', { name: 'Confirmar resposta' }).click();
+  await expect(convidado.getByText('Registámos que não vai. Obrigado por avisar.')).toBeVisible();
+
+  // A organizadora vê a resposta.
+  await dona.reload();
+  await expect(dona.locator('.totais-convidados')).toHaveText(/1 convidado · 0 vão .* 1 não vai/);
+
+  // Gerar nova ligação: a antiga deixa de funcionar.
+  dona.once('dialog', (d) => d.accept());
+  const tio2 = dona.locator('.convidado', { hasText: 'Tio Zeca' });
+  await tio2.locator('summary').click();
+  await tio2.getByRole('button', { name: 'Mostrar a ligação' }).click();
+  await tio2.getByRole('button', { name: 'Gerar nova ligação' }).click();
+  await expect(tio2.locator('.ligacao-convite')).not.toHaveText(ligacao);
+  const antiga = await (await browser.newContext()).newPage();
+  await antiga.goto(new URL(ligacao).pathname + new URL(ligacao).search);
+  await expect(antiga.getByRole('alert')).toHaveText('Esta ligação não é válida ou já foi substituída. Peça uma nova a quem o convidou.');
+});

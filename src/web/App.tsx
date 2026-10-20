@@ -4,6 +4,7 @@ import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
 import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
+import { EcraRsvp } from './ecra-rsvp.js';
 import { EcraDoisFactores } from './ecras-dois-factores.js';
 import { EcraConvite, EcraEquipa } from './ecras-equipa.js';
 import { EcraProjecto } from './ecra-projecto.js';
@@ -38,6 +39,7 @@ function esquecerToken(caminho: string) {
 const tokenConfirmacao = lerToken('/confirmar-email');
 const tokenRedefinir = lerToken('/redefinir-palavra-passe');
 const tokenConvite = lerToken('/convite');
+const tokenRsvp = lerToken('/rsvp');
 
 // O convite fica guardado neste separador enquanto a pessoa entra ou cria conta, para voltar a ele.
 function conviteGuardado(): string {
@@ -50,7 +52,7 @@ function conviteGuardado(): string {
 
 // Ecrãs só para quem não tem sessão, e ecrãs acessíveis com ou sem sessão.
 const SO_ANONIMO = new Set(['/entrar', '/registo', '/recuperar']);
-const QUALQUER = new Set(['/confirmar-email', '/redefinir-palavra-passe', '/convite']);
+const QUALQUER = new Set(['/confirmar-email', '/redefinir-palavra-passe', '/convite', '/rsvp']);
 
 type Estado = { tipo: 'a-carregar' } | { tipo: 'anonimo' } | { tipo: 'com-sessao'; eu: Eu };
 
@@ -81,6 +83,8 @@ export function App() {
     setEstado({ tipo: 'com-sessao', eu });
   };
 
+  // A página de RSVP é do convidado: não depende de ter (ou não) conta no Eveni.
+  if (caminho === '/rsvp') return <EcraRsvp token={tokenRsvp} />;
   if (estado.tipo === 'a-carregar') {
     return <p className="a-carregar">{mensagens.ecras.carregar}</p>;
   }

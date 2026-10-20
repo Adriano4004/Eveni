@@ -2,7 +2,9 @@ import { type ReactNode, useEffect, useId, useState } from 'react';
 import {
   calcularTotais,
   type Convidado,
+  enderecoWhatsapp,
   formatarTelemovel,
+  type LigacaoRsvp,
   type LinhaColada,
   lerColagem,
   type ListaConvidados,
@@ -11,6 +13,7 @@ import {
   type Resposta,
   type ResultadoImportacao,
 } from '../shared/convidados.js';
+import { formatarData } from '../shared/datas.js';
 import { dadosConvidado } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api, mensagemDeErro } from './api.js';
@@ -136,7 +139,7 @@ export function EcraConvidados({ id }: { id: string }) {
             {visiveis.length === 0 && <p className="campo__ajuda">{q.nenhumComFiltro}</p>}
             <ul className="convidados">
               {visiveis.map((c) => (
-                <LinhaConvidado key={c.id} convidado={c} caminho={caminho} podeAlterar={lista.podeAlterar} aoMudar={mudarLocal} />
+                <LinhaConvidado key={c.id} convidado={c} caminho={caminho} projecto={lista.projecto} podeAlterar={lista.podeAlterar} aoMudar={mudarLocal} />
               ))}
             </ul>
           </>
@@ -297,12 +300,13 @@ function ImportarLista({ caminho, aoImportar }: { caminho: string; aoImportar: (
 interface PropsLinha {
   convidado: Convidado;
   caminho: string;
+  projecto: ListaConvidados['projecto'];
   podeAlterar: boolean;
   aoMudar: (c: Convidado | { removido: string }) => void;
 }
 
 // Um convidado: nome, resposta e contactos; ao abrir, os dados para alterar (dono e editores).
-function LinhaConvidado({ convidado: c, caminho, podeAlterar, aoMudar }: PropsLinha) {
+function LinhaConvidado({ convidado: c, caminho, projecto, podeAlterar, aoMudar }: PropsLinha) {
   const [erro, setErro] = useState<string>();
   const [guardado, setGuardado] = useState(false);
   const contactos = [c.telemovel && formatarTelemovel(c.telemovel), c.email].filter(Boolean).join(' · ');
@@ -331,6 +335,7 @@ function LinhaConvidado({ convidado: c, caminho, podeAlterar, aoMudar }: PropsLi
         </summary>
         {podeAlterar && (
           <div className="convidado__editar">
+            <PartilharLigacao convidado={c} caminho={caminho} projecto={projecto} />
             <Formulario
               botao={q.guardar}
               aEnviar={q.aGuardar}
@@ -392,6 +397,73 @@ function EscolhaResposta({ valor, erro }: { valor: Resposta; erro?: string }) {
       <p id={`${id}-ajuda`} className={erro ? 'campo__erro' : 'campo__ajuda'}>
         {erro ?? q.ajudaResposta}
       </p>
+    </div>
+  );
+}
+
+// Ligação de RSVP deste convidado: pede-se ao servidor só quando o organizador a quer partilhar.
+// "Gerar nova ligação" invalida a anterior (ex.: foi enviada à pessoa errada).
+function PartilharLigacao({ convidado: c, caminho, projecto }: { convidado: Convidado; caminho: string; projecto: ListaConvidados['projecto'] }) {
+  const [ligacao, setLigacao] = useState<string>();
+  const [aCarregar, setACarregar] = useState(false);
+  const [copiada, setCopiada] = useState(false);
+  const [erro, setErro] = useState<string>();
+
+  async function obter(nova: boolean) {
+    if (nova && !confirm(q.confirmarNovaLigacao)) return;
+    setACarregar(true);
+    setErro(undefined);
+    setCopiada(false);
+    try {
+      setLigacao((await api<LigacaoRsvp>('POST', `${caminho}/${c.id}/ligacao${nova ? '/nova' : ''}`)).ligacao);
+    } catch (falha) {
+      setErro(mensagemDeErro(falha));
+    } finally {
+      setACarregar(false);
+    }
+  }
+
+  return (
+    <div className="partilhar-rsvp">
+      <strong>{q.ligacaoRsvp}</strong>
+      <p className="campo__ajuda">{q.ligacaoRsvpTexto}</p>
+      {erro && (
+        <p className="formulario__erro" role="alert">
+          {erro}
+        </p>
+      )}
+      {!ligacao ? (
+        <button className="botao botao--secundario" type="button" disabled={aCarregar} onClick={() => obter(false)}>
+          {aCarregar ? q.aCarregarLigacao : q.mostrarLigacao}
+        </button>
+      ) : (
+        <>
+          <p className="ligacao-convite">{ligacao}</p>
+          <a
+            className="botao"
+            href={enderecoWhatsapp(c.telemovel, q.mensagemWhatsapp(c.nome, projecto.nome, formatarData(projecto.dataEvento), ligacao))}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {q.whatsapp}
+          </a>
+          <button
+            className="botao botao--secundario"
+            type="button"
+            onClick={() =>
+              navigator.clipboard
+                ?.writeText(ligacao)
+                .then(() => setCopiada(true))
+                .catch(() => setCopiada(false))
+            }
+          >
+            {copiada ? q.copiada : q.copiar}
+          </button>
+          <button className="botao botao--secundario botao--compacto" type="button" disabled={aCarregar} onClick={() => obter(true)}>
+            {q.novaLigacao}
+          </button>
+        </>
+      )}
     </div>
   );
 }
