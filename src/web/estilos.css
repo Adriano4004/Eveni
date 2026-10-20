@@ -846,3 +846,16 @@ h1 {
   margin: 12px 0 8px;
   font-size: 1rem;
 }
+
+.arquivados {
+  margin: 0 0 16px;
+}
+
+.arquivados summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+}

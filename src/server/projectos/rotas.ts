@@ -164,6 +164,47 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     return projecto;
   });
 
+  // Arquivar e restaurar. Não há eliminação de projectos pelo utilizador (CLAUDE.md, secção 8): arquivar
+  // esconde o projecto da lista principal e torna-o só de leitura, mas continua a contar para o limite
+  // do plano. Só o dono do espaço de trabalho o pode fazer. Repetir o pedido não muda nada.
+  for (const [accao, novoEstado] of [
+    ['arquivar', 'archived'],
+    ['restaurar', 'active'],
+  ] as const) {
+    app.post(`/api/projectos/:id/${accao}`, { preHandler: guardas.exigirEmailConfirmado }, async (pedido): Promise<ResumoProjecto> => {
+      const parametros = idProjecto.safeParse(pedido.params);
+      if (!parametros.success) throw new ErroHttp(404, m.naoEncontrado);
+      const projectoId = parametros.data.id;
+      const { utilizadorId } = pedido.sessao!;
+
+      await emTransaccao(pool, async (cliente) => {
+        const { rows } = await cliente.query<{ status: EstadoProjecto; papel: string }>(
+          `select p.status, wm.role as papel from projects p
+             join workspace_members wm on wm.workspace_id = p.workspace_id and wm.user_id = $2
+            where p.id = $1
+              for update of p`,
+          [projectoId, utilizadorId],
+        );
+        const projecto = rows[0];
+        if (!projecto) throw new ErroHttp(404, m.naoEncontrado);
+        if (projecto.papel !== 'owner') throw new ErroHttp(403, m.soDonoArquiva);
+        if (projecto.status === novoEstado) return;
+        await cliente.query(
+          `update projects set status = $2, archived_at = case when $2 = 'archived' then now() else null end where id = $1`,
+          [projectoId, novoEstado],
+        );
+        await auditar(cliente, novoEstado === 'archived' ? 'projecto.arquivado' : 'projecto.restaurado', {
+          utilizadorId,
+          ip: pedido.ip,
+          detalhes: { projectoId },
+        });
+      });
+
+      const { rows } = await pool.query<LinhaResumo>(`${SELECCAO_RESUMO} where p.id = $1`, [projectoId]);
+      return paraResumo(rows[0]!);
+    });
+  }
+
   // Mudar o estado e/ou o responsável de uma tarefa.
   // Verifica no servidor, numa só transacção: acesso ao projecto pelo espaço de trabalho, que a tarefa é
   // desse projecto, que o projecto não está arquivado e que o responsável é membro do mesmo espaço
@@ -310,8 +351,8 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
   if (!l) return null;
   const { rows: tarefas } = await pool.query<LinhaTarefa>(`${SELECCAO_TAREFAS} where t.project_id = $1 order by t.position`, [projectoId]);
   // Só o nome dos membros: nunca o e-mail nem outros dados de outras contas.
-  const { rows: membros } = await pool.query<{ id: string; name: string }>(
-    `select u.id, u.name from workspace_members wm join users u on u.id = wm.user_id
+  const { rows: membros } = await pool.query<{ id: string; name: string; role: string }>(
+    `select u.id, u.name, wm.role from workspace_members wm join users u on u.id = wm.user_id
       where wm.workspace_id = $1 order by u.name, u.id`,
     [l.workspace_id],
   );
@@ -333,6 +374,7 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
     criadoEm: l.created_at.toISOString(),
     hoje: l.hoje,
     membros: membros.map((m) => ({ id: m.id, nome: m.name })),
+    podeArquivar: membros.some((m) => m.id === utilizadorId && m.role === 'owner'),
     tarefasDoProjecto: tarefas.map(paraTarefa),
     orcamento: itens.map((i) => ({
       id: i.id,

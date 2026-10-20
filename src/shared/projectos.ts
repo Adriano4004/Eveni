@@ -88,6 +88,8 @@ export interface Projecto extends ResumoProjecto {
   hoje: string;
   // Quem pode ser responsável por tarefas: os membros do espaço de trabalho do projecto.
   membros: Pessoa[];
+  // Quem está a ver é dono do espaço de trabalho (pode arquivar e restaurar).
+  podeArquivar: boolean;
   tarefasDoProjecto: TarefaProjecto[];
   orcamento: ItemOrcamento[];
 }

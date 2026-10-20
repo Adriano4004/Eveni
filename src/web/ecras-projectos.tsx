@@ -21,6 +21,8 @@ export function ListaProjectos({ eu }: { eu: Eu }) {
       .catch(() => setErro(p.erroCarregar));
   }, []);
 
+  const activos = projectos?.filter((x) => x.estado === 'active') ?? [];
+  const arquivados = projectos?.filter((x) => x.estado === 'archived') ?? [];
   const limite = LIMITE_PROJECTOS[eu.espaco.plano];
   const noLimite = limite !== null && projectos !== undefined && projectos.length >= limite;
 
@@ -33,29 +35,22 @@ export function ListaProjectos({ eu }: { eu: Eu }) {
         </p>
       )}
       {projectos?.length === 0 && <p className="cartao__subtitulo">{p.vazio}</p>}
-      {projectos && projectos.length > 0 && (
+      {activos.length > 0 && (
         <ul className="projectos">
-          {projectos.map((projecto) => (
-            <li key={projecto.id}>
-              <a
-                className="projecto-cartao"
-                href={`/projectos/${projecto.id}`}
-                onClick={(evento) => {
-                  evento.preventDefault();
-                  navegar(`/projectos/${projecto.id}`);
-                }}
-              >
-                <strong>{projecto.nome}</strong>
-                <span>{p.evento(formatarData(projecto.dataEvento))}</span>
-                <span className="projecto-cartao__progresso">{p.progresso(projecto.concluidas, projecto.tarefas)}</span>
-                {projecto.criticasEmAtraso > 0 && projecto.estado === 'active' && (
-                  <span className="etiqueta etiqueta--atraso">{p.criticasEmAtraso(projecto.criticasEmAtraso)}</span>
-                )}
-                {projecto.estado === 'archived' && <span className="etiqueta">{p.estado.archived}</span>}
-              </a>
-            </li>
+          {activos.map((projecto) => (
+            <CartaoProjecto key={projecto.id} projecto={projecto} />
           ))}
         </ul>
+      )}
+      {arquivados.length > 0 && (
+        <details className="arquivados">
+          <summary>{p.arquivados(arquivados.length)}</summary>
+          <ul className="projectos">
+            {arquivados.map((projecto) => (
+              <CartaoProjecto key={projecto.id} projecto={projecto} />
+            ))}
+          </ul>
+        </details>
       )}
       {!eu.emailConfirmado ? (
         <p className="campo__ajuda">{p.confirmarParaCriar}</p>
@@ -69,6 +64,30 @@ export function ListaProjectos({ eu }: { eu: Eu }) {
         )
       )}
     </section>
+  );
+}
+
+function CartaoProjecto({ projecto }: { projecto: ResumoProjecto }) {
+  const p = e.projectos;
+  return (
+    <li>
+      <a
+        className="projecto-cartao"
+        href={`/projectos/${projecto.id}`}
+        onClick={(evento) => {
+          evento.preventDefault();
+          navegar(`/projectos/${projecto.id}`);
+        }}
+      >
+        <strong>{projecto.nome}</strong>
+        <span>{p.evento(formatarData(projecto.dataEvento))}</span>
+        <span className="projecto-cartao__progresso">{p.progresso(projecto.concluidas, projecto.tarefas)}</span>
+        {projecto.criticasEmAtraso > 0 && projecto.estado === 'active' && (
+          <span className="etiqueta etiqueta--atraso">{p.criticasEmAtraso(projecto.criticasEmAtraso)}</span>
+        )}
+        {projecto.estado === 'archived' && <span className="etiqueta">{p.estado.archived}</span>}
+      </a>
+    </li>
   );
 }
 
