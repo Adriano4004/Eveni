@@ -20,7 +20,7 @@ const esquema = z
       .string({ error: 'DATABASE_URL em falta (ligação ao PostgreSQL).' })
       .startsWith('postgres', 'DATABASE_URL tem de começar por postgres:// ou postgresql://'),
     APP_URL: z
-      .url({ error: 'APP_URL em falta ou inválido (endereço público da aplicação, ex.: https://eveni.ao).' })
+      .url({ error: 'APP_URL em falta ou inválido (endereço público da aplicação, ex.: https://app.eveni.ao).' })
       .refine((v) => !v.endsWith('/'), 'APP_URL não pode terminar com "/".'),
     SESSION_SECRET: z
       .string({ error: 'SESSION_SECRET em falta.' })
