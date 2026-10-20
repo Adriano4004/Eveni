@@ -12,12 +12,16 @@ import type { RubricaTemplate, Taxonomia, TarefaTemplate, Template } from '../sr
 export const CAMINHO_EXCEL = 'docs/templates/Eveni-Templates-Projecto.xlsx';
 export const PASTA_DADOS = 'data/templates';
 
-// Ajustes à taxonomia do Excel, decididos fora dele (registar aqui o porquê de cada um).
-const PAPEIS_EXTRA = [
-  // O T01 atribui 6 tarefas ao papel "Registo" (presenças, clipping, relatórios), que não está na
-  // folha Taxonomia. Opção recomendada, A CONFIRMAR pelo Adriano (docs/decisoes/011-templates.md).
-  'Registo',
-];
+// Valores acrescentados às listas da folha Taxonomia, aprovados pelo Adriano a 20/10/2026
+// (docs/decisoes/011-templates.md): os templates já os usavam e reflectem trabalho real.
+const CATEGORIAS_TAREFA_EXTRA = ['Alojamento', 'Artístico', 'Produção', 'Segurança', 'Transporte'];
+// "Registo": presenças, clipping e relatórios do T01. "Legal" e "Segurança": T03 e T04.
+const PAPEIS_EXTRA = ['Registo', 'Legal', 'Segurança'];
+// Licenças, direitos de autor, taxas do registo civil, vistos (T02 e T04).
+const CATEGORIAS_ORCAMENTO_EXTRA = ['Legal'];
+
+// Sem repetidos, se um dia o Excel passar a ter o valor acrescentado.
+const juntar = (lista: string[], extra: string[]) => [...new Set([...lista, ...extra])];
 
 type Celula = ExcelJS.CellValue;
 
@@ -84,9 +88,9 @@ function lerTaxonomia(ws: ExcelJS.Worksheet): Taxonomia {
   };
   return {
     fases: obter('FASES'),
-    categoriasTarefa: obter('CATEGORIAS DE TAREFA'),
-    papeis: [...obter('PAPÉIS'), ...PAPEIS_EXTRA],
-    categoriasOrcamento: obter('CATEGORIAS DE ORÇAMENTO'),
+    categoriasTarefa: juntar(obter('CATEGORIAS DE TAREFA'), CATEGORIAS_TAREFA_EXTRA),
+    papeis: juntar(obter('PAPÉIS'), PAPEIS_EXTRA),
+    categoriasOrcamento: juntar(obter('CATEGORIAS DE ORÇAMENTO'), CATEGORIAS_ORCAMENTO_EXTRA),
   };
 }
 
@@ -123,10 +127,8 @@ function lerTemplate(ws: ExcelJS.Worksheet): Omit<Template, 'versao' | 'rubricas
   return { codigo, nome, descricao: todas[1]?.[0] ?? '', tarefas };
 }
 
-// Erros que impedem a conversão. As diferenças às listas fechadas de categorias e papéis são devolvidas
-// à parte (avisos), porque há templates com diferenças conhecidas à espera de decisão.
-function validarTemplate(t: Omit<Template, 'versao'>, taxonomia: Taxonomia): string[] {
-  const avisos: string[] = [];
+// Erros que impedem a conversão: nada fora das listas fechadas chega ao produto.
+function validarTemplate(t: Omit<Template, 'versao'>, taxonomia: Taxonomia): void {
   const vistos = new Set<string>();
   for (const x of t.tarefas) {
     if (vistos.has(x.id)) throw new Error(`${t.codigo}: ID repetido ${x.id}`);
@@ -134,13 +136,14 @@ function validarTemplate(t: Omit<Template, 'versao'>, taxonomia: Taxonomia): str
     if (x.fim < x.inicio) throw new Error(`${x.id}: Fim antes do Início`);
     if (!x.titulo) throw new Error(`${x.id}: sem título`);
     if (!taxonomia.fases.includes(x.fase)) throw new Error(`${x.id}: fase "${x.fase}" fora da lista`);
-    if (!taxonomia.categoriasTarefa.includes(x.categoria)) avisos.push(`${x.id}: categoria "${x.categoria}" fora da lista`);
-    if (!taxonomia.papeis.includes(x.papel)) avisos.push(`${x.id}: papel "${x.papel}" fora da lista`);
+    if (!taxonomia.categoriasTarefa.includes(x.categoria)) throw new Error(`${x.id}: categoria "${x.categoria}" fora da lista`);
+    if (!taxonomia.papeis.includes(x.papel)) throw new Error(`${x.id}: papel "${x.papel}" fora da lista`);
   }
   for (const r of t.rubricas) {
-    if (!taxonomia.categoriasOrcamento.includes(r.categoria)) avisos.push(`${t.codigo}: rubrica "${r.descricao}" com categoria "${r.categoria}" fora da lista`);
+    if (!taxonomia.categoriasOrcamento.includes(r.categoria)) {
+      throw new Error(`${t.codigo}: rubrica "${r.descricao}" com categoria "${r.categoria}" fora da lista`);
+    }
   }
-  return avisos;
 }
 
 function lerRubricas(ws: ExcelJS.Worksheet): Map<string, RubricaTemplate[]> {
@@ -161,7 +164,7 @@ export function versaoDe(t: Omit<Template, 'versao'>): string {
   return createHash('sha256').update(JSON.stringify(t)).digest('hex').slice(0, 12);
 }
 
-export async function converter(caminho = CAMINHO_EXCEL): Promise<{ taxonomia: Taxonomia; templates: Template[]; avisos: string[] }> {
+export async function converter(caminho = CAMINHO_EXCEL): Promise<{ taxonomia: Taxonomia; templates: Template[] }> {
   const livro = new ExcelJS.Workbook();
   await livro.xlsx.readFile(caminho);
   const folha = (nome: string) => {
@@ -171,16 +174,15 @@ export async function converter(caminho = CAMINHO_EXCEL): Promise<{ taxonomia: T
   };
   const taxonomia = lerTaxonomia(folha('Taxonomia'));
   const rubricas = lerRubricas(folha('Orçamento_Modelos'));
-  const avisos: string[] = [];
   const templates = livro.worksheets
     .filter((ws) => /^T\d{2}_/.test(ws.name))
     .map((ws) => {
       const base = lerTemplate(ws);
       const semVersao = { ...base, rubricas: rubricas.get(base.codigo) ?? [] };
-      avisos.push(...validarTemplate(semVersao, taxonomia));
+      validarTemplate(semVersao, taxonomia);
       return { ...semVersao, versao: versaoDe(semVersao) };
     });
-  return { taxonomia, templates, avisos };
+  return { taxonomia, templates };
 }
 
 export function serializar(dados: unknown): string {

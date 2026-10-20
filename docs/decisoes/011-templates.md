@@ -1,6 +1,6 @@
 # 011 — Dados dos templates
 
-**Data:** 20/10/2026 · **Estado:** Em vigor (Fase 2, primeiro PR)
+**Data:** 20/10/2026 · **Estado:** Em vigor (Fase 2, primeiro PR; taxonomia e ordem decididas a 20/10/2026)
 
 ## Fonte e conversão
 
@@ -15,22 +15,21 @@
 
 Para ler o Excel. Escolhida por ser mantida, ler `.xlsx` sem serviços externos e ter tipos TypeScript. A alternativa mais conhecida (`xlsx`/SheetJS) deixou de ser publicada no npm e a versão lá disponível tem vulnerabilidades conhecidas. A `exceljs` só é usada pelo conversor e pelos testes: **não entra na aplicação em produção**. Traz um aviso moderado numa dependência interna (`uuid`, numa função que não é usada aqui); a auditoria das dependências de produção continua com 0 vulnerabilidades.
 
-## Ajustes à taxonomia
+## Ajustes à taxonomia (decididos pelo Adriano a 20/10/2026)
 
-- **Papel "Registo"** acrescentado à lista de papéis. O T01 atribui-lhe 6 tarefas (presenças, clipping, relatórios). Opção recomendada ao Adriano; **a confirmar**. Se preferir, as tarefas passam para "Comunicação" e retira-se o papel.
+Os templates usavam valores que não estavam nas listas da folha Taxonomia. O Adriano decidiu **acrescentá-los às listas**, porque reflectem trabalho real (segurança num festival, alojamento de oradores, licenças):
 
-## Pendente de decisão antes de lançar T02, T03 e T04
+| Lista | Valores acrescentados | Onde são usados |
+|---|---|---|
+| Categorias de tarefa | Alojamento, Artístico, Produção, Segurança, Transporte | T02, T03, T04 |
+| Papéis | Registo | T01 (presenças, clipping, relatórios) |
+| Papéis | Legal, Segurança | T03, T04 |
+| Categorias de orçamento | Legal | T02 (registo civil), T04 (licenças, direitos de autor, vistos) |
 
-Estes templates usam valores fora das listas fechadas da folha Taxonomia. Os testes registam exactamente estas diferenças: uma nova faz o teste falhar.
+Os valores estão em `scripts/converter-templates.ts`. Quando o Excel for actualizado, convém acrescentá-los também à folha Taxonomia.
 
-| Template | Categorias de tarefa fora da lista | Papéis fora da lista | Categorias de orçamento fora da lista |
-|---|---|---|---|
-| T02 Casamento | Alojamento, Artístico, Produção, Segurança, Transporte | — | Legal |
-| T03 Congresso | Alojamento, Produção, Segurança, Transporte | Legal | — |
-| T04 Festival / Concerto | Alojamento, Artístico, Produção, Segurança, Transporte | Legal, Segurança | Legal |
+Desde esta decisão, **as listas são fechadas a sério**: um valor fora delas pára a conversão do Excel, com a linha exacta, em vez de dar apenas um aviso.
 
-Para cada um: ou se acrescenta à lista fechada (e aos gráficos e filtros), ou se corrige no Excel para uma categoria/papel existente.
+## Ordem de lançamento (decidida pelo Adriano a 20/10/2026)
 
-## Ordem de lançamento
-
-O Excel actual recomenda **T01 → T03 → T04 → T02** (o T04 entrou depois do `CLAUDE.md` ser escrito, que diz T01 → T03 → T02). **A confirmar pelo Adriano** e actualizar o `CLAUDE.md`.
+**T01 Conferência de Imprensa → T03 Congresso → T04 Festival / Concerto → T02 Casamento**, como no Excel. O `CLAUDE.md` foi actualizado.

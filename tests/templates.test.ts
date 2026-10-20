@@ -77,8 +77,8 @@ describe('conteúdo dos templates (CLAUDE.md, secção 9)', () => {
     }
   });
 
-  it('T01 usa apenas categorias, papéis e categorias de orçamento das listas fechadas', () => {
-    const t = templates.T01!;
+  it.each(['T01', 'T02', 'T03', 'T04'])('%s usa apenas categorias, papéis e categorias de orçamento das listas fechadas', (codigo) => {
+    const t = templates[codigo]!;
     for (const x of t.tarefas) {
       expect(taxonomia.categoriasTarefa, `${x.id}: categoria`).toContain(x.categoria);
       expect(taxonomia.papeis, `${x.id}: papel`).toContain(x.papel);
@@ -86,18 +86,11 @@ describe('conteúdo dos templates (CLAUDE.md, secção 9)', () => {
     for (const r of t.rubricas) expect(taxonomia.categoriasOrcamento, r.descricao).toContain(r.categoria);
   });
 
-  // Diferenças conhecidas entre o Excel e as listas fechadas, à espera de decisão do Adriano antes de
-  // estes templates serem lançados (docs/decisoes/011-templates.md). Uma diferença nova faz o teste falhar.
-  it.each([
-    ['T02', ['Alojamento', 'Artístico', 'Produção', 'Segurança', 'Transporte'], [], ['Legal']],
-    ['T03', ['Alojamento', 'Produção', 'Segurança', 'Transporte'], ['Legal'], []],
-    ['T04', ['Alojamento', 'Artístico', 'Produção', 'Segurança', 'Transporte'], ['Legal', 'Segurança'], ['Legal']],
-  ])('%s: só as diferenças conhecidas às listas fechadas', (codigo, categorias, papeis, orcamento) => {
-    const t = templates[codigo]!;
-    const fora = (valores: string[], lista: string[]) => [...new Set(valores.filter((v) => !lista.includes(v)))].sort();
-    expect(fora(t.tarefas.map((x) => x.categoria), taxonomia.categoriasTarefa)).toEqual(categorias);
-    expect(fora(t.tarefas.map((x) => x.papel), taxonomia.papeis)).toEqual(papeis);
-    expect(fora(t.rubricas.map((r) => r.categoria), taxonomia.categoriasOrcamento)).toEqual(orcamento);
+  it('as listas incluem os valores aprovados pelo Adriano (decisão 011)', () => {
+    expect(taxonomia.categoriasTarefa).toEqual(expect.arrayContaining(['Alojamento', 'Artístico', 'Produção', 'Segurança', 'Transporte']));
+    expect(taxonomia.papeis).toEqual(expect.arrayContaining(['Registo', 'Legal', 'Segurança']));
+    expect(taxonomia.categoriasOrcamento).toContain('Legal');
+    for (const lista of Object.values(taxonomia)) expect(new Set(lista).size).toBe(lista.length);
   });
 
   it.each([
@@ -149,7 +142,6 @@ describe('o conversor recusa erros no Excel em vez de os passar para o produto',
     const r = await converter(await excelDeTeste([tarefaBoa]));
     expect(r.templates[0]!.tarefas[0]).toMatchObject({ id: 'T09-001', inicio: -10, fim: -10, critica: true });
     expect(r.taxonomia.categoriasTarefa).toContain('Nova sem descrição');
-    expect(r.avisos).toEqual([]);
   });
 
   it.each(['S', 'Sím', 'Yes', 'x'])('Crítica = "%s" é um erro (só "Sim" ou vazio)', async (valor) => {
@@ -184,10 +176,12 @@ describe('o conversor recusa erros no Excel em vez de os passar para o produto',
     await expect(converter(await excelDeTeste([tarefa]))).rejects.toThrow(/erro na célula/);
   });
 
-  it('categoria ou papel fora da lista dá aviso (há templates com diferenças à espera de decisão)', async () => {
-    const tarefa = [...tarefaBoa];
-    tarefa[2] = 'Alojamento';
-    const r = await converter(await excelDeTeste([tarefa]));
-    expect(r.avisos).toEqual(['T09-001: categoria "Alojamento" fora da lista']);
+  it('categoria ou papel fora da lista é um erro', async () => {
+    const categoria = [...tarefaBoa];
+    categoria[2] = 'Catering';
+    await expect(converter(await excelDeTeste([categoria]))).rejects.toThrow('T09-001: categoria "Catering" fora da lista');
+    const papel = [...tarefaBoa];
+    papel[4] = 'Estagiário';
+    await expect(converter(await excelDeTeste([papel]))).rejects.toThrow('T09-001: papel "Estagiário" fora da lista');
   });
 });
