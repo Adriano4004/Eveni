@@ -1,0 +1,42 @@
+{
+  "fases": [
+    "Pré Produção",
+    "Produção",
+    "Pós Produção"
+  ],
+  "categoriasTarefa": [
+    "Estratégia",
+    "Local e Logística",
+    "Fornecedores",
+    "Comunicação",
+    "Convidados",
+    "Protocolo",
+    "Técnica",
+    "Financeiro",
+    "Legal",
+    "Equipa",
+    "Registo"
+  ],
+  "papeis": [
+    "Gestor",
+    "Produção",
+    "Comunicação",
+    "Financeiro",
+    "Protocolo",
+    "Técnica",
+    "Cliente",
+    "Registo"
+  ],
+  "categoriasOrcamento": [
+    "Local",
+    "Divulgação",
+    "Decoração/Iluminação",
+    "Equipamentos",
+    "Alimentação/Hospedagem",
+    "Equipa de trabalho",
+    "Artístico",
+    "Segurança",
+    "Transporte",
+    "Outros"
+  ]
+}
