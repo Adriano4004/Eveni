@@ -175,6 +175,8 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
         </ul>
       </section>
 
+      {projecto.podeArquivar && <AcessosProjecto projecto={projecto} aoMudar={setProjecto} />}
+
       {!arquivado && projecto.podeArquivar && (
         <section className="seccao" aria-labelledby="titulo-arquivar">
           <h2 id="titulo-arquivar">{p.arquivar}</h2>
@@ -183,6 +185,119 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
         </section>
       )}
     </main>
+  );
+}
+
+// Só para o dono do espaço: quem tem acesso ao projecto, mudar o papel, retirar e dar acesso a quem é
+// da equipa. Depois de cada alteração, o projecto é lido de novo (os responsáveis podem ter mudado).
+function AcessosProjecto({ projecto, aoMudar }: { projecto: Projecto; aoMudar: Dispatch<SetStateAction<Projecto | undefined>> }) {
+  const id = useId();
+  const [erro, setErro] = useState<string>();
+  const [aEnviar, setAEnviar] = useState(false);
+  const [pessoa, setPessoa] = useState('');
+  const [papel, setPapel] = useState<'editor' | 'viewer'>('editor');
+  const outros = projecto.membros.filter((m) => m.papel !== 'owner');
+  const base = `/api/projectos/${encodeURIComponent(projecto.id)}/acessos`;
+
+  async function alterar(caminho: string, corpo?: object, confirmacao?: string) {
+    if (confirmacao && !confirm(confirmacao)) return;
+    setAEnviar(true);
+    setErro(undefined);
+    try {
+      await api('POST', caminho, corpo);
+      aoMudar(await api<Projecto>('GET', `/api/projectos/${encodeURIComponent(projecto.id)}`));
+      setPessoa('');
+    } catch (falha) {
+      setErro(mensagemDeErro(falha));
+    } finally {
+      setAEnviar(false);
+    }
+  }
+
+  return (
+    <section className="seccao" aria-labelledby="titulo-acessos">
+      <h2 id="titulo-acessos">{p.acessos}</h2>
+      <p className="campo__ajuda">{p.acessosTexto}</p>
+      {erro && (
+        <p className="formulario__erro" role="alert">
+          {erro}
+        </p>
+      )}
+      <ul className="lista-equipa">
+        {projecto.membros
+          .filter((m) => m.papel === 'owner')
+          .map((m) => (
+            <li key={m.id}>
+              <strong>{m.nome}</strong>
+              <span className="etiqueta">{p.papeisAcesso.owner}</span>
+            </li>
+          ))}
+        {outros.map((m) => (
+          <li key={m.id}>
+            <strong>{m.nome}</strong>
+            <span className="acesso__accoes">
+              <select
+                aria-label={`${p.acesso}: ${m.nome}`}
+                value={m.papel}
+                disabled={aEnviar}
+                onChange={(evento) => alterar(base, { utilizadorId: m.id, papel: evento.target.value })}
+              >
+                <option value="editor">{p.papeisAcesso.editor}</option>
+                <option value="viewer">{p.papeisAcesso.viewer}</option>
+              </select>
+              <button
+                className="botao botao--secundario botao--compacto"
+                type="button"
+                disabled={aEnviar}
+                onClick={() => alterar(`${base}/${m.id}/remover`, undefined, p.confirmarRetirarAcesso(m.nome))}
+              >
+                {p.retirarAcesso}
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {projecto.semAcesso.length > 0 ? (
+        <form
+          className="formulario dar-acesso"
+          onSubmit={(evento) => {
+            evento.preventDefault();
+            if (pessoa) alterar(base, { utilizadorId: pessoa, papel });
+          }}
+        >
+          <div className="campo">
+            <label htmlFor={`${id}-pessoa`}>{p.pessoa}</label>
+            <select id={`${id}-pessoa`} value={pessoa} required onChange={(evento) => setPessoa(evento.target.value)}>
+              <option value="">—</option>
+              {projecto.semAcesso.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor={`${id}-papel`}>{p.acesso}</label>
+            <select id={`${id}-papel`} value={papel} onChange={(evento) => setPapel(evento.target.value as 'editor' | 'viewer')}>
+              <option value="editor">{p.papeisAcesso.editor}</option>
+              <option value="viewer">{p.papeisAcesso.viewer}</option>
+            </select>
+          </div>
+          <button className="botao" type="submit" disabled={aEnviar || !pessoa}>
+            {p.darAcesso}
+          </button>
+        </form>
+      ) : outros.length > 0 ? (
+        <p className="campo__ajuda">{p.todosComAcesso}</p>
+      ) : (
+        <>
+          <p className="campo__ajuda">{p.semEquipa}</p>
+          <button className="botao botao--secundario" type="button" onClick={() => navegar('/equipa')}>
+            {p.irEquipa}
+          </button>
+        </>
+      )}
+    </section>
   );
 }
 

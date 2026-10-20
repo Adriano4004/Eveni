@@ -93,8 +93,10 @@ export interface Projecto extends ResumoProjecto {
   hoje: string;
   // Quem tem acesso ao projecto. Só donos e editores podem ser responsáveis por tarefas.
   membros: (Pessoa & { papel: PapelNoProjecto })[];
-  // Quem está a ver é dono do espaço de trabalho (pode arquivar e restaurar).
+  // Quem está a ver é dono do espaço de trabalho (pode arquivar e restaurar, e dar acessos).
   podeArquivar: boolean;
+  // Só para o dono: membros da equipa sem acesso a este projecto, a quem o pode dar. Só nomes.
+  semAcesso: Pessoa[];
   tarefasDoProjecto: TarefaProjecto[];
   orcamento: ItemOrcamento[];
 }

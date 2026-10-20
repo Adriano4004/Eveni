@@ -96,6 +96,20 @@ Resultado da revisão de segurança deste PR:
 - **Logs do servidor:** os tokens das ligações (`?token=`) aparecem sempre escondidos. Isto vale para os convites, a confirmação de e-mail e a recuperação de palavra-passe.
 - **Texto livre nos e-mails:** o nome de quem convida e o nome do espaço são escolhidos pelo dono. Vão escapados, mas o texto não é verificado. Por isso só os planos pagos convidam, com os limites acima. Se aparecer abuso, a opção seguinte é tirar esses nomes do e-mail.
 
-Ainda não existe nesta fase:
-- dar acesso a um projecto a um membro (próximo PR);
+## Dar acesso aos projectos (terceiro PR da Fase 4)
+
+- **Onde se gere:** na página de cada projecto, o dono do espaço tem a secção "Pessoas com acesso". Lá pode:
+  - dar acesso a um membro da equipa, como **editor** ou **leitor**;
+  - mudar o papel de quem já tem acesso;
+  - retirar o acesso.
+- **Quem pode receber acesso:** só membros da equipa deste espaço que não sejam o dono. O servidor verifica sempre a pessoa enviada no pedido.
+- **Responsáveis:** passar alguém a leitor, ou retirar-lhe o acesso, deixa sem responsável as tarefas desse projecto que eram dele.
+- **Projectos arquivados:** também se podem gerir acessos, por exemplo para retirar acessos depois do evento.
+- **Auditoria:** fica registado cada acesso dado, mudado ou retirado (`projecto.acesso_dado`, `projecto.acesso_retirado`).
+- **Quem não é dono** não gere acessos:
+  - editores e leitores recebem "sem permissão";
+  - quem não tem acesso ao projecto recebe "não encontrado".
+- **Lista de membros sem acesso:** só vai para o dono.
+
+Ainda não existe:
 - um membro sair sozinho de uma equipa.

@@ -147,3 +147,9 @@ export const actualizarTarefa = z
 // Equipa e convites.
 export const convidar = z.object({ email });
 export const tokenConvite = z.object({ token: z.string().min(1).max(100) });
+
+// Dar ou mudar o acesso de um membro da equipa a um projecto.
+export const darAcesso = z.object({
+  utilizadorId: z.uuid({ error: m.membroInvalido }),
+  papel: z.enum(['editor', 'viewer'], { error: m.papelInvalido }),
+});

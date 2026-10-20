@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import { z } from 'zod';
 import { diasEntre, hojeEmLuanda } from '../../shared/datas.js';
-import { actualizarTarefa, type CodigoPlano, criarProjecto, previsaoProjecto } from '../../shared/esquemas.js';
+import { actualizarTarefa, type CodigoPlano, criarProjecto, darAcesso, previsaoProjecto } from '../../shared/esquemas.js';
 import { materializar } from '../../shared/materializacao.js';
 import { mensagens } from '../../shared/mensagens.js';
 import {
@@ -205,6 +205,71 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     });
   }
 
+  // Dar, mudar ou retirar o acesso de um membro da equipa a um projecto. Só o dono do espaço.
+  // A pessoa tem de ser membro (não dono) do espaço do projecto: verificado no servidor, com o ID que vem
+  // no corpo ou no endereço (CLAUDE.md, secção 5, regra 5).
+  async function donoDoProjecto(cliente: pg.PoolClient, projectoId: string, utilizadorId: string): Promise<string> {
+    const { rows } = await cliente.query<{ workspace_id: string; papel: PapelNoProjecto | null }>(
+      'select p.workspace_id, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1 for update of p',
+      [projectoId, utilizadorId],
+    );
+    if (!rows[0]?.papel) throw new ErroHttp(404, m.naoEncontrado);
+    if (rows[0].papel !== 'owner') throw new ErroHttp(403, m.soDonoAcessos);
+    return rows[0].workspace_id;
+  }
+
+  app.post('/api/projectos/:id/acessos', { preHandler: guardas.exigirEmailConfirmado }, async (pedido, resposta) => {
+    const parametros = idProjecto.safeParse(pedido.params);
+    if (!parametros.success) throw new ErroHttp(404, m.naoEncontrado);
+    const projectoId = parametros.data.id;
+    const dados = validar(darAcesso, pedido.body);
+    const { utilizadorId } = pedido.sessao!;
+    await emTransaccao(pool, async (cliente) => {
+      const espacoId = await donoDoProjecto(cliente, projectoId, utilizadorId);
+      const { rows: membro } = await cliente.query(
+        "select 1 from workspace_members where workspace_id = $1 and user_id = $2 and role = 'member'",
+        [espacoId, dados.utilizadorId],
+      );
+      if (membro.length === 0) throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { utilizadorId: mensagens.validacao.membroInvalido });
+      await cliente.query(
+        `insert into project_members (project_id, user_id, role) values ($1, $2, $3)
+         on conflict (project_id, user_id) do update set role = excluded.role`,
+        [projectoId, dados.utilizadorId, dados.papel],
+      );
+      // Um leitor não pode ser responsável: ao passar a leitor, as tarefas dele ficam sem responsável.
+      if (dados.papel === 'viewer') {
+        await cliente.query('update tasks set assignee_id = null, updated_at = clock_timestamp() where project_id = $1 and assignee_id = $2', [
+          projectoId,
+          dados.utilizadorId,
+        ]);
+      }
+      await auditar(cliente, 'projecto.acesso_dado', {
+        utilizadorId,
+        ip: pedido.ip,
+        detalhes: { projectoId, membroId: dados.utilizadorId, papel: dados.papel },
+      });
+    });
+    return resposta.code(204).send();
+  });
+
+  app.post('/api/projectos/:id/acessos/:utilizador/remover', { preHandler: guardas.exigirEmailConfirmado }, async (pedido, resposta) => {
+    const parametros = z.object({ id: z.uuid(), utilizador: z.uuid() }).safeParse(pedido.params);
+    if (!parametros.success) throw new ErroHttp(404, m.acessoNaoEncontrado);
+    const { id: projectoId, utilizador: membro } = parametros.data;
+    const { utilizadorId } = pedido.sessao!;
+    await emTransaccao(pool, async (cliente) => {
+      await donoDoProjecto(cliente, projectoId, utilizadorId);
+      const { rows } = await cliente.query('delete from project_members where project_id = $1 and user_id = $2 returning user_id', [projectoId, membro]);
+      if (rows.length === 0) throw new ErroHttp(404, m.acessoNaoEncontrado);
+      await cliente.query('update tasks set assignee_id = null, updated_at = clock_timestamp() where project_id = $1 and assignee_id = $2', [
+        projectoId,
+        membro,
+      ]);
+      await auditar(cliente, 'projecto.acesso_retirado', { utilizadorId, ip: pedido.ip, detalhes: { projectoId, membroId: membro } });
+    });
+    return resposta.code(204).send();
+  });
+
   // Mudar o estado e/ou o responsável de uma tarefa.
   // Verifica no servidor, numa só transacção (regra de acesso: papel_no_projecto, decisão 017): que a pessoa
   // pode alterar o projecto (dono ou editor; o leitor só consulta), que a tarefa é desse projecto, que o
@@ -385,6 +450,7 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
     hoje: l.hoje,
     membros: membros.map((m) => ({ id: m.id, nome: m.name, papel: m.papel })),
     podeArquivar: l.papel === 'owner',
+    semAcesso: l.papel === 'owner' ? await membrosSemAcesso(pool, l.workspace_id, projectoId) : [],
     tarefasDoProjecto: tarefas.map(paraTarefa),
     orcamento: itens.map((i) => ({
       id: i.id,
@@ -397,4 +463,15 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
       realCentimos: Number(i.actual_cents),
     })),
   };
+}
+
+// Membros da equipa (não donos) sem acesso ao projecto: a quem o dono o pode dar. Só nomes.
+async function membrosSemAcesso(pool: pg.Pool, espacoId: string, projectoId: string) {
+  const { rows } = await pool.query<{ id: string; name: string }>(
+    `select u.id, u.name from workspace_members wm join users u on u.id = wm.user_id
+      where wm.workspace_id = $1 and wm.role = 'member' and papel_no_projecto($2, u.id) is null
+      order by u.name, u.id`,
+    [espacoId, projectoId],
+  );
+  return rows.map((r) => ({ id: r.id, nome: r.name }));
 }
