@@ -96,16 +96,18 @@ export function EcraNovoProjecto() {
   useEffect(() => {
     setPrevisao(undefined);
     setAceitar(false);
+    setErros((anteriores) => ({ ...anteriores, dataEvento: '' }));
     if (!template || !/^\d{4}-\d{2}-\d{2}$/.test(dataEvento)) return;
     let actual = true;
     setAVerificar(true);
-    setErros((anteriores) => ({ ...anteriores, dataEvento: '' }));
     api<Previsao>('POST', '/api/projectos/previsao', { template, dataEvento })
       .then((p) => actual && setPrevisao(p))
       .catch((falha) => actual && falha instanceof ErroApi && setErros((anteriores) => ({ ...anteriores, ...falha.campos })))
       .finally(() => actual && setAVerificar(false));
     return () => {
+      // Pedido anterior ignorado: o indicador não pode ficar preso se a data ficar vazia entretanto.
       actual = false;
+      setAVerificar(false);
     };
   }, [template, dataEvento]);
 

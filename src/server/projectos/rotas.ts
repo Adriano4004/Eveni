@@ -52,6 +52,7 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
 
   // Mostra os avisos antes de criar: tarefas críticas que já deviam ter começado.
   app.post('/api/projectos/previsao', { preHandler: guardas.exigirSessao }, async (pedido): Promise<Previsao> => {
+    await limitar(pool, `prever-projecto:${pedido.sessao!.utilizadorId}`, LIMITES.preverProjecto);
     const dados = validar(previsaoProjecto, pedido.body);
     return resumoPrevisao(prepararCriacao(dados.template, dados.dataEvento).previsao);
   });
@@ -63,18 +64,19 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const { template, previsao } = prepararCriacao(dados.template, dados.dataEvento);
 
     const resultado = await emTransaccao(pool, async (cliente) => {
+      // O espaço de que a pessoa é dona (os papéis dos outros membros chegam na Fase 4).
       // Bloqueia o espaço até ao fim da transacção: dois pedidos em simultâneo não passam ambos o limite.
       const { rows: espacos } = await cliente.query<{ id: string; plan_code: CodigoPlano; plan_started_at: Date }>(
         `select w.id, w.plan_code, w.plan_started_at
            from workspace_members wm join workspaces w on w.id = wm.workspace_id
-          where wm.user_id = $1
-          order by (wm.role = 'owner') desc, wm.created_at
+          where wm.user_id = $1 and wm.role = 'owner'
+          order by wm.created_at
           limit 1
             for update of w`,
         [utilizadorId],
       );
       const espaco = espacos[0];
-      if (!espaco) throw new ErroHttp(401, mensagens.contas.sessaoNecessaria);
+      if (!espaco) throw new ErroHttp(403, mensagens.erros.semPermissao);
 
       const limite = LIMITE_PROJECTOS[espaco.plan_code];
       if (limite !== null) {

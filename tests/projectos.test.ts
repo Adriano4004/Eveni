@@ -172,10 +172,21 @@ describe('criar projecto', () => {
 
   it('as datas guardadas não mudam de dia com o fuso horário do servidor', async () => {
     const cookie = await contaConfirmada();
-    const { id } = (await criar(cookie, { dataEvento: '2027-01-01' })).json();
-    const { rows } = await base.pool.query('select event_date from projects where id = $1', [id]);
-    expect(rows[0].event_date).toBe('2027-01-01');
-    expect((await c.get(`/api/projectos/${id}`, cookie)).json().dataEvento).toBe('2027-01-01');
+    const data = emDias(200);
+    const { id } = (await criar(cookie, { dataEvento: data })).json();
+    // Com o fuso da sessão da base de dados bem longe de Luanda, as datas continuam a ser o mesmo texto:
+    // nunca passam por um instante (Date) que pudesse mudar de dia.
+    const cliente = await base.pool.connect();
+    try {
+      await cliente.query("set time zone 'Pacific/Kiritimati'");
+      const { rows } = await cliente.query('select event_date, (select min(start_date) from tasks where project_id = $1) as inicio from projects where id = $1', [id]);
+      expect(rows[0].event_date).toBe(data);
+      expect(rows[0].inicio).toBe(somarDias(data, -21));
+    } finally {
+      await cliente.query('reset time zone');
+      cliente.release();
+    }
+    expect((await c.get(`/api/projectos/${id}`, cookie)).json().dataEvento).toBe(data);
   });
 
   it('com tarefas críticas sem tempo, só cria depois de a pessoa aceitar os avisos', async () => {
@@ -260,6 +271,16 @@ describe('limite de projectos do plano', () => {
     expect((await criar(cookie)).statusCode).toBe(201);
   });
 
+  it('só contam os projectos desde o início do período do plano', async () => {
+    const cookie = await contaConfirmada();
+    await criar(cookie);
+    // Novo período do plano (ex.: renovação): o projecto anterior deixa de contar.
+    await base.pool.query("update projects set created_at = now() - interval '2 days'");
+    await base.pool.query("update workspaces set plan_started_at = now() - interval '1 day'");
+    expect((await criar(cookie, { nome: 'Do novo período' })).statusCode).toBe(201);
+    expect((await criar(cookie, { nome: 'Terceiro' })).statusCode).toBe(403);
+  });
+
   it('Empresarial: sem limite de projectos', async () => {
     const cookie = await contaConfirmada();
     await mudarPlano('ana@exemplo.ao', 'empresarial');
@@ -302,6 +323,24 @@ describe('acesso aos projectos', () => {
     for (const id of ["1' or '1'='1", 'abc', '%00', '00000000-0000-4000-8000-00000000000g']) {
       expect((await c.get(`/api/projectos/${encodeURIComponent(id)}`, ana)).statusCode, id).toBe(404);
     }
+  });
+
+  it('só o dono do espaço cria projectos (um membro sem espaço próprio não cria no espaço de outra pessoa)', async () => {
+    const ana = await contaConfirmada();
+    const bruno = await contaConfirmada('bruno@exemplo.ao', 'Bruno Neto');
+    // Situação da Fase 4: o Bruno passa a membro do espaço da Ana e deixa de ter espaço próprio.
+    const espacoAna = (await c.eu(ana)).json().espaco.id;
+    await base.pool.query("delete from workspaces where id = (select workspace_id from workspace_members wm join users u on u.id = wm.user_id where u.email = 'bruno@exemplo.ao')");
+    await base.pool.query("insert into workspace_members (workspace_id, user_id, role) select $1, id, 'member' from users where email = 'bruno@exemplo.ao'", [espacoAna]);
+    const r = await criar(bruno);
+    expect(r.statusCode).toBe(403);
+    expect(await contar('projects')).toBe(0);
+  });
+
+  it('a previsão tem limite de pedidos', async () => {
+    const ana = await contaConfirmada();
+    await base.pool.query("insert into rate_limits (key, count, window_start) select 'prever-projecto:' || id, 300, now() from users");
+    expect((await c.post('/api/projectos/previsao', { template: 'T01', dataEvento: emDias(30) }, ana)).statusCode).toBe(429);
   });
 
   it('criar exige um pedido vindo do próprio Eveni (protecção CSRF)', async () => {

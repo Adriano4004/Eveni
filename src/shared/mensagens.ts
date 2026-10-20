@@ -16,6 +16,7 @@ export const mensagens = {
     interno: 'Ocorreu um erro inesperado. Tente novamente dentro de momentos.',
     origemInvalida: 'Pedido recusado por motivos de segurança. Recarregue a página e tente novamente.',
     semLigacao: 'Sem ligação ao servidor. Verifique a internet e tente novamente.',
+    semPermissao: 'Não tem permissão para fazer isto.',
   },
   validacao: {
     nomeObrigatorio: 'Indique o seu nome.',
