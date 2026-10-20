@@ -89,6 +89,13 @@ describe('responsável', () => {
     expect((await alterar(cookie, p.id, t.id, { responsavelId: null })).json().responsavel).toBeNull();
   });
 
+  it('estado e responsável no mesmo pedido', async () => {
+    const { cookie, id } = await contaConfirmada();
+    const p = await criarProjecto(cookie);
+    const r = await alterar(cookie, p.id, p.tarefasDoProjecto[1]!.id, { estado: 'in_progress', responsavelId: id });
+    expect(r.json()).toMatchObject({ estado: 'in_progress', responsavel: { id, nome: 'Ana Domingos' } });
+  });
+
   it('não aceita como responsável alguém de fora do espaço de trabalho (ID secundário no corpo)', async () => {
     const { cookie } = await contaConfirmada();
     const bruno = await contaConfirmada('bruno@exemplo.ao', 'Bruno Neto');
@@ -161,6 +168,16 @@ describe('acesso indevido às tarefas', () => {
     expect((await alterar(cookie, 'abc', t.id, { estado: 'done' })).statusCode).toBe(404);
   });
 
+  it('sem o e-mail confirmado, não altera', async () => {
+    const { cookie, id } = await contaConfirmada();
+    const p = await criarProjecto(cookie);
+    await base.pool.query('update users set email_verified_at = null where id = $1', [id]);
+    const r = await alterar(cookie, p.id, p.tarefasDoProjecto[0]!.id, { estado: 'done' });
+    expect(r.statusCode).toBe(403);
+    const { rows } = await base.pool.query('select status from tasks where id = $1', [p.tarefasDoProjecto[0]!.id]);
+    expect(rows[0].status).toBe('pending');
+  });
+
   it('projecto arquivado: só leitura', async () => {
     const { cookie } = await contaConfirmada();
     const p = await criarProjecto(cookie);
@@ -196,8 +213,8 @@ describe('tarefas críticas em atraso', () => {
     expect(p.criticasEmAtraso).toBe(0);
     const deHoje = p.tarefasDoProjecto.filter((t) => t.fim === hojeEmLuanda());
     expect(deHoje.length).toBeGreaterThan(0);
+    // Incluindo tarefas críticas (D-21 no T01): acabam hoje, ainda não estão em atraso.
+    expect(deHoje.filter((t) => t.critica).length).toBe(T01.tarefas.filter((t) => t.critica && t.fim === -21).length);
     for (const t of deHoje) expect(t.emAtraso).toBe(false);
-    // O primeiro dia do T01 tem tarefas críticas (D-21).
-    expect(T01.tarefas.some((t) => t.critica && t.fim === -21)).toBe(true);
   });
 });
