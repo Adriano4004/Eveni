@@ -110,6 +110,13 @@ Resultado da revisão de segurança deste PR:
   - editores e leitores recebem "sem permissão";
   - quem não tem acesso ao projecto recebe "não encontrado".
 - **Lista de membros sem acesso:** só vai para o dono.
+- **Passar a leitor pede confirmação,** tal como retirar o acesso, porque também deixa sem responsável as tarefas da pessoa.
+- **Pedidos em simultâneo:**
+  - todas as alterações reservam o projecto antes das tarefas, pela mesma ordem;
+  - dar acesso, ou escolher um responsável, reserva também a entrada da pessoa na equipa.
+
+  Assim, retirar alguém da equipa no mesmo instante espera e limpa tudo.
+- **Voltar a entrar na equipa:** ao aceitar um convite, apagam-se os acessos antigos que a pessoa possa ter nesse espaço. Quem entra começa sempre sem projectos.
 
 Ainda não existe:
 - um membro sair sozinho de uma equipa.

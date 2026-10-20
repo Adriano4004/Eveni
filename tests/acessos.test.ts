@@ -104,6 +104,75 @@ describe('o dono dá e retira acessos', () => {
   });
 });
 
+describe('casos-limite', () => {
+  it('passar a leitor ou retirar só mexe nas tarefas DESTE projecto', async () => {
+    const { ana, bruno, projecto } = await cenario();
+    const outro: string = (
+      await c.post('/api/projectos', { template: 'T01', nome: 'Outro', dataEvento: somarDias(hojeEmLuanda(), 40) }, ana.cookie)
+    ).json().id;
+    for (const p of [projecto, outro]) {
+      await dar(ana.cookie, p, bruno.id, 'editor');
+      const tarefa = (await c.get(`/api/projectos/${p}`, ana.cookie)).json().tarefasDoProjecto[0].id;
+      await c.post(`/api/projectos/${p}/tarefas/${tarefa}`, { responsavelId: bruno.id }, ana.cookie);
+    }
+    await dar(ana.cookie, projecto, bruno.id, 'viewer');
+    await retirar(ana.cookie, projecto, bruno.id);
+    const { rows } = await base.pool.query<{ project_id: string }>('select project_id from tasks where assignee_id = $1', [bruno.id]);
+    expect(rows.map((r) => r.project_id)).toEqual([outro]);
+  });
+
+  it('de leitor a editor de novo, e repetir o mesmo pedido não muda nada', async () => {
+    const { ana, bruno, projecto } = await cenario();
+    await dar(ana.cookie, projecto, bruno.id, 'viewer');
+    await dar(ana.cookie, projecto, bruno.id, 'editor');
+    expect((await dar(ana.cookie, projecto, bruno.id, 'editor')).statusCode).toBe(204);
+    expect((await base.pool.query('select role from project_members')).rows).toEqual([{ role: 'editor' }]);
+    // A auditoria guarda só identificadores.
+    const { rows } = await base.pool.query("select details from audit_log where action = 'projecto.acesso_dado' limit 1");
+    expect(Object.keys(rows[0].details).sort()).toEqual(['membroId', 'papel', 'projectoId']);
+  });
+
+  it('quem volta a entrar na equipa não recupera acessos antigos', async () => {
+    const { ana, bruno, projecto } = await cenario();
+    await dar(ana.cookie, projecto, bruno.id, 'editor');
+    // Um acesso esquecido (por exemplo, de uma corrida entre dar acesso e retirar da equipa).
+    await base.pool.query('delete from workspace_members where user_id = $1 and role = $2', [bruno.id, 'member']);
+    expect((await base.pool.query('select count(*)::int as n from project_members')).rows[0].n).toBe(1);
+    const ligacao: string = (await c.post('/api/equipa/convites', { email: 'bruno@exemplo.ao' }, ana.cookie)).json().ligacao;
+    await c.post('/api/convites/aceitar', { token: decodeURIComponent(new URL(ligacao).searchParams.get('token')!) }, bruno.cookie);
+    expect((await c.get(`/api/projectos/${projecto}`, bruno.cookie)).statusCode).toBe(404);
+  });
+
+  it('dar acesso ao mesmo tempo que se retira a pessoa da equipa não deixa acessos esquecidos', async () => {
+    for (let ronda = 0; ronda < 5; ronda++) {
+      await limparBaseDeDados(base.pool);
+      const { ana, bruno, projecto } = await cenario();
+      await Promise.all([dar(ana.cookie, projecto, bruno.id, 'editor'), c.post(`/api/equipa/membros/${bruno.id}/remover`, {}, ana.cookie)]);
+      const { rows } = await base.pool.query(
+        `select count(*)::int as n from project_members pm
+          where not exists (select 1 from workspace_members wm join projects p on p.workspace_id = wm.workspace_id
+                             where p.id = pm.project_id and wm.user_id = pm.user_id)`,
+      );
+      expect(rows[0].n, `ronda ${ronda}`).toBe(0);
+    }
+  });
+
+  it('o editor a concluir tarefas ao mesmo tempo que o dono o passa a leitor: sem erros internos', async () => {
+    for (let ronda = 0; ronda < 3; ronda++) {
+      await limparBaseDeDados(base.pool);
+      const { ana, bruno, projecto } = await cenario();
+      await dar(ana.cookie, projecto, bruno.id, 'editor');
+      const tarefas: { id: string }[] = (await c.get(`/api/projectos/${projecto}`, ana.cookie)).json().tarefasDoProjecto.slice(0, 6);
+      for (const t of tarefas) await c.post(`/api/projectos/${projecto}/tarefas/${t.id}`, { responsavelId: bruno.id }, ana.cookie);
+      const respostas = await Promise.all([
+        ...tarefas.map((t) => c.post(`/api/projectos/${projecto}/tarefas/${t.id}`, { estado: 'done' }, bruno.cookie)),
+        ronda === 1 ? retirar(ana.cookie, projecto, bruno.id) : dar(ana.cookie, projecto, bruno.id, 'viewer'),
+      ]);
+      for (const r of respostas) expect(r.statusCode, r.body).toBeLessThan(500);
+    }
+  });
+});
+
 describe('IDs no pedido verificados no servidor', () => {
   it('só se dá acesso a membros (não donos) da equipa deste espaço', async () => {
     const { ana, daniel, projecto } = await cenario();

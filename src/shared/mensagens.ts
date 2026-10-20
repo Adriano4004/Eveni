@@ -275,6 +275,8 @@ export const mensagens = {
       retirarAcesso: 'Retirar acesso',
       confirmarRetirarAcesso: (nome: string) =>
         `Retirar o acesso de ${nome} a este projecto? As tarefas de que é responsável ficam sem responsável.`,
+      confirmarLeitor: (nome: string) =>
+        `Passar ${nome} a leitor? Só poderá consultar o projecto, e as tarefas de que é responsável ficam sem responsável.`,
       todosComAcesso: 'Todas as pessoas da equipa já têm acesso a este projecto.',
       semEquipa: 'Ainda não há mais ninguém na equipa. Pode convidar pessoas no ecrã Equipa.',
       irEquipa: 'Ir para a equipa',

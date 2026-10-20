@@ -76,7 +76,13 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
   const responsaveis = projecto.membros.filter((m) => m.papel !== 'viewer');
   // Fases pela ordem do template.
   const fases = valoresDistintos(projecto.tarefasDoProjecto, 'fase');
-  const visiveis = filtrarTarefas(projecto.tarefasDoProjecto, filtros, utilizadorId);
+  // Se a pessoa escolhida no filtro de responsável deixou de ter acesso, o filtro deixa de se aplicar
+  // (o menu já não a mostra; continuar a filtrar daria uma lista vazia sem explicação).
+  const filtrosValidos =
+    filtros.responsavel && ![RESPONSAVEL_EU, RESPONSAVEL_NINGUEM].includes(filtros.responsavel) && !projecto.membros.some((m) => m.id === filtros.responsavel)
+      ? { ...filtros, responsavel: undefined }
+      : filtros;
+  const visiveis = filtrarTarefas(projecto.tarefasDoProjecto, filtrosValidos, utilizadorId);
 
   return (
     <main className="cartao cartao--largo">
@@ -121,8 +127,8 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
             </button>
           ))}
         </div>
-        <PainelFiltros tarefas={projecto.tarefasDoProjecto} membros={projecto.membros} filtros={filtros} mudar={setFiltros} />
-        {filtrosActivos(filtros) > 0 && (
+        <PainelFiltros tarefas={projecto.tarefasDoProjecto} membros={projecto.membros} filtros={filtrosValidos} mudar={setFiltros} />
+        {filtrosActivos(filtrosValidos) > 0 && (
           <p className="campo__ajuda" aria-live="polite">
             {p.aMostrar(visiveis.length, projecto.tarefas)}
           </p>
@@ -240,7 +246,9 @@ function AcessosProjecto({ projecto, aoMudar }: { projecto: Projecto; aoMudar: D
                 aria-label={`${p.acesso}: ${m.nome}`}
                 value={m.papel}
                 disabled={aEnviar}
-                onChange={(evento) => alterar(base, { utilizadorId: m.id, papel: evento.target.value })}
+                onChange={(evento) =>
+                  alterar(base, { utilizadorId: m.id, papel: evento.target.value }, evento.target.value === 'viewer' ? p.confirmarLeitor(m.nome) : undefined)
+                }
               >
                 <option value="editor">{p.papeisAcesso.editor}</option>
                 <option value="viewer">{p.papeisAcesso.viewer}</option>

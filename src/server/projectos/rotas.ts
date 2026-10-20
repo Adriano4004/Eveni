@@ -226,8 +226,10 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const { utilizadorId } = pedido.sessao!;
     await emTransaccao(pool, async (cliente) => {
       const espacoId = await donoDoProjecto(cliente, projectoId, utilizadorId);
+      // Bloqueio em partilha da entrada na equipa: retirar a pessoa da equipa ao mesmo tempo espera por isto e
+      // depois apaga também este acesso (sem ele, ficava um acesso esquecido que voltava com um novo convite).
       const { rows: membro } = await cliente.query(
-        "select 1 from workspace_members where workspace_id = $1 and user_id = $2 and role = 'member'",
+        "select 1 from workspace_members where workspace_id = $1 and user_id = $2 and role = 'member' for share",
         [espacoId, dados.utilizadorId],
       );
       if (membro.length === 0) throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { utilizadorId: mensagens.validacao.membroInvalido });
@@ -283,14 +285,14 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const { utilizadorId } = pedido.sessao!;
 
     await emTransaccao(pool, async (cliente) => {
-      // Bloqueia a tarefa e o projecto: arquivar o projecto ao mesmo tempo espera por esta alteração.
-      const { rows } = await cliente.query<{ status: EstadoProjecto; papel: PapelNoProjecto | null }>(
-        `select p.status, papel_no_projecto(p.id, $3) as papel from tasks t join projects p on p.id = t.project_id
-          where t.id = $1 and t.project_id = $2
-            for update of t, p`,
-        [tarefaId, projectoId, utilizadorId],
+      // Bloqueia primeiro o projecto e só depois a tarefa, pela mesma ordem das rotas de arquivo e de acessos
+      // (ordens diferentes podiam bloquear-se mutuamente). Arquivar ou mudar acessos ao mesmo tempo espera.
+      const { rows: projectos } = await cliente.query<{ status: EstadoProjecto; papel: PapelNoProjecto | null }>(
+        'select p.status, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1 for update of p',
+        [projectoId, utilizadorId],
       );
-      const projecto = rows[0];
+      const { rows: tarefas } = await cliente.query('select 1 from tasks where id = $1 and project_id = $2 for update', [tarefaId, projectoId]);
+      const projecto = tarefas.length > 0 ? projectos[0] : undefined;
       // Tarefa inexistente, de outro projecto ou de um projecto sem acesso: a mesma resposta.
       if (!projecto?.papel) throw new ErroHttp(404, m.tarefaNaoEncontrada);
       if (projecto.papel === 'viewer') throw new ErroHttp(403, m.soLeitura);
@@ -299,6 +301,12 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
       // O responsável tem de poder alterar este projecto (dono ou editor): um leitor ficaria com uma tarefa
       // que não consegue marcar como feita. Não basta ser do espaço de trabalho.
       if (dados.responsavelId) {
+        // Bloqueia (em partilha) a entrada do responsável na equipa: retirá-lo da equipa ao mesmo tempo espera
+        // por esta alteração e depois limpa-lhe as tarefas, em vez de ele ficar responsável sem acesso.
+        await cliente.query(
+          'select 1 from workspace_members wm join projects p on p.workspace_id = wm.workspace_id where p.id = $1 and wm.user_id = $2 for share of wm',
+          [projectoId, dados.responsavelId],
+        );
         const { rows: acesso } = await cliente.query<{ papel: string | null }>('select papel_no_projecto($1, $2) as papel', [
           projectoId,
           dados.responsavelId,
