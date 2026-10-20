@@ -41,7 +41,10 @@ export async function espacosPartilhados(cliente: pg.Pool | pg.PoolClient, utili
 // já não existia (ex.: dois pedidos de eliminação em simultâneo).
 // Fica apenas um registo "conta.eliminada" sem nada que identifique a pessoa.
 export async function eliminarContaCompleta(cliente: pg.PoolClient, utilizadorId: string): Promise<boolean> {
-  const { rows } = await cliente.query<{ email: string }>('select email from users where id = $1 for update', [utilizadorId]);
+  const { rows } = await cliente.query<{ email: string; confirmado: boolean }>(
+    'select email, email_verified_at is not null as confirmado from users where id = $1 for update',
+    [utilizadorId],
+  );
   const email = rows[0]?.email;
   if (!email) return false;
   await cliente.query(
@@ -58,8 +61,10 @@ export async function eliminarContaCompleta(cliente: pg.PoolClient, utilizadorId
       where key = any($1::text[]) or exists (select 1 from unnest($2::text[]) p where left(key, length(p)) = p)`,
     [chaves.exactas, chaves.prefixos],
   );
-  // Convites que a pessoa criou e convites feitos para o e-mail dela (de outros espaços).
-  await cliente.query('delete from invitations where created_by = $1 or email = $2', [utilizadorId, email]);
+  // Convites que a pessoa criou e, só se provou que o e-mail é dela (confirmado), os feitos para esse e-mail.
+  // Uma conta por confirmar pode ser de outra pessoa: não pode apagar convites verdadeiros para esse e-mail
+  // (o que aconteceria também na limpeza automática das contas por confirmar).
+  await cliente.query('delete from invitations where created_by = $1 or ($3 and email = $2)', [utilizadorId, email, rows[0]!.confirmado]);
   // Sessões, ligações, códigos e entradas a meio vão em cascata.
   await cliente.query('delete from users where id = $1', [utilizadorId]);
   await auditar(cliente, 'conta.eliminada', {});

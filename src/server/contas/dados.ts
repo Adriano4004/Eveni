@@ -113,8 +113,10 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
   );
   const { rows: recebidos } = await pool.query<{ espaco: string; created_at: Date; estado: EstadoConvite }>(
     `select w.name as espaco, i.created_at, ${estadoConvite('i.')} as estado
-       from invitations i join workspaces w on w.id = i.workspace_id where i.email = $1 order by i.created_at`,
-    [u.email],
+       from invitations i join workspaces w on w.id = i.workspace_id
+      -- Só com o e-mail confirmado: uma conta por confirmar pode ter o e-mail de outra pessoa.
+      where i.email = $1 and $2 order by i.created_at`,
+    [u.email, u.email_verified_at !== null],
   );
   const projectos: Projecto[] = [];
   for (const { id } of idsProjectos) {

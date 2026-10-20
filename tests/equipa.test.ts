@@ -294,6 +294,19 @@ describe('dados da conta', () => {
     expect(doBruno.convitesRecebidos).toEqual([{ espaco: 'Espaço de Ana Domingos', criadoEm: expect.any(String), estado: 'pendente' }]);
   });
 
+  it('uma conta por confirmar com o e-mail convidado não vê nem apaga os convites para esse e-mail', async () => {
+    const ana = await anaEmpresarial();
+    await convidar(ana.cookie, 'bruno@exemplo.ao');
+    // Alguém regista-se com o e-mail do Bruno e não o confirma.
+    const impostor = cookieDe(await c.registar('bruno@exemplo.ao', 'Impostor'));
+    const dados = (await c.post('/api/conta/exportar', { palavraPasse: PALAVRA_PASSE }, impostor)).json();
+    expect(dados.convitesRecebidos).toEqual([]);
+    expect(JSON.stringify(dados)).not.toContain('Espaço de Ana Domingos');
+    // Eliminar essa conta (ou a limpeza automática das contas por confirmar) não apaga o convite.
+    expect((await c.post('/api/conta/eliminar', { palavraPasse: PALAVRA_PASSE, confirmacao: 'ELIMINAR' }, impostor)).statusCode).toBe(204);
+    expect(await contar('select count(*)::int as n from invitations')).toBe(1);
+  });
+
   it('eliminar a conta apaga os convites que criou e os que recebeu', async () => {
     const ana = await anaEmpresarial();
     await convidar(ana.cookie, 'bruno@exemplo.ao');
