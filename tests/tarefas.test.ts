@@ -78,7 +78,7 @@ describe('responsável', () => {
   it('escolher um membro do espaço e voltar a ninguém', async () => {
     const { cookie, id } = await contaConfirmada();
     const p = await criarProjecto(cookie);
-    expect(p.membros).toEqual([{ id, nome: 'Ana Domingos' }]);
+    expect(p.membros).toEqual([{ id, nome: 'Ana Domingos', papel: 'owner' }]);
     const t = p.tarefasDoProjecto[3]!;
 
     const r = await alterar(cookie, p.id, t.id, { responsavelId: id });

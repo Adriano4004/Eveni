@@ -62,6 +62,28 @@ describe('membro do espaço sem acesso ao projecto', () => {
   });
 });
 
+describe('a pessoa tem de ser do espaço do projecto', () => {
+  it('sair do espaço retira logo o acesso, mesmo que fique a linha em project_members', async () => {
+    const { bruno, projecto, tarefa } = await cenario();
+    await adicionar(projecto, bruno.id, 'editor');
+    expect((await c.get(`/api/projectos/${projecto}`, bruno.cookie)).statusCode).toBe(200);
+    await base.pool.query("delete from workspace_members where user_id = $1 and role = 'member'", [bruno.id]);
+    expect((await c.get('/api/projectos', bruno.cookie)).json()).toEqual([]);
+    expect((await c.get(`/api/projectos/${projecto}`, bruno.cookie)).statusCode).toBe(404);
+    expect((await c.post(`/api/projectos/${projecto}/tarefas/${tarefa}`, { estado: 'done' }, bruno.cookie)).statusCode).toBe(404);
+  });
+
+  it('uma linha em project_members de alguém de fora do espaço não dá acesso nem aparece nos membros', async () => {
+    const { ana, projecto } = await cenario();
+    const daniel = await contaConfirmada('daniel@exemplo.ao', 'Daniel Costa');
+    await adicionar(projecto, daniel.id, 'editor');
+    expect((await c.get(`/api/projectos/${projecto}`, daniel.cookie)).statusCode).toBe(404);
+    expect((await c.get('/api/projectos', daniel.cookie)).json()).toEqual([]);
+    const nomes = (await c.get(`/api/projectos/${projecto}`, ana.cookie)).json().membros.map((m: { nome: string }) => m.nome);
+    expect(nomes).not.toContain('Daniel Costa');
+  });
+});
+
 describe('leitor do projecto', () => {
   it('vê o projecto mas não altera nada', async () => {
     const { bruno, projecto, tarefa } = await cenario();
@@ -75,6 +97,22 @@ describe('leitor do projecto', () => {
     expect(alterar.json().mensagem).toMatch(/só para consulta/);
     expect((await base.pool.query('select status from tasks where id = $1', [tarefa])).rows[0].status).toBe('pending');
     expect((await c.post(`/api/projectos/${projecto}/arquivar`, {}, bruno.cookie)).statusCode).toBe(403);
+    expect((await c.post(`/api/projectos/${projecto}/restaurar`, {}, bruno.cookie)).statusCode).toBe(403);
+  });
+
+  it('não pode ser escolhido como responsável (não conseguiria concluir a tarefa)', async () => {
+    const { ana, bruno, projecto, tarefa } = await cenario();
+    await adicionar(projecto, bruno.id, 'viewer');
+    const r = await c.post(`/api/projectos/${projecto}/tarefas/${tarefa}`, { responsavelId: bruno.id }, ana.cookie);
+    expect(r.statusCode).toBe(400);
+    expect(r.json().campos.responsavelId).toBeDefined();
+  });
+
+  it('num projecto arquivado continua a não poder alterar', async () => {
+    const { ana, bruno, projecto, tarefa } = await cenario();
+    await adicionar(projecto, bruno.id, 'viewer');
+    await c.post(`/api/projectos/${projecto}/arquivar`, {}, ana.cookie);
+    expect((await c.post(`/api/projectos/${projecto}/tarefas/${tarefa}`, { estado: 'done' }, bruno.cookie)).statusCode).toBe(403);
   });
 });
 
@@ -85,15 +123,29 @@ describe('editor do projecto', () => {
     expect((await c.post(`/api/projectos/${projecto}/tarefas/${tarefa}`, { estado: 'done', responsavelId: bruno.id }, bruno.cookie)).statusCode).toBe(200);
     expect((await c.post(`/api/projectos/${projecto}/tarefas/${tarefa}`, { responsavelId: ana.id }, bruno.cookie)).statusCode).toBe(200);
     expect((await c.get(`/api/projectos/${projecto}`, bruno.cookie)).json()).toMatchObject({ papel: 'editor', podeArquivar: false });
+    expect((await c.get('/api/projectos', bruno.cookie)).json()).toEqual([expect.objectContaining({ id: projecto, papel: 'editor' })]);
     expect((await c.post(`/api/projectos/${projecto}/arquivar`, {}, bruno.cookie)).statusCode).toBe(403);
+    await c.post(`/api/projectos/${projecto}/arquivar`, {}, ana.cookie);
+    expect((await c.post(`/api/projectos/${projecto}/restaurar`, {}, bruno.cookie)).statusCode).toBe(403);
+  });
+
+  it('o responsável não pode ser alguém inexistente nem dono de outro espaço', async () => {
+    const { ana, projecto, tarefa } = await cenario();
+    const daniel = await contaConfirmada('daniel@exemplo.ao', 'Daniel Costa');
+    for (const responsavelId of ['00000000-0000-4000-8000-000000000000', daniel.id]) {
+      expect((await c.post(`/api/projectos/${projecto}/tarefas/${tarefa}`, { responsavelId }, ana.cookie)).statusCode).toBe(400);
+    }
   });
 
   it('a lista de responsáveis tem só quem tem acesso ao projecto', async () => {
     const { ana, bruno, projecto } = await cenario();
     await adicionar(projecto, bruno.id, 'viewer');
     // A Carla é do espaço mas não deste projecto: não aparece.
-    const membros = (await c.get(`/api/projectos/${projecto}`, ana.cookie)).json().membros.map((m: { nome: string }) => m.nome);
-    expect(membros).toEqual(['Ana Domingos', 'Bruno Neto']);
+    const membros = (await c.get(`/api/projectos/${projecto}`, ana.cookie)).json().membros;
+    expect(membros).toEqual([
+      { id: ana.id, nome: 'Ana Domingos', papel: 'owner' },
+      { id: bruno.id, nome: 'Bruno Neto', papel: 'viewer' },
+    ]);
   });
 
   it('perde o acesso logo que é retirado do projecto', async () => {
@@ -121,11 +173,26 @@ describe('dono do espaço', () => {
     expect(await papel(ana.id)).toBe('owner');
     expect(await papel(bruno.id)).toBe('viewer');
     expect(await papel(carla.id)).toBeNull();
+    // Linha em project_members sem ser do espaço: sem acesso.
+    const daniel = await contaConfirmada('daniel@exemplo.ao', 'Daniel Costa');
+    await adicionar(projecto, daniel.id, 'editor');
+    expect(await papel(daniel.id)).toBeNull();
     expect(await papel('00000000-0000-4000-8000-000000000000')).toBeNull();
   });
 });
 
 describe('dados da conta', () => {
+  it('a exportação de um membro inclui os projectos de outros espaços a que tem acesso', async () => {
+    const { bruno, projecto } = await cenario();
+    await adicionar(projecto, bruno.id, 'editor');
+    const dados = (await c.post('/api/conta/exportar', { palavraPasse: 'Kizomba-2026-evento' }, bruno.cookie)).json();
+    expect(dados.acessosAProjectos).toEqual([
+      { projectoId: projecto, projecto: 'Conferência', espaco: 'Espaço de Ana Domingos', papel: 'editor', desde: expect.any(String) },
+    ]);
+    // Os projectos da Ana não são do Bruno: não vêm por inteiro na exportação dele.
+    expect(dados.projectos).toEqual([]);
+  });
+
   it('eliminar a conta de um membro retira-lhe os acessos e as tarefas atribuídas', async () => {
     const { ana, bruno, projecto, tarefa } = await cenario();
     await adicionar(projecto, bruno.id, 'editor');

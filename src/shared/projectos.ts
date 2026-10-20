@@ -91,8 +91,8 @@ export interface Projecto extends ResumoProjecto {
   criadoEm: string;
   // O dia de hoje em Luanda, segundo o servidor (para os ecrãs não dependerem do relógio do telemóvel).
   hoje: string;
-  // Quem pode ser responsável por tarefas: os membros do espaço de trabalho do projecto.
-  membros: Pessoa[];
+  // Quem tem acesso ao projecto. Só donos e editores podem ser responsáveis por tarefas.
+  membros: (Pessoa & { papel: PapelNoProjecto })[];
   // Quem está a ver é dono do espaço de trabalho (pode arquivar e restaurar).
   podeArquivar: boolean;
   tarefasDoProjecto: TarefaProjecto[];
