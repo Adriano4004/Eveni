@@ -49,7 +49,6 @@ export const mensagens = {
     telemovelInvalido: 'Indique um telemóvel válido (ex.: 923 456 789, ou com o indicativo do país, ex.: +351 912 345 678).',
     acompanhantesInvalidos: 'Indique um número de acompanhantes entre 0 e 10.',
     respostaInvalida: 'Escolha uma resposta válida.',
-    confirmadosAMais: 'Não pode confirmar mais acompanhantes do que os permitidos.',
   },
   convidados: {
     naoEncontrado: 'Convidado não encontrado.',

@@ -81,6 +81,31 @@ export interface LinhaColada {
   acompanhantes: string;
 }
 
+// Parte uma linha pelo separador, respeitando as aspas de CSV ("Silva, João" fica numa só célula; "" é uma aspa).
+function partirLinha(linha: string, separador: string): string[] {
+  const celulas: string[] = [];
+  let actual = '';
+  let entreAspas = false;
+  for (let i = 0; i < linha.length; i++) {
+    const ch = linha[i]!;
+    if (entreAspas) {
+      if (ch === '"' && linha[i + 1] === '"') {
+        actual += '"';
+        i++;
+      } else if (ch === '"') entreAspas = false;
+      else actual += ch;
+    } else if (ch === '"' && actual.trim() === '') {
+      entreAspas = true;
+      actual = '';
+    } else if (ch === separador) {
+      celulas.push(actual.trim());
+      actual = '';
+    } else actual += ch;
+  }
+  celulas.push(actual.trim());
+  return celulas;
+}
+
 type Coluna = Exclude<keyof LinhaColada, 'linha'>;
 const ORDEM_POR_OMISSAO: Coluna[] = ['nome', 'telemovel', 'email', 'acompanhantes'];
 
@@ -91,7 +116,8 @@ function colunaDoTitulo(titulo: string): Coluna | null {
     .replace(/\p{M}/gu, '')
     .toLowerCase()
     .trim();
-  if (/^nome/.test(t)) return 'nome';
+  // Só títulos de coluna exactos: um convidado chamado "Nome…" na primeira linha não é um título.
+  if (/^nome( (do|da) convidad[oa]| completo)?$/.test(t)) return 'nome';
   if (/telem|telef|contacto|whatsapp|numero|celular/.test(t)) return 'telemovel';
   if (/e-?mail|correio/.test(t)) return 'email';
   if (/acompanh|\+ ?1|^extra/.test(t)) return 'acompanhantes';
@@ -103,7 +129,7 @@ function colunaDoTitulo(titulo: string): Coluna | null {
 export function lerColagem(texto: string): LinhaColada[] {
   const linhas = texto.replace(/\r\n?/g, '\n').split('\n');
   const separador = texto.includes('\t') ? '\t' : texto.includes(';') ? ';' : ',';
-  const partir = (l: string) => l.split(separador).map((c) => c.trim().replace(/^"(.*)"$/, '$1').trim());
+  const partir = (l: string) => partirLinha(l, separador);
 
   let ordem: (Coluna | null)[] = ORDEM_POR_OMISSAO;
   let inicio = 0;

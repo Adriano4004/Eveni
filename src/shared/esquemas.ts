@@ -193,16 +193,12 @@ export const dadosConvidado = z.object({
 export type DadosConvidado = z.infer<typeof dadosConvidado>;
 
 // Alterar um convidado: os dados e, opcionalmente, a resposta marcada à mão pelo organizador
-// (ex.: respondeu por telefone). Só quem vai pode ter acompanhantes confirmados.
-export const actualizarConvidado = dadosConvidado
-  .extend({
-    resposta: z.enum(RESPOSTAS, { error: m.respostaInvalida }).optional(),
-    acompanhantesConfirmados: numeroAcompanhantes.optional(),
-  })
-  .refine((d) => d.resposta !== 'yes' || (d.acompanhantesConfirmados ?? 0) <= d.acompanhantes, {
-    message: m.confirmadosAMais,
-    path: ['acompanhantesConfirmados'],
-  });
+// (ex.: respondeu por telefone). Só quem vai tem acompanhantes confirmados, nunca mais do que os permitidos:
+// o servidor acerta os confirmados (ex.: o organizador reduz os permitidos depois da resposta), sem dar erro.
+export const actualizarConvidado = dadosConvidado.extend({
+  resposta: z.enum(RESPOSTAS, { error: m.respostaInvalida }).optional(),
+  acompanhantesConfirmados: numeroAcompanhantes.optional(),
+});
 
 // Importação: as linhas lidas da colagem (lerColagem), ainda por validar. Cada uma é validada no servidor
 // com dadosConvidado. Os limites de tamanho só travam pedidos absurdos.

@@ -54,6 +54,20 @@ describe('lerColagem', () => {
     expect(lerColagem('Ana,923456789')[0]).toMatchObject({ nome: 'Ana', telemovel: '923456789' });
   });
 
+  it('separadores dentro de aspas não partem a célula', () => {
+    expect(lerColagem('"Silva, João",923456789\n"Ana ""Kika"" Lopes",924000111')).toEqual([
+      { linha: 1, nome: 'Silva, João', telemovel: '923456789', email: '', acompanhantes: '' },
+      { linha: 2, nome: 'Ana "Kika" Lopes', telemovel: '924000111', email: '', acompanhantes: '' },
+    ]);
+  });
+
+  it('um convidado chamado "Nome…" na primeira linha não é tomado por títulos', () => {
+    expect(lerColagem('Nomeriano Silva\t923456789\nAna\t924000111').map((l) => l.nome)).toEqual(['Nomeriano Silva', 'Ana']);
+    expect(lerColagem('Nome completo\tTelemóvel\nAna\t923456789')).toEqual([
+      { linha: 2, nome: 'Ana', telemovel: '923456789', email: '', acompanhantes: '' },
+    ]);
+  });
+
   it('só nomes, um por linha', () => {
     expect(lerColagem('Tia Maria e família\nPadrinhos').map((l) => l.nome)).toEqual(['Tia Maria e família', 'Padrinhos']);
   });
@@ -90,9 +104,9 @@ describe('validação de convidados', () => {
     expect(r.error!.issues[0]!.path[0]).toBe(campo);
   });
 
-  it('não confirma mais acompanhantes do que os permitidos', () => {
-    expect(actualizarConvidado.safeParse({ nome: 'Ana', acompanhantes: 1, resposta: 'yes', acompanhantesConfirmados: 2 }).success).toBe(false);
-    expect(actualizarConvidado.safeParse({ nome: 'Ana', acompanhantes: 2, resposta: 'yes', acompanhantesConfirmados: 2 }).success).toBe(true);
+  it('resposta e acompanhantes confirmados são opcionais ao alterar', () => {
+    expect(actualizarConvidado.parse({ nome: 'Ana' })).toEqual({ nome: 'Ana', telemovel: null, email: null, acompanhantes: 0 });
+    expect(actualizarConvidado.safeParse({ nome: 'Ana', resposta: 'talvez' }).success).toBe(false);
   });
 
   it('totais: quem vai conta com os acompanhantes confirmados', () => {

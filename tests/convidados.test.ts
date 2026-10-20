@@ -192,7 +192,13 @@ describe('alterar e remover', () => {
     expect(igual.acompanhantesConfirmados).toBe(1);
     expect((await lista(ana.cookie, projecto)).json().totais).toEqual({ convidados: 1, vao: 1, naoVao: 0, semResposta: 0, pessoas: 2 });
 
+    // Pedir mais confirmados do que os permitidos fica nos permitidos (o ecrã envia sempre os dois campos).
+    const acertado = await alterar(ana.cookie, projecto, g.id, { nome: 'Ana Silva', acompanhantes: 2, resposta: 'yes', acompanhantesConfirmados: 5 });
+    expect(acertado.json().acompanhantesConfirmados).toBe(2);
     // Reduzir os permitidos reduz também os confirmados; "não vai" e "sem resposta" ficam sem acompanhantes.
+    const reduzido = await alterar(ana.cookie, projecto, g.id, { nome: 'Ana Silva', acompanhantes: 1, resposta: 'yes', acompanhantesConfirmados: 2 });
+    expect(reduzido.statusCode).toBe(200);
+    expect(reduzido.json().acompanhantesConfirmados).toBe(1);
     expect((await alterar(ana.cookie, projecto, g.id, { nome: 'Ana Silva', acompanhantes: 0 })).json().acompanhantesConfirmados).toBe(0);
     const naoVai = (await alterar(ana.cookie, projecto, g.id, { nome: 'Ana Silva', acompanhantes: 2, resposta: 'no', acompanhantesConfirmados: 0 })).json();
     expect(naoVai).toMatchObject({ resposta: 'no', acompanhantesConfirmados: 0 });
