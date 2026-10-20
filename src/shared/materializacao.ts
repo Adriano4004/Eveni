@@ -56,11 +56,10 @@ export function materializar(tarefas: readonly TarefaBase[], dataEvento: string,
   const diasNecessarios = Math.max(0, ...tarefas.map((t) => -t.inicio));
   const comprimido = diasDisponiveis < diasNecessarios;
 
-  // Só offsets antes do evento se comprimem. A divisão entre inteiros arredonda em direcção a zero
-  // (para mais perto do evento), o que garante que nenhuma tarefa comprimida fica antes de hoje.
-  // `|| 0` evita o -0.
+  // Só offsets antes do evento se comprimem, arredondados ao dia mais próximo. O valor exacto nunca
+  // é anterior a -diasDisponiveis (hoje), que é inteiro, logo o arredondado também não. `|| 0` evita o -0.
   const comprimir = (offset: number) =>
-    offset >= 0 ? offset : Math.trunc((offset * diasDisponiveis) / diasNecessarios) || 0;
+    offset >= 0 ? offset : Math.round((offset * diasDisponiveis) / diasNecessarios) || 0;
 
   const avisos: AvisoPrazo[] = [];
   const materializadas = tarefas.map((t): TarefaMaterializada => {

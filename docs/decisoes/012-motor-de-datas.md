@@ -17,7 +17,7 @@ Ao criar um projecto, cada tarefa do template passa de um offset (`D-21`, `D0`, 
 
 - **Antecedência necessária** = o offset mais antigo do template (21 dias no T01, 365 no T02).
 - Se faltam **pelo menos** esses dias até ao evento, não se comprime nada. Exactamente 21 dias no T01 conta como suficiente: a primeira tarefa fica para hoje.
-- Se faltam **menos**, as tarefas **não críticas** anteriores ao evento são comprimidas na proporção *dias disponíveis ÷ antecedência necessária*. Exemplo: com 10 dias para um template de 20, uma tarefa de D-10 passa a D-5. O arredondamento é feito sempre para o lado do evento, para nenhuma tarefa ficar antes de hoje. A ordem entre elas mantém-se.
+- Se faltam **menos**, as tarefas **não críticas** anteriores ao evento são comprimidas na proporção *dias disponíveis ÷ antecedência necessária*. Exemplo: com 10 dias para um template de 20, uma tarefa de D-10 passa a D-5. Arredonda-se ao dia mais próximo; nenhuma tarefa comprimida fica antes de hoje. A ordem entre elas mantém-se.
 - As tarefas **críticas nunca se comprimem**: mantêm o offset, mesmo que a data já tenha passado. Cada uma dessas tarefas gera um **aviso** com o título, a data em que deveria ter começado e os dias em falta. Os avisos são mostrados **no momento de criar o projecto**, no próximo PR.
 - As tarefas no dia do evento ou depois dele (`D0`, `D+7`) nunca mudam.
 - Um evento com data no passado é recusado. Um evento **hoje** é aceite: as tarefas não críticas passam todas para hoje e as críticas anteriores aparecem nos avisos.

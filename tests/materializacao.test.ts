@@ -113,7 +113,7 @@ describe('regra de compressão', () => {
     expect(r.tarefas.map((t) => [t.id, diasEntre(evento(10), t.inicio), diasEntre(evento(10), t.fim), t.comprimida])).toEqual([
       ['A', -10, -10, true],
       ['B', -5, -3, true],
-      // -0,5 arredonda para o lado do evento.
+      // -0,5 arredonda para o dia do evento, nunca para antes.
       ['C', 0, 0, true],
       ['D', 0, 0, false],
       ['E', 3, 7, false],
@@ -162,6 +162,17 @@ describe('regra de compressão', () => {
       expect([HOJE, evento(1)]).toContain(r.tarefas[i]!.inicio);
     });
     expect(r.avisos.map((a) => a.id)).toEqual(T01.tarefas.filter((t) => t.critica && t.inicio < -1).map((t) => t.id));
+  });
+
+  it('com muito pouco tempo, as tarefas espalham-se entre hoje e o evento em vez de se acumularem no dia do evento', () => {
+    const r = materializar(T01.tarefas, evento(1), HOJE);
+    const naoCriticas = T01.tarefas.map((t, i) => [t, r.tarefas[i]!] as const).filter(([t]) => !t.critica && t.inicio < 0);
+    for (const [t, m] of naoCriticas) expect(m.inicio).toBe(t.inicio <= -11 ? HOJE : evento(1));
+  });
+
+  it('datas mal formadas: recusa', () => {
+    expect(() => materializar(T01.tarefas, '2026-02-30', HOJE)).toThrow(/Data inválida/);
+    expect(() => materializar(T01.tarefas, evento(5), '20/10/2026')).toThrow(/Data inválida/);
   });
 
   it('evento no passado: recusa', () => {
