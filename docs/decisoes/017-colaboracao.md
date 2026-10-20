@@ -58,3 +58,44 @@ Resultado da revisão de segurança deste PR:
 7. **Sem fugas de dados:** as listas de membros e de convites, com e-mails, só são visíveis ao dono.
 8. **Auditoria:** fica registado quando um convite é criado, aceite ou revogado, quando um membro é adicionado ou retirado, e quando um papel muda.
 9. **O espaço da própria pessoa continua a ser o principal:** aceitar um convite não muda onde ela cria os seus projectos.
+
+## Convites e equipa (segundo PR da Fase 4)
+
+- **Ecrã "Equipa"**, no início. Mostra:
+  - os membros do espaço, com o e-mail (só o dono vê este ecrã);
+  - os convites por aceitar;
+  - quantas pessoas ocupam o plano.
+- **Convidar.** O dono escreve o e-mail da pessoa e o Eveni cria uma **ligação de uso único**, válida 7 dias. A ligação:
+  - aparece uma só vez, com os botões **Partilhar no WhatsApp** e **Copiar ligação**;
+  - é também enviada por e-mail, quando a Resend estiver configurada (até lá, fica só nos logs);
+  - não fica guardada: na base de dados fica apenas o hash do token.
+- **Convidar de novo o mesmo e-mail** anula a ligação anterior.
+- **Aceitar.** A pessoa abre a ligação e vê quem a convidou e para que equipa, com o e-mail parcialmente escondido.
+  - Se não tiver sessão, entra ou cria conta, e o Eveni volta ao convite.
+  - Só aceita com sessão na conta do **e-mail convidado, já confirmado**.
+- **Ao entrar na equipa,** a pessoa **não vê nenhum projecto** até o dono lhe dar acesso. O espaço principal dela continua a ser o seu: é aí que cria os seus projectos.
+- **Limite do plano:**
+  - Singular: sem equipa.
+  - Empresarial: 10 pessoas, contando com o dono e com os convites por aceitar.
+  - Grandes: sem limite.
+  - O limite é verificado ao convidar e outra vez ao aceitar, com o espaço bloqueado, para que pedidos em simultâneo não o passem.
+- **Retirar alguém** apaga, na mesma operação:
+  - a entrada na equipa;
+  - os acessos aos projectos desse espaço;
+  - a atribuição das tarefas desses projectos.
+- **Auditoria:** fica registado quando um convite é criado, revogado ou aceite, e quando alguém é retirado. O e-mail convidado não vai para a auditoria, porque é um dado de terceiro.
+- **Dados pessoais:**
+  - a exportação inclui os convites enviados e recebidos;
+  - eliminar a conta apaga os convites que a pessoa criou e os feitos para o e-mail dela;
+  - convites aceites, revogados ou expirados há mais de 30 dias são apagados sozinhos.
+- **Limitação de pedidos:**
+  - 20 convites por hora por dono;
+  - 30 pedidos de ver ou aceitar convites a cada 15 minutos por IP.
+- **Limite diário de e-mails de convite:** 10 por espaço e 40 no total. Acima disso, o convite é criado na mesma, mas só se partilha pelo WhatsApp. O plano gratuito da Resend dá 100 e-mails por dia para tudo, e as confirmações e recuperações de palavra-passe não podem ficar sem quota.
+- **Contas por confirmar:** os convites feitos para um e-mail só entram na exportação e na eliminação depois de a conta confirmar esse e-mail. Uma conta por confirmar pode ser de outra pessoa.
+- **Logs do servidor:** os tokens das ligações (`?token=`) aparecem sempre escondidos. Isto vale para os convites, a confirmação de e-mail e a recuperação de palavra-passe.
+- **Texto livre nos e-mails:** o nome de quem convida e o nome do espaço são escolhidos pelo dono. Vão escapados, mas o texto não é verificado. Por isso só os planos pagos convidam, com os limites acima. Se aparecer abuso, a opção seguinte é tirar esses nomes do e-mail.
+
+Ainda não existe nesta fase:
+- dar acesso a um projecto a um membro (próximo PR);
+- um membro sair sozinho de uma equipa.

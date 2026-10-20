@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { criarApp, eRotaDeEcra } from '../src/server/app.js';
+import { criarApp, eRotaDeEcra, esconderTokens } from '../src/server/app.js';
 import { aplicarMigracoes, criarBaseDeDados } from '../src/server/db/index.js';
 import { configTeste, URL_BD_TESTE } from './ajuda.js';
 
@@ -132,5 +132,16 @@ describe('migrações em paralelo', () => {
     await expect(Promise.all([aplicarMigracoes(a, 'drizzle'), aplicarMigracoes(b, 'drizzle')])).resolves.toBeDefined();
     await a.fechar();
     await b.fechar();
+  });
+});
+
+describe('logs do servidor', () => {
+  it.each([
+    ['/convite?token=abc_DEF-123', '/convite?token=[escondido]'],
+    ['/redefinir-palavra-passe?token=xyz', '/redefinir-palavra-passe?token=[escondido]'],
+    ['/confirmar-email?a=1&token=xyz&b=2', '/confirmar-email?a=1&token=[escondido]&b=2'],
+    ['/api/projectos', '/api/projectos'],
+  ])('os tokens das ligações nunca ficam escritos: %s', (url, esperado) => {
+    expect(esconderTokens(url)).toBe(esperado);
   });
 });

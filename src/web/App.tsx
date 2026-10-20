@@ -4,6 +4,7 @@ import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
 import { EcraDados } from './ecras-dados.js';
 import { EcraDoisFactores } from './ecras-dois-factores.js';
+import { EcraConvite, EcraEquipa } from './ecras-equipa.js';
 import { EcraProjecto } from './ecra-projecto.js';
 import { EcraNovoProjecto } from './ecras-projectos.js';
 import { EcraMudarPalavraPasse, EcraRecuperar, EcraRedefinir } from './ecras-palavra-passe.js';
@@ -35,10 +36,20 @@ function esquecerToken(caminho: string) {
 }
 const tokenConfirmacao = lerToken('/confirmar-email');
 const tokenRedefinir = lerToken('/redefinir-palavra-passe');
+const tokenConvite = lerToken('/convite');
+
+// O convite fica guardado neste separador enquanto a pessoa entra ou cria conta, para voltar a ele.
+function conviteGuardado(): string {
+  try {
+    return sessionStorage.getItem('eveni-token:/convite') ?? '';
+  } catch {
+    return '';
+  }
+}
 
 // Ecrãs só para quem não tem sessão, e ecrãs acessíveis com ou sem sessão.
 const SO_ANONIMO = new Set(['/entrar', '/registo', '/recuperar']);
-const QUALQUER = new Set(['/confirmar-email', '/redefinir-palavra-passe']);
+const QUALQUER = new Set(['/confirmar-email', '/redefinir-palavra-passe', '/convite']);
 
 type Estado = { tipo: 'a-carregar' } | { tipo: 'anonimo' } | { tipo: 'com-sessao'; eu: Eu };
 
@@ -60,7 +71,7 @@ export function App() {
   useEffect(() => {
     if (QUALQUER.has(caminho)) return;
     if (estado.tipo === 'anonimo' && !SO_ANONIMO.has(caminho)) navegar('/entrar');
-    if (estado.tipo === 'com-sessao' && SO_ANONIMO.has(caminho)) navegar('/');
+    if (estado.tipo === 'com-sessao' && SO_ANONIMO.has(caminho)) navegar(conviteGuardado() ? '/convite' : '/');
   }, [estado, caminho]);
 
   const entrou = (eu: Eu) => {
@@ -84,6 +95,11 @@ export function App() {
       />
     );
   }
+  if (caminho === '/convite') {
+    return (
+      <EcraConvite token={conviteGuardado() || tokenConvite} comSessao={estado.tipo === 'com-sessao'} aoTerminar={() => esquecerToken('/convite')} />
+    );
+  }
   if (caminho === '/confirmar-email') {
     // A confirmação exige sessão na conta que recebeu o e-mail (ver servidor): entrar primeiro.
     if (estado.tipo === 'anonimo') return <EcraEntrar aoEntrar={entrou} aviso={mensagens.ecras.confirmar.entrarPrimeiro} />;
@@ -102,6 +118,7 @@ export function App() {
     if (caminho === '/projectos/novo') return <EcraNovoProjecto />;
     const projecto = /^\/projectos\/([^/]+)$/.exec(caminho)?.[1];
     if (projecto) return <EcraProjecto key={projecto} id={decodeURIComponent(projecto)} utilizadorId={estado.eu.id} />;
+    if (caminho === '/equipa') return <EcraEquipa />;
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;
     if (caminho === '/conta/dados') {
@@ -116,7 +133,16 @@ export function App() {
         />
       );
     }
-    return <EcraInicio eu={estado.eu} aoSair={() => setEstado({ tipo: 'anonimo' })} />;
+    return (
+      <EcraInicio
+        eu={estado.eu}
+        aoSair={() => {
+          // Num telemóvel partilhado, quem entrar a seguir não deve ser levado para o convite de outra pessoa.
+          esquecerToken('/convite');
+          setEstado({ tipo: 'anonimo' });
+        }}
+      />
+    );
   }
   if (caminho === '/registo') return <EcraRegisto aoEntrar={entrou} />;
   if (caminho === '/recuperar') return <EcraRecuperar />;

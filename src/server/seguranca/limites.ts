@@ -68,6 +68,15 @@ export const LIMITES = {
   criarProjecto: { max: 30, janela: 60 * 60 },
   // Ver os prazos enquanto se escolhe a data: generoso, só trava abusos.
   preverProjecto: { max: 300, janela: 60 * 60 },
+  // Convites: por dono (cada convite pode enviar um e-mail para um endereço qualquer).
+  convidarPorConta: { max: 20, janela: 60 * 60 },
+  // Ver e aceitar convites: por IP (a ligação é pública até se entrar).
+  convitesPorIp: { max: 30, janela: 15 * 60 },
+  // E-mails de convite por dia: por espaço e no total. A Resend gratuita dá 100 e-mails por dia para tudo;
+  // as confirmações e recuperações de palavra-passe não podem ficar sem quota por causa de convites.
+  // Acima disto o convite cria-se na mesma (partilha-se por WhatsApp), só não sai por e-mail.
+  emailsConvitePorEspaco: { max: 10, janela: 24 * 60 * 60 },
+  emailsConviteTotal: { max: 40, janela: 24 * 60 * 60 },
 } as const;
 
 // Regista a tentativa e recusa com 429 quando passa do limite.

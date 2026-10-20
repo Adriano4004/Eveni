@@ -139,6 +139,9 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
           {erro}
         </p>
       )}
+      <button className="botao botao--secundario botao--primeiro" type="button" onClick={() => navegar('/equipa')}>
+        {mensagens.ecras.equipa.botaoInicio}
+      </button>
       <button className="botao botao--secundario botao--primeiro" type="button" onClick={() => navegar('/conta/palavra-passe')}>
         {e.inicio.mudarPalavraPasse}
       </button>

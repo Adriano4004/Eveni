@@ -7,11 +7,13 @@ interface Props {
   enviar: (dados: Record<string, string>) => Promise<void>;
   // Acção irreversível: botão em vermelho.
   perigo?: boolean;
+  // Limpar os campos depois de enviar com sucesso (ex.: criar outro convite).
+  limparAoEnviar?: boolean;
   children: (erros: Record<string, string>) => ReactNode;
 }
 
 // Formulário com estado de envio, erro geral e erros por campo vindos do servidor.
-export function Formulario({ botao, aEnviar, enviar, children, perigo }: Props) {
+export function Formulario({ botao, aEnviar, enviar, children, perigo, limparAoEnviar }: Props) {
   const [aEnviarAgora, setAEnviar] = useState(false);
   const [erroGeral, setErroGeral] = useState<string>();
   const [erros, setErros] = useState<Record<string, string>>({});
@@ -21,9 +23,11 @@ export function Formulario({ botao, aEnviar, enviar, children, perigo }: Props) 
     setAEnviar(true);
     setErroGeral(undefined);
     setErros({});
-    const dados = Object.fromEntries(new FormData(evento.currentTarget)) as Record<string, string>;
+    const formulario = evento.currentTarget;
+    const dados = Object.fromEntries(new FormData(formulario)) as Record<string, string>;
     try {
       await enviar(dados);
+      if (limparAoEnviar) formulario.reset();
     } catch (erro) {
       const campos = erro instanceof ErroApi ? erro.campos : {};
       setErros(campos);

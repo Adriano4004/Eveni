@@ -80,3 +80,15 @@ ${p(c.corpo)}
 </body></html>`,
   };
 }
+
+// O nome de quem convida e o nome do espaço são texto escolhido pelo dono do espaço: vão sempre escapados.
+// Só donos com e-mail confirmado num plano com equipa podem convidar, e com limite de pedidos.
+export function emailConvite(para: string, url: string, quem: string, espaco: string): MensagemEmail {
+  const c = e.convite;
+  return {
+    para,
+    assunto: c.assunto,
+    texto: [c.corpo(quem, espaco), '', `${c.botao}: ${url}`, '', c.validade, c.naoConhece, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(c.corpo(quem, espaco))], { texto: c.botao, url }, [escaparHtml(c.validade), escaparHtml(c.naoConhece)]),
+  };
+}
