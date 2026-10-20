@@ -20,3 +20,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 013 | [Criar projectos a partir de um template](013-criar-projectos.md) | Em vigor |
 | 014 | [Trabalhar as tarefas: estado, responsável e atrasos](014-tarefas.md) | Em vigor |
 | 015 | [Filtros e calendário das tarefas](015-filtros-calendario.md) | Em vigor |
+| 016 | [Arquivar e restaurar projectos](016-arquivar.md) | Em vigor |

@@ -23,7 +23,9 @@ export type AccaoAuditada =
   | 'sessao.bloqueada'
   | 'sessao.sair'
   | 'sessao.sair_todos'
-  | 'projecto.criado';
+  | 'projecto.criado'
+  | 'projecto.arquivado'
+  | 'projecto.restaurado';
 
 export async function auditar(
   pool: pg.Pool | pg.PoolClient,

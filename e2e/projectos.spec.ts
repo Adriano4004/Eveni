@@ -213,3 +213,49 @@ test('filtrar as tarefas e ver o calendário', async ({ page }) => {
   await expect(page.locator('.calendario__dia-escolhido li.tarefa-linha').first()).toBeVisible();
 });
 
+
+test('arquivar e restaurar um projecto', async ({ page }) => {
+  await contaConfirmada(page, 'Jorge');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await page.getByLabel('Nome do projecto').fill('Lançamento do produto');
+  await page.getByLabel('Data do evento').fill(emDias(30));
+  await expect(page.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+  await expect(page.getByRole('heading', { name: 'Lançamento do produto' })).toBeVisible();
+
+  // Arquivar pede confirmação; depois fica só de leitura.
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: 'Arquivar projecto' }).click();
+  await expect(page.getByText('Este projecto está arquivado: pode ser consultado, mas não alterado.')).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Concluída: Validar que existe facto novo' })).toBeDisabled();
+
+  // No início, sai da lista principal e aparece nos arquivados; continua a contar para o plano.
+  await page.getByRole('button', { name: 'Voltar ao início' }).click();
+  await expect(page.getByText('Arquivados (1)')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Lançamento do produto/ })).toBeHidden();
+  await expect(page.getByText('O plano Singular permite 1 projecto. Para criar mais, mude para o plano Empresarial.')).toBeVisible();
+
+  // Restaurar.
+  await page.getByText('Arquivados (1)').click();
+  await page.getByRole('link', { name: /Lançamento do produto/ }).click();
+  await page.getByRole('button', { name: 'Restaurar projecto' }).click();
+  await expect(page.getByRole('heading', { name: 'Arquivar projecto' })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Concluída: Validar que existe facto novo' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Voltar ao início' }).click();
+  await expect(page.getByText('Arquivados (1)')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Lançamento do produto/ })).toBeVisible();
+});
+
+test('cancelar a confirmação não arquiva', async ({ page }) => {
+  await contaConfirmada(page, 'Katia');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await page.getByLabel('Nome do projecto').fill('Gala');
+  await page.getByLabel('Data do evento').fill(emDias(40));
+  await expect(page.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+  page.once('dialog', (d) => d.dismiss());
+  await page.getByRole('button', { name: 'Arquivar projecto' }).click();
+  await expect(page.getByText('Este projecto está arquivado', { exact: false })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Arquivar projecto' })).toBeVisible();
+});

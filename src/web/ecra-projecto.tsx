@@ -1,8 +1,8 @@
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useId, useState } from 'react';
 import { formatarData } from '../shared/datas.js';
 import { formatarKz } from '../shared/dinheiro.js';
 import { mensagens } from '../shared/mensagens.js';
-import { ESTADOS_TAREFA, type EstadoTarefa, type Pessoa, type Projecto, type TarefaProjecto } from '../shared/projectos.js';
+import { ESTADOS_TAREFA, type EstadoTarefa, type Pessoa, type Projecto, type ResumoProjecto, type TarefaProjecto } from '../shared/projectos.js';
 import {
   type Filtros,
   filtrarTarefas,
@@ -95,7 +95,12 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
         </div>
       </dl>
 
-      {arquivado && <p className="aviso">{p.arquivado}</p>}
+      {arquivado && (
+        <div className="aviso">
+          <p>{p.arquivado}</p>
+          {projecto.podeArquivar && <BotaoArquivo projecto={projecto} aoMudar={setProjecto} />}
+        </div>
+      )}
       {!arquivado && <AlertaAtrasos tarefas={projecto.tarefasDoProjecto} />}
 
       <section className="seccao" aria-labelledby="titulo-tarefas">
@@ -164,7 +169,50 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
           ))}
         </ul>
       </section>
+
+      {!arquivado && projecto.podeArquivar && (
+        <section className="seccao" aria-labelledby="titulo-arquivar">
+          <h2 id="titulo-arquivar">{p.arquivar}</h2>
+          <p className="campo__ajuda">{p.arquivarTexto}</p>
+          <BotaoArquivo projecto={projecto} aoMudar={setProjecto} />
+        </section>
+      )}
     </main>
+  );
+}
+
+// Arquivar (no fim da página) ou restaurar (no aviso de projecto arquivado). Só para o dono do espaço.
+function BotaoArquivo({ projecto, aoMudar }: { projecto: Projecto; aoMudar: Dispatch<SetStateAction<Projecto | undefined>> }) {
+  const [aEnviar, setAEnviar] = useState(false);
+  const [erro, setErro] = useState<string>();
+  const arquivar = projecto.estado === 'active';
+
+  async function mudar() {
+    if (arquivar && !confirm(p.confirmarArquivar)) return;
+    setAEnviar(true);
+    setErro(undefined);
+    try {
+      const resumo = await api<ResumoProjecto>('POST', `/api/projectos/${encodeURIComponent(projecto.id)}/${arquivar ? 'arquivar' : 'restaurar'}`);
+      // Sobre o estado actual, não sobre a cópia do momento do clique: uma tarefa guardada entretanto não se perde.
+      aoMudar((actual) => actual && { ...actual, ...resumo });
+    } catch (falha) {
+      setErro(mensagemDeErro(falha));
+    } finally {
+      setAEnviar(false);
+    }
+  }
+
+  return (
+    <>
+      {erro && (
+        <p className="formulario__erro" role="alert">
+          {erro}
+        </p>
+      )}
+      <button className="botao botao--secundario" type="button" disabled={aEnviar} onClick={mudar}>
+        {arquivar ? (aEnviar ? p.aArquivar : p.arquivar) : aEnviar ? p.aRestaurar : p.restaurar}
+      </button>
+    </>
   );
 }
 
