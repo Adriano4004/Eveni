@@ -2,7 +2,7 @@
 // Depois de alterar este ficheiro: npm run db:generate, rever a migração criada em drizzle/
 // e escrever o ficheiro de reversão correspondente em drizzle/reverter/.
 import { sql } from 'drizzle-orm';
-import { bigint, bigserial, boolean, check, date, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { bigint, bigserial, boolean, check, date, foreignKey, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const criadoEm = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -287,6 +287,26 @@ export const invitations = pgTable(
   ],
 );
 
+// Mesas de um projecto (decisão 018): nome e lotação. Os convidados sentam-se por mesa, sem lugar numerado.
+export const eventTables = pgTable(
+  'event_tables',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    seats: integer('seats').notNull(),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    // Alvo da chave estrangeira composta dos convidados: a mesa tem de ser do mesmo projecto.
+    unique('event_tables_projecto_id').on(t.projectId, t.id),
+    uniqueIndex('event_tables_nome_unico').on(t.projectId, sql`lower(${t.name})`),
+    check('event_tables_lugares_validos', sql`${t.seats} between 1 and 100`),
+  ],
+);
+
 // Convidados de um projecto (decisão 018). Dados de terceiros: só nome e contactos.
 // Telemóvel guardado como +<indicativo><número> (ver normalizarTelemovel), e-mail em minúsculas:
 // assim os repetidos detectam-se na base de dados, seja qual for a forma como foram escritos.
@@ -309,12 +329,16 @@ export const guests = pgTable(
     // segredo da aplicação: uma fuga só da base de dados não chega para responder por ninguém.
     // Mudar a chave invalida a ligação antiga (ver convidados/rsvp.ts).
     rsvpKey: uuid('rsvp_key').notNull().defaultRandom(),
+    // Mesa (do mesmo projecto: garantido pela chave estrangeira composta). Apagar a mesa só tira o convidado dela.
+    tableId: uuid('table_id'),
     createdAt: criadoEm(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('guests_projecto').on(t.projectId, t.name),
     uniqueIndex('guests_chave_rsvp').on(t.rsvpKey),
+    index('guests_mesa').on(t.tableId),
+    foreignKey({ name: 'guests_mesa_do_projecto', columns: [t.projectId, t.tableId], foreignColumns: [eventTables.projectId, eventTables.id] }).onDelete('set null'),
     uniqueIndex('guests_telemovel_unico').on(t.projectId, t.phone).where(sql`${t.phone} is not null`),
     uniqueIndex('guests_email_unico').on(t.projectId, t.email).where(sql`${t.email} is not null`),
     check('guests_resposta_valida', sql`${t.response} in ('pending', 'yes', 'no')`),

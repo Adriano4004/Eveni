@@ -1,6 +1,6 @@
 // Esquemas de validação partilhados entre o servidor e os ecrãs (uma só fonte de verdade).
 import { z } from 'zod';
-import { MAX_ACOMPANHANTES, MAX_LINHAS_IMPORTACAO, normalizarTelemovel, RESPOSTAS } from './convidados.js';
+import { MAX_ACOMPANHANTES, MAX_LINHAS_IMPORTACAO, MAX_LUGARES_POR_MESA, normalizarTelemovel, RESPOSTAS } from './convidados.js';
 import { dataValida } from './datas.js';
 import { mensagens } from './mensagens.js';
 import { ESTADOS_TAREFA } from './projectos.js';
@@ -225,3 +225,26 @@ export const importarConvidados = z.object({
     .min(1, mensagens.convidados.importacaoVazia)
     .max(MAX_LINHAS_IMPORTACAO, mensagens.convidados.importacaoGrande(MAX_LINHAS_IMPORTACAO)),
 });
+
+// Mesas (decisão 018). Lugares: quantas pessoas cabem, contando com os acompanhantes.
+const lugaresMesa = z
+  .union([z.number(), z.string().trim()], { error: m.lugaresInvalidos })
+  .transform((v) => (v === '' ? Number.NaN : Number(v)))
+  .pipe(z.number({ error: m.lugaresInvalidos }).int(m.lugaresInvalidos).min(1, m.lugaresInvalidos).max(MAX_LUGARES_POR_MESA, m.lugaresInvalidos));
+
+export const dadosMesa = z.object({
+  nome: textoDeUmaLinha(60, { obrigatorio: m.nomeMesaObrigatorio, longo: m.nomeMesaLongo, invalido: m.nomeMesaInvalido }),
+  lugares: lugaresMesa,
+});
+
+// Criar várias mesas de uma vez ("Mesa 1", "Mesa 2", …), todas com a mesma lotação.
+export const criarVariasMesas = z.object({
+  quantidade: z
+    .union([z.number(), z.string().trim()], { error: m.quantidadeMesasInvalida })
+    .transform((v) => (v === '' ? Number.NaN : Number(v)))
+    .pipe(z.number({ error: m.quantidadeMesasInvalida }).int(m.quantidadeMesasInvalida).min(1, m.quantidadeMesasInvalida).max(50, m.quantidadeMesasInvalida)),
+  lugares: lugaresMesa,
+});
+
+// Sentar um convidado numa mesa (null = tirar da mesa).
+export const sentarConvidado = z.object({ mesaId: z.uuid({ error: m.mesaInvalida }).nullable() });

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import {
   calcularTotais,
   type Convidado,
@@ -18,6 +18,7 @@ import { dadosConvidado } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api, mensagemDeErro } from './api.js';
 import { Campo } from './Campo.js';
+import { Desdobravel } from './Desdobravel.js';
 import { Formulario } from './Formulario.js';
 import { navegar } from './navegacao.js';
 
@@ -139,27 +140,21 @@ export function EcraConvidados({ id }: { id: string }) {
             {visiveis.length === 0 && <p className="campo__ajuda">{q.nenhumComFiltro}</p>}
             <ul className="convidados">
               {visiveis.map((c) => (
-                <LinhaConvidado key={c.id} convidado={c} caminho={caminho} projecto={lista.projecto} podeAlterar={lista.podeAlterar} aoMudar={mudarLocal} />
+                <LinhaConvidado
+                  key={c.id}
+                  convidado={c}
+                  mesa={lista.mesas.find((m) => m.id === c.mesaId)?.nome}
+                  caminho={caminho}
+                  projecto={lista.projecto}
+                  podeAlterar={lista.podeAlterar}
+                  aoMudar={mudarLocal}
+                />
               ))}
             </ul>
           </>
         )}
       </section>
     </main>
-  );
-}
-
-// Secção que abre e fecha com um toque. Começa aberta só se `aberto` for verdade ao aparecer (ex.: lista
-// vazia): depois disso fica como a pessoa a deixou, para não fechar o formulário a meio do trabalho.
-function Desdobravel({ titulo, aberto, children }: { titulo: string; aberto: boolean; children: ReactNode }) {
-  const [abertoAgora, setAberto] = useState(aberto);
-  return (
-    <details className="seccao desdobravel" open={abertoAgora} onToggle={(ev) => setAberto(ev.currentTarget.open)}>
-      <summary>
-        <h2>{titulo}</h2>
-      </summary>
-      {children}
-    </details>
   );
 }
 
@@ -299,6 +294,8 @@ function ImportarLista({ caminho, aoImportar }: { caminho: string; aoImportar: (
 
 interface PropsLinha {
   convidado: Convidado;
+  // Nome da mesa, se já tiver.
+  mesa?: string;
   caminho: string;
   projecto: ListaConvidados['projecto'];
   podeAlterar: boolean;
@@ -306,7 +303,7 @@ interface PropsLinha {
 }
 
 // Um convidado: nome, resposta e contactos; ao abrir, os dados para alterar (dono e editores).
-function LinhaConvidado({ convidado: c, caminho, projecto, podeAlterar, aoMudar }: PropsLinha) {
+function LinhaConvidado({ convidado: c, mesa, caminho, projecto, podeAlterar, aoMudar }: PropsLinha) {
   const [erro, setErro] = useState<string>();
   const [guardado, setGuardado] = useState(false);
   const contactos = [c.telemovel && formatarTelemovel(c.telemovel), c.email].filter(Boolean).join(' · ');
@@ -331,6 +328,7 @@ function LinhaConvidado({ convidado: c, caminho, projecto, podeAlterar, aoMudar 
           <span className="campo__ajuda convidado__detalhe">
             {contactos || q.semContacto}
             {c.acompanhantes > 0 && ` · ${q.comAcompanhantes(c.acompanhantesConfirmados, c.acompanhantes, c.resposta)}`}
+            {mesa && ` · ${mesa}`}
           </span>
         </summary>
         {podeAlterar && (

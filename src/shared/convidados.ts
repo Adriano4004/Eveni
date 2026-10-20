@@ -19,6 +19,34 @@ export interface Convidado {
   resposta: Resposta;
   acompanhantesConfirmados: number;
   respondidoEm: string | null;
+  // Mesa onde está sentado (null = ainda sem mesa).
+  mesaId: string | null;
+}
+
+export const MAX_MESAS_POR_PROJECTO = 200;
+export const MAX_LUGARES_POR_MESA = 100;
+
+export interface Mesa {
+  id: string;
+  nome: string;
+  lugares: number;
+}
+
+// Lugares que um convidado ocupa na mesa (decisão 018): ele e os acompanhantes. Quem confirmou conta com os
+// acompanhantes confirmados; quem ainda não respondeu conta com todos os permitidos (reserva-se o lugar);
+// quem não vai não ocupa lugar.
+export function lugaresDoConvidado(c: Pick<Convidado, 'resposta' | 'acompanhantes' | 'acompanhantesConfirmados'>): number {
+  if (c.resposta === 'no') return 0;
+  return 1 + (c.resposta === 'yes' ? c.acompanhantesConfirmados : c.acompanhantes);
+}
+
+// Lugares ocupados em cada mesa, por id da mesa.
+export function ocupacaoDasMesas(convidados: Pick<Convidado, 'mesaId' | 'resposta' | 'acompanhantes' | 'acompanhantesConfirmados'>[]): Map<string, number> {
+  const ocupacao = new Map<string, number>();
+  for (const c of convidados) {
+    if (c.mesaId) ocupacao.set(c.mesaId, (ocupacao.get(c.mesaId) ?? 0) + lugaresDoConvidado(c));
+  }
+  return ocupacao;
 }
 
 export interface TotaisConvidados {
@@ -35,6 +63,8 @@ export interface ListaConvidados {
   // Dono ou editor, com o projecto activo.
   podeAlterar: boolean;
   convidados: Convidado[];
+  // Pela ordem em que foram criadas.
+  mesas: Mesa[];
   totais: TotaisConvidados;
 }
 

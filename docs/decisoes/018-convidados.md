@@ -62,6 +62,24 @@
   - os pedidos são limitados por endereço IP. O limite é largo, porque muitos convidados da mesma operadora móvel podem partilhar o mesmo IP.
 - **O token não fica registado:** sai da barra de endereço logo à entrada e não é escrito nos logs.
 
-## Próximo PR desta fase
+## Mesas (terceiro PR) — decisões do Adriano a 20/10/2026
 
-3. Mesas e lugares.
+1. **Por mesa, sem lugar numerado:** cada convidado fica numa mesa (ex.: "Mesa 5", "Mesa dos noivos").
+2. **Os acompanhantes contam na lotação:**
+   - quem confirmou que vai ocupa 1 lugar mais os acompanhantes confirmados;
+   - quem ainda não respondeu ocupa 1 lugar mais todos os acompanhantes permitidos (reserva-se o lugar);
+   - quem não vai não ocupa lugar.
+3. **A mesa é só para a organização:** o convidado não a vê na página de RSVP (as mesas mudam muito até à véspera).
+
+### Regras
+
+- **Mesas:**
+  - cada mesa tem um nome, único no projecto (sem ligar a maiúsculas), e de 1 a 100 lugares;
+  - podem criar-se várias de uma vez ("Mesa 1", "Mesa 2"…, a continuar a numeração);
+  - no máximo 200 mesas por projecto;
+  - aparecem por ordem natural ("Mesa 2" antes de "Mesa 10").
+- **Passar da lotação é permitido**, com um aviso a vermelho na mesa. As respostas ao RSVP mudam a ocupação depois de as mesas estarem arrumadas, e recusar não ajudaria o organizador.
+- **Apagar uma mesa** deixa os seus convidados sem mesa. Nunca os apaga.
+- **A mesa tem de ser do mesmo projecto que o convidado.** O servidor verifica-o, e a base de dados também o garante, com uma chave estrangeira composta.
+- **Quem altera:** as mesmas regras dos convidados (dono e editores, com o projecto activo; os leitores só vêem).
+- **Exportação:** as mesas, e a mesa de cada convidado, saem na exportação de dados do dono.
