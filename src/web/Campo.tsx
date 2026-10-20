@@ -9,9 +9,11 @@ interface Props {
   ajuda?: string;
   // Teclado numérico no telemóvel (ex.: códigos de 6 dígitos).
   numerico?: boolean;
+  // Campo que se pode deixar em branco.
+  opcional?: boolean;
 }
 
-export function Campo({ rotulo, nome, tipo = 'text', autoComplete, erro, ajuda, numerico }: Props) {
+export function Campo({ rotulo, nome, tipo = 'text', autoComplete, erro, ajuda, numerico, opcional }: Props) {
   const id = useId();
   const idDescricao = `${id}-descricao`;
   return (
@@ -24,7 +26,7 @@ export function Campo({ rotulo, nome, tipo = 'text', autoComplete, erro, ajuda, 
         autoComplete={autoComplete}
         inputMode={numerico ? 'numeric' : undefined}
         pattern={numerico ? '[0-9]*' : undefined}
-        required
+        required={!opcional}
         aria-invalid={erro ? true : undefined}
         aria-describedby={erro || ajuda ? idDescricao : undefined}
       />

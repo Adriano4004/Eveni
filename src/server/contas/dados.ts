@@ -7,6 +7,8 @@ import { type BaseDeDados, emTransaccao } from '../db/index.js';
 import type { EnviarEmail } from '../email/index.js';
 import { emailContaEliminada } from '../email/modelos.js';
 import { ErroHttp, validar } from '../erros.js';
+import { lerProjecto } from '../projectos/rotas.js';
+import type { Projecto } from '../../shared/projectos.js';
 import { LIMITES, descontarTentativa, limitar, registarTentativa } from '../seguranca/limites.js';
 import { verificarPalavraPasse } from '../seguranca/palavras-passe.js';
 import type { criarGuardas } from './acesso.js';
@@ -31,6 +33,9 @@ export const TABELAS_PESSOAIS = {
   login_challenges: 'não exportada (temporária); apagada com a conta (cascata)',
   audit_log: 'exportada; apagada, incluindo registos com o e-mail',
   rate_limits: 'não exportada (contadores temporários); apagados os que incluem o e-mail ou o identificador',
+  projects: 'exportada (espaços de que a pessoa é dona); apagada com o espaço (cascata)',
+  tasks: 'exportada com o projecto; apagada com o projecto (cascata)',
+  budget_items: 'exportada com o projecto; apagada com o projecto (cascata)',
 } as const;
 
 export interface Exportacao {
@@ -47,6 +52,8 @@ export interface Exportacao {
   espacosDeTrabalho: { id: string; nome: string; plano: string; papel: string; planoDesde: string; criadoEm: string }[];
   sessoes: { criadaEm: string; ultimaUtilizacao: string; expiraEm: string; ip: string | null; navegador: string | null }[];
   historicoDeAcessos: { accao: string; data: string; ip: string | null; detalhes: Record<string, unknown> }[];
+  // Projectos dos espaços de que a pessoa é dona, com tarefas e orçamento.
+  projectos: Projecto[];
 }
 
 export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promise<Exportacao> {
@@ -78,6 +85,16 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       order by id`,
     [utilizadorId, u.email, u.created_at],
   );
+  const { rows: idsProjectos } = await pool.query<{ id: string }>(
+    `select p.id from projects p join workspace_members wm on wm.workspace_id = p.workspace_id
+      where wm.user_id = $1 and wm.role = 'owner' order by p.created_at`,
+    [utilizadorId],
+  );
+  const projectos: Projecto[] = [];
+  for (const { id } of idsProjectos) {
+    const projecto = await lerProjecto(pool, id, utilizadorId);
+    if (projecto) projectos.push(projecto);
+  }
   return {
     geradoEm: new Date().toISOString(),
     conta: {
@@ -105,6 +122,7 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       navegador: s.user_agent,
     })),
     historicoDeAcessos: acessos.map((a) => ({ accao: a.action, data: a.created_at.toISOString(), ip: a.ip, detalhes: a.details })),
+    projectos,
   };
 }
 

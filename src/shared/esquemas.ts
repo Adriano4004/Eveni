@@ -1,5 +1,6 @@
 // Esquemas de validação partilhados entre o servidor e os ecrãs (uma só fonte de verdade).
 import { z } from 'zod';
+import { dataValida } from './datas.js';
 import { mensagens } from './mensagens.js';
 import { ePalavraPasseComum } from './palavras-passe-comuns.js';
 
@@ -24,14 +25,17 @@ export const palavraPasseNova = z
   .refine((v) => /\p{L}/u.test(v) && /\d/.test(v), m.palavraPasseFraca)
   .refine((v) => !ePalavraPasseComum(v), m.palavraPasseComum);
 
-export const registo = z.object({
-  nome: z
-    .string({ error: m.nomeObrigatorio })
+// Texto de uma linha. Sem quebras de linha nem caracteres de controlo: aparece em ecrãs, PDF e notificações.
+const textoDeUmaLinha = (max: number, erros: { obrigatorio: string; longo: string; invalido: string }) =>
+  z
+    .string({ error: erros.obrigatorio })
     .trim()
-    .min(1, m.nomeObrigatorio)
-    .max(120, m.nomeLongo)
-    // Sem quebras de linha nem caracteres de controlo: o nome aparece em ecrãs, PDF e notificações.
-    .refine((v) => !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(v), m.nomeInvalido),
+    .min(1, erros.obrigatorio)
+    .max(max, erros.longo)
+    .refine((v) => !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(v), erros.invalido);
+
+export const registo = z.object({
+  nome: textoDeUmaLinha(120, { obrigatorio: m.nomeObrigatorio, longo: m.nomeLongo, invalido: m.nomeInvalido }),
   email,
   palavraPasse: palavraPasseNova,
 });
@@ -107,3 +111,26 @@ export interface Eu {
   doisFactores: boolean;
   espaco: { id: string; nome: string; plano: CodigoPlano };
 }
+
+// Projectos. A data do evento ser hoje ou futura (no calendário de Luanda) verifica-se no servidor.
+const codigoTemplate = z.string({ error: m.templateInvalido }).regex(/^T\d{2}$/, m.templateInvalido);
+const dataEvento = z.string({ error: m.dataEventoInvalida }).refine(dataValida, m.dataEventoInvalida);
+
+export const previsaoProjecto = z.object({ template: codigoTemplate, dataEvento });
+
+export const criarProjecto = z.object({
+  template: codigoTemplate,
+  nome: textoDeUmaLinha(120, { obrigatorio: m.nomeProjectoObrigatorio, longo: m.nomeProjectoLongo, invalido: m.nomeProjectoInvalido }),
+  dataEvento,
+  // Opcional: vazio conta como não indicado.
+  local: z
+    .string()
+    .trim()
+    .max(200, m.localLongo)
+    .refine((v) => !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(v), m.localInvalido)
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  // A pessoa leu os avisos de tarefas críticas sem tempo (obrigatório quando os há).
+  aceitarAvisos: z.boolean().optional(),
+});
+export type CriarProjecto = z.infer<typeof criarProjecto>;

@@ -18,6 +18,8 @@ function chavesDaConta(email: string, utilizadorId: string) {
       `mudar-palavra-passe:${utilizadorId}`,
       `dados-conta:${utilizadorId}`,
       `reenviar:${utilizadorId}`,
+      `criar-projecto:${utilizadorId}`,
+      `prever-projecto:${utilizadorId}`,
     ],
     prefixos: [`entrar-email-ip:${email}:`, `recuperar-email-ip:${email}:`, `entrar-2fa-erros:${utilizadorId}:`],
   };

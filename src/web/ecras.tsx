@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api, ErroApi, mensagemDeErro } from './api.js';
+import { ListaProjectos } from './ecras-projectos.js';
 import { Campo } from './Campo.js';
 import { Formulario } from './Formulario.js';
 import { navegar } from './navegacao.js';
@@ -118,7 +119,7 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
       <Logo />
       <h1>{e.inicio.ola(eu.nome)}</h1>
       {!eu.emailConfirmado && <AvisoConfirmar email={eu.email} />}
-      <p className="cartao__subtitulo">{e.inicio.emConstrucao}</p>
+      <ListaProjectos eu={eu} />
       <dl className="detalhes">
         <div>
           <dt>{e.inicio.espaco}</dt>

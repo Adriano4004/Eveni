@@ -4,6 +4,7 @@ import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
 import { EcraDados } from './ecras-dados.js';
 import { EcraDoisFactores } from './ecras-dois-factores.js';
+import { EcraNovoProjecto, EcraProjecto } from './ecras-projectos.js';
 import { EcraMudarPalavraPasse, EcraRecuperar, EcraRedefinir } from './ecras-palavra-passe.js';
 import { EcraConfirmarEmail, EcraEntrar, EcraInicio, EcraRegisto } from './ecras.js';
 import { navegar, useCaminho } from './navegacao.js';
@@ -97,6 +98,9 @@ export function App() {
     );
   }
   if (estado.tipo === 'com-sessao') {
+    if (caminho === '/projectos/novo') return <EcraNovoProjecto />;
+    const projecto = /^\/projectos\/([^/]+)$/.exec(caminho)?.[1];
+    if (projecto) return <EcraProjecto key={projecto} id={decodeURIComponent(projecto)} />;
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;
     if (caminho === '/conta/dados') {

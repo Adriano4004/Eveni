@@ -2,6 +2,10 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 
+// Colunas `date` (dias de calendário) chegam como texto "aaaa-mm-dd". Por omissão, o pg converte-as num
+// instante à meia-noite na hora local do servidor, o que pode mudar o dia.
+pg.types.setTypeParser(pg.types.builtins.DATE, (valor) => valor);
+
 export type BaseDeDados = ReturnType<typeof criarBaseDeDados>;
 
 export function criarBaseDeDados(url: string) {

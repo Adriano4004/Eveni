@@ -1,15 +1,11 @@
-import { dirname, join, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { criarApp } from './app.js';
 import { ConfigInvalida, lerConfig } from './config.js';
 import { limparExpirados } from './contas/sessoes.js';
 import { esperarSegundoPlano } from './segundo-plano.js';
 import { aplicarMigracoes, criarBaseDeDados } from './db/index.js';
+import { RAIZ } from './raiz.js';
 
-// Raiz do projecto, quer a correr com tsx (src/server/) quer compilado (dist/server/server/).
-const pastaDesteFicheiro = dirname(fileURLToPath(import.meta.url));
-const compilado = pastaDesteFicheiro.endsWith(join('dist', 'server', 'server'));
-const raiz = join(pastaDesteFicheiro, compilado ? '../../..' : '../..') + sep;
+const raiz = RAIZ;
 
 async function arrancar() {
   let config;
