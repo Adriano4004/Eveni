@@ -81,7 +81,7 @@ describe('acrescentar e ver convidados', () => {
     });
     await acrescentar(ana.cookie, projecto, { nome: 'adriano Costa' });
     const l = (await lista(ana.cookie, projecto)).json();
-    expect(l.projecto).toEqual({ id: projecto, nome: 'Conferência' });
+    expect(l.projecto).toEqual({ id: projecto, nome: 'Conferência', dataEvento: somarDias(hojeEmLuanda(), 30) });
     expect(l.podeAlterar).toBe(true);
     expect(l.convidados.map((g: Convidado) => g.nome)).toEqual(['adriano Costa', 'Ana Silva']);
     expect(l.totais).toEqual({ convidados: 2, vao: 0, naoVao: 0, semResposta: 2, pessoas: 0 });
