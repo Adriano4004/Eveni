@@ -101,7 +101,7 @@ export function App() {
   if (estado.tipo === 'com-sessao') {
     if (caminho === '/projectos/novo') return <EcraNovoProjecto />;
     const projecto = /^\/projectos\/([^/]+)$/.exec(caminho)?.[1];
-    if (projecto) return <EcraProjecto key={projecto} id={decodeURIComponent(projecto)} />;
+    if (projecto) return <EcraProjecto key={projecto} id={decodeURIComponent(projecto)} utilizadorId={estado.eu.id} />;
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;
     if (caminho === '/conta/dados') {
