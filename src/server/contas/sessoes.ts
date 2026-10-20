@@ -105,6 +105,10 @@ export async function limparExpirados(pool: pg.Pool): Promise<{ sessoes: number;
     "delete from email_tokens where expires_at < now() - interval '1 day' or used_at < now() - interval '1 day'",
   );
   await pool.query('delete from login_challenges where expires_at < now()');
+  // Convites aceites, revogados ou expirados há mais de 30 dias: o e-mail convidado é um dado de terceiro.
+  await pool.query(
+    "delete from invitations where coalesce(accepted_at, revoked_at, expires_at) < now() - interval '30 days' and (accepted_at is not null or revoked_at is not null or expires_at < now())",
+  );
   const contas = await apagarContasPorConfirmar({ pool });
   return { sessoes: sessoes.rowCount ?? 0, tentativas: tentativas.rowCount ?? 0, ligacoes: ligacoes.rowCount ?? 0, contas };
 }

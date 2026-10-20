@@ -143,3 +143,7 @@ export const actualizarTarefa = z
     responsavelId: z.uuid({ error: m.responsavelInvalido }).nullable().optional(),
   })
   .refine((d) => d.estado !== undefined || d.responsavelId !== undefined, { message: mensagens.erros.pedidoInvalido, path: ['estado'] });
+
+// Equipa e convites.
+export const convidar = z.object({ email });
+export const tokenConvite = z.object({ token: z.string().min(1).max(100) });

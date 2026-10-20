@@ -25,7 +25,11 @@ export type AccaoAuditada =
   | 'sessao.sair_todos'
   | 'projecto.criado'
   | 'projecto.arquivado'
-  | 'projecto.restaurado';
+  | 'projecto.restaurado'
+  | 'equipa.convite_criado'
+  | 'equipa.convite_revogado'
+  | 'equipa.convite_aceite'
+  | 'equipa.membro_removido';
 
 export async function auditar(
   pool: pg.Pool | pg.PoolClient,

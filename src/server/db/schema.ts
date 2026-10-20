@@ -256,3 +256,30 @@ export const projectMembers = pgTable(
     check('project_members_papel_valido', sql`${t.role} in ('editor', 'viewer')`),
   ],
 );
+
+// Convites para a equipa de um espaço de trabalho (decisão 017). O link leva o token; aqui guarda-se só
+// o hash. Uso único, válido 7 dias, revogável; só serve à conta com o e-mail convidado, já confirmado.
+export const invitations = pgTable(
+  'invitations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    // Sempre em minúsculas (ver normalizarEmail). Dado de terceiro: só o necessário.
+    email: text('email').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: criadoEm(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    acceptedBy: uuid('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('invitations_token_unico').on(t.tokenHash),
+    index('invitations_espaco').on(t.workspaceId),
+    index('invitations_email').on(t.email),
+    check('invitations_email_minusculas', sql`${t.email} = lower(${t.email})`),
+  ],
+);

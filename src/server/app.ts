@@ -13,6 +13,7 @@ import { registarRotasContas } from './contas/rotas.js';
 import { criarEnvioDeEmail, type EnviarEmail } from './email/index.js';
 import type { BaseDeDados } from './db/index.js';
 import { ErroHttp } from './erros.js';
+import { registarRotasEquipa } from './equipa/rotas.js';
 import { registarRotasProjectos } from './projectos/rotas.js';
 import { protegerOrigem } from './seguranca/origem.js';
 
@@ -85,6 +86,7 @@ export async function criarApp({ config, base, pastaWeb, enviarEmail = criarEnvi
   registarRotasPalavraPasse(app, config, base, enviarEmail, guardas);
   registarRotasDados(app, config, base, enviarEmail, guardas);
   registarRotasProjectos(app, base, guardas);
+  registarRotasEquipa(app, config, base, enviarEmail, guardas);
 
   app.get('/health', async (_pedido, resposta) => {
     const bdOk = await base.verificar();

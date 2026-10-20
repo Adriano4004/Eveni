@@ -20,6 +20,7 @@ function chavesDaConta(email: string, utilizadorId: string) {
       `reenviar:${utilizadorId}`,
       `criar-projecto:${utilizadorId}`,
       `prever-projecto:${utilizadorId}`,
+      `convidar:${utilizadorId}`,
     ],
     prefixos: [`entrar-email-ip:${email}:`, `recuperar-email-ip:${email}:`, `entrar-2fa-erros:${utilizadorId}:`],
   };
@@ -57,6 +58,8 @@ export async function eliminarContaCompleta(cliente: pg.PoolClient, utilizadorId
       where key = any($1::text[]) or exists (select 1 from unnest($2::text[]) p where left(key, length(p)) = p)`,
     [chaves.exactas, chaves.prefixos],
   );
+  // Convites que a pessoa criou e convites feitos para o e-mail dela (de outros espaços).
+  await cliente.query('delete from invitations where created_by = $1 or email = $2', [utilizadorId, email]);
   // Sessões, ligações, códigos e entradas a meio vão em cascata.
   await cliente.query('delete from users where id = $1', [utilizadorId]);
   await auditar(cliente, 'conta.eliminada', {});

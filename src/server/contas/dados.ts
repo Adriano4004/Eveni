@@ -36,6 +36,7 @@ export const TABELAS_PESSOAIS = {
   projects: 'exportada (espaços de que a pessoa é dona); apagada com o espaço (cascata)',
   tasks: 'exportada com o projecto; apagada com o projecto (cascata)',
   budget_items: 'exportada com o projecto; apagada com o projecto (cascata)',
+  invitations: 'exportada (convites enviados e recebidos); apagados os que a pessoa criou e os feitos para o e-mail dela; os antigos são apagados ao fim de 30 dias',
   project_members: 'exportada (acessos da pessoa a projectos de outros espaços: projecto, espaço, papel, desde); apagada com o projecto ou com a conta (cascata)',
 } as const;
 
@@ -57,7 +58,14 @@ export interface Exportacao {
   projectos: Projecto[];
   // Projectos de outros espaços a que a pessoa tem acesso (como editora ou leitora).
   acessosAProjectos: { projectoId: string; projecto: string; espaco: string; papel: string; desde: string }[];
+  convitesEnviados: { email: string; criadoEm: string; estado: EstadoConvite }[];
+  convitesRecebidos: { espaco: string; criadoEm: string; estado: EstadoConvite }[];
 }
+
+type EstadoConvite = 'aceite' | 'revogado' | 'expirado' | 'pendente';
+// `t` é o prefixo da tabela na consulta (fixo, nunca do pedido).
+const estadoConvite = (t = '') => `case when ${t}accepted_at is not null then 'aceite' when ${t}revoked_at is not null then 'revogado'
+                                        when ${t}expires_at < now() then 'expirado' else 'pendente' end`;
 
 export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promise<Exportacao> {
   const iso = (d: Date | null) => (d ? d.toISOString() : null);
@@ -99,6 +107,15 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       where pm.user_id = $1 order by pm.created_at`,
     [utilizadorId],
   );
+  const { rows: enviados } = await pool.query<{ email: string; created_at: Date; estado: EstadoConvite }>(
+    `select email, created_at, ${estadoConvite()} as estado from invitations where created_by = $1 order by created_at`,
+    [utilizadorId],
+  );
+  const { rows: recebidos } = await pool.query<{ espaco: string; created_at: Date; estado: EstadoConvite }>(
+    `select w.name as espaco, i.created_at, ${estadoConvite('i.')} as estado
+       from invitations i join workspaces w on w.id = i.workspace_id where i.email = $1 order by i.created_at`,
+    [u.email],
+  );
   const projectos: Projecto[] = [];
   for (const { id } of idsProjectos) {
     const projecto = await lerProjecto(pool, id, utilizadorId);
@@ -139,6 +156,8 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       papel: a.role,
       desde: a.created_at.toISOString(),
     })),
+    convitesEnviados: enviados.map((c) => ({ email: c.email, criadoEm: c.created_at.toISOString(), estado: c.estado })),
+    convitesRecebidos: recebidos.map((c) => ({ espaco: c.espaco, criadoEm: c.created_at.toISOString(), estado: c.estado })),
   };
 }
 

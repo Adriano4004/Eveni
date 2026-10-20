@@ -300,3 +300,63 @@ test('um leitor vê o projecto mas não o altera; um membro sem acesso não o v�
   await outro.goto(`/projectos/${projecto}`);
   await expect(outro.getByRole('alert')).toHaveText('Projecto não encontrado.');
 });
+
+test('convidar uma pessoa para a equipa: ligação, criar conta, aceitar e retirar', async ({ browser }) => {
+  const dona = await (await browser.newContext()).newPage();
+  await contaConfirmada(dona, 'Olga');
+  // Plano Empresarial (os pagamentos chegam mais tarde): directamente na base de dados de teste.
+  const cliente = new pg.Client({ connectionString: envValido.DATABASE_URL });
+  await cliente.connect();
+  await cliente.query(
+    "update workspaces set plan_code = 'empresarial' where id in (select workspace_id from workspace_members wm join users u on u.id = wm.user_id where u.name = 'Olga')",
+  );
+
+  await dona.getByRole('button', { name: 'Equipa' }).click();
+  await expect(dona.getByRole('heading', { name: 'Equipa' })).toBeVisible();
+  await expect(dona.getByText('1 de 10 pessoas')).toBeVisible();
+  const emailConvidado = `paulo.${Date.now()}@exemplo.ao`;
+  await dona.getByLabel('E-mail da pessoa').fill(emailConvidado);
+  await dona.getByRole('button', { name: 'Criar convite' }).click();
+  await expect(dona.getByText('Convite criado')).toBeVisible();
+  await expect(dona.getByRole('link', { name: 'Partilhar no WhatsApp' })).toHaveAttribute('href', /^https:\/\/wa\.me\/\?text=/);
+  const ligacao = (await dona.locator('.ligacao-convite').textContent())!;
+  await expect(dona.getByText('2 de 10 pessoas')).toBeVisible();
+
+  // A pessoa abre a ligação sem conta: vê o convite, cria conta e volta ao convite.
+  const convidado = await (await browser.newContext()).newPage();
+  await convidado.goto(ligacao);
+  await expect(convidado.getByText('Olga convidou-o para a equipa «Espaço de Olga» no Eveni.')).toBeVisible();
+  await expect(convidado).toHaveURL(/\/convite$/);
+  await convidado.getByRole('button', { name: 'Criar conta' }).click();
+  await convidado.getByLabel('Nome').fill('Paulo');
+  await convidado.getByLabel('E-mail').fill(emailConvidado);
+  await convidado.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await convidado.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(convidado.getByRole('button', { name: 'Aceitar convite' })).toBeVisible();
+
+  // Sem o e-mail confirmado, não aceita; depois de confirmar, aceita.
+  await convidado.getByRole('button', { name: 'Aceitar convite' }).click();
+  await expect(convidado.getByRole('alert')).toContainText('Confirme o seu e-mail');
+  await cliente.query('update users set email_verified_at = now() where email = $1', [emailConvidado]);
+  await convidado.getByRole('button', { name: 'Aceitar convite' }).click();
+  await expect(convidado.getByText('Já faz parte da equipa «Espaço de Olga».', { exact: false })).toBeVisible();
+  await convidado.getByRole('button', { name: 'Ir para o início' }).click();
+  await expect(convidado.getByRole('heading', { name: 'Olá, Paulo' })).toBeVisible();
+  await cliente.end();
+
+  // A dona vê o Paulo na equipa e retira-o.
+  await dona.reload();
+  await expect(dona.getByText(emailConvidado)).toBeVisible();
+  await expect(dona.getByRole('heading', { name: 'Convites por aceitar' })).toHaveCount(0);
+  dona.once('dialog', (d) => d.accept());
+  await dona.getByRole('button', { name: 'Retirar' }).click();
+  await expect(dona.getByText(emailConvidado)).toHaveCount(0);
+  await expect(dona.getByText('1 de 10 pessoas')).toBeVisible();
+});
+
+test('no plano Singular, a equipa explica que não há colaboração', async ({ page }) => {
+  await contaConfirmada(page, 'Quim');
+  await page.getByRole('button', { name: 'Equipa' }).click();
+  await expect(page.getByText('O plano Singular não inclui equipa.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Criar convite' })).toHaveCount(0);
+});

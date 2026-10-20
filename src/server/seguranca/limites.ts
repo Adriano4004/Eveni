@@ -68,6 +68,10 @@ export const LIMITES = {
   criarProjecto: { max: 30, janela: 60 * 60 },
   // Ver os prazos enquanto se escolhe a data: generoso, só trava abusos.
   preverProjecto: { max: 300, janela: 60 * 60 },
+  // Convites: por dono (cada convite pode enviar um e-mail para um endereço qualquer).
+  convidarPorConta: { max: 20, janela: 60 * 60 },
+  // Ver e aceitar convites: por IP (a ligação é pública até se entrar).
+  convitesPorIp: { max: 30, janela: 15 * 60 },
 } as const;
 
 // Regista a tentativa e recusa com 429 quando passa do limite.

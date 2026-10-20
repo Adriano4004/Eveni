@@ -1,0 +1,52 @@
+// Tipos da API da equipa do espaço de trabalho e dos convites (decisão 017).
+import type { CodigoPlano } from './esquemas.js';
+
+// Pessoas no espaço por plano, contando com o dono e com os convites por aceitar. null = sem limite.
+// O plano Singular não tem colaboração: só o dono.
+export const LIMITE_PESSOAS: Record<CodigoPlano, number | null> = {
+  singular: 1,
+  empresarial: 10,
+  grandes: null,
+};
+
+export const DIAS_VALIDADE_CONVITE = 7;
+
+export interface MembroEquipa {
+  id: string;
+  nome: string;
+  email: string;
+  papel: 'owner' | 'member';
+  desde: string;
+}
+
+export interface ConvitePendente {
+  id: string;
+  email: string;
+  criadoEm: string;
+  expiraEm: string;
+}
+
+// Só para o dono do espaço: inclui e-mails.
+export interface Equipa {
+  espaco: string;
+  plano: CodigoPlano;
+  limite: number | null;
+  // Membros mais convites por aceitar.
+  ocupados: number;
+  membros: MembroEquipa[];
+  convites: ConvitePendente[];
+}
+
+// Resposta a criar um convite. A ligação só aparece aqui, uma vez.
+export interface ConviteCriado extends ConvitePendente {
+  ligacao: string;
+}
+
+// O que quem abre a ligação vê antes de aceitar.
+export interface InfoConvite {
+  espaco: string;
+  convidadoPor: string;
+  // Parcialmente escondido (ex.: a***@exemplo.ao).
+  email: string;
+  expiraEm: string;
+}
