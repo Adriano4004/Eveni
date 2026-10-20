@@ -118,6 +118,35 @@ describe('acesso indevido', () => {
     expect(r.statusCode).toBe(403);
     expect(r.json().mensagem).toMatch(/Só o dono/);
     expect((await base.pool.query('select status from projects where id = $1', [id])).rows[0].status).toBe('active');
+
+    // Nem restaurar; e o ecrã só mostra o botão ao dono.
+    await c.post(`/api/projectos/${id}/arquivar`, {}, ana.cookie);
+    expect((await c.post(`/api/projectos/${id}/restaurar`, {}, bruno.cookie)).statusCode).toBe(403);
+    expect((await base.pool.query('select status from projects where id = $1', [id])).rows[0].status).toBe('archived');
+    expect((await c.get(`/api/projectos/${id}`, bruno.cookie)).json().podeArquivar).toBe(false);
+    expect((await c.get(`/api/projectos/${id}`, ana.cookie)).json().podeArquivar).toBe(true);
+  });
+
+  it('arquivar e alterar tarefas ao mesmo tempo: nenhuma alteração entra depois de arquivado', async () => {
+    const { cookie } = await contaConfirmada();
+    const id = await criarProjecto(cookie);
+    const tarefas: { id: string }[] = (await c.get(`/api/projectos/${id}`, cookie)).json().tarefasDoProjecto;
+    const pedidos = [
+      ...tarefas.slice(0, 15).map((t) => c.post(`/api/projectos/${id}/tarefas/${t.id}`, { estado: 'done' }, cookie)),
+      c.post(`/api/projectos/${id}/arquivar`, {}, cookie),
+    ];
+    const respostas = await Promise.all(pedidos);
+    expect(respostas.at(-1)!.statusCode).toBe(200);
+    const aceites = respostas.slice(0, -1).filter((r) => r.statusCode === 200).length;
+    const recusadas = respostas.slice(0, -1).filter((r) => r.statusCode === 409).length;
+    expect(aceites + recusadas).toBe(15);
+    // Todas as alterações aceites ficaram antes do arquivo; nenhuma depois.
+    const { rows } = await base.pool.query(
+      `select count(*)::int as n, count(*) filter (where t.updated_at > p.archived_at)::int as depois
+         from tasks t join projects p on p.id = t.project_id where p.id = $1 and t.status = 'done'`,
+      [id],
+    );
+    expect(rows[0]).toEqual({ n: aceites, depois: 0 });
   });
 
   it('sem sessão: 401; e-mail por confirmar: 403; ID mal formado: 404; pedido de outro site: 403', async () => {

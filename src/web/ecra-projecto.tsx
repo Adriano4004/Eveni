@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useId, useState } from 'react';
 import { formatarData } from '../shared/datas.js';
 import { formatarKz } from '../shared/dinheiro.js';
 import { mensagens } from '../shared/mensagens.js';
@@ -182,7 +182,7 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
 }
 
 // Arquivar (no fim da página) ou restaurar (no aviso de projecto arquivado). Só para o dono do espaço.
-function BotaoArquivo({ projecto, aoMudar }: { projecto: Projecto; aoMudar: (p: Projecto) => void }) {
+function BotaoArquivo({ projecto, aoMudar }: { projecto: Projecto; aoMudar: Dispatch<SetStateAction<Projecto | undefined>> }) {
   const [aEnviar, setAEnviar] = useState(false);
   const [erro, setErro] = useState<string>();
   const arquivar = projecto.estado === 'active';
@@ -193,7 +193,8 @@ function BotaoArquivo({ projecto, aoMudar }: { projecto: Projecto; aoMudar: (p: 
     setErro(undefined);
     try {
       const resumo = await api<ResumoProjecto>('POST', `/api/projectos/${encodeURIComponent(projecto.id)}/${arquivar ? 'arquivar' : 'restaurar'}`);
-      aoMudar({ ...projecto, ...resumo });
+      // Sobre o estado actual, não sobre a cópia do momento do clique: uma tarefa guardada entretanto não se perde.
+      aoMudar((actual) => actual && { ...actual, ...resumo });
     } catch (falha) {
       setErro(mensagemDeErro(falha));
     } finally {
