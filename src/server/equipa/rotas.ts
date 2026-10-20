@@ -237,6 +237,12 @@ export function registarRotasEquipa(
           espaco.id,
         ]);
         if (limite !== null && n[0]!.n >= limite) throw new ErroHttp(409, m.equipaCompleta);
+        // Segunda salvaguarda: ao entrar (ou voltar) para a equipa, nenhum acesso antigo a projectos deste espaço
+        // se mantém. Quem entra não vê nenhum projecto até o dono lhe dar acesso (decisão 017).
+        await cliente.query('delete from project_members where user_id = $1 and project_id in (select id from projects where workspace_id = $2)', [
+          utilizadorId,
+          espaco.id,
+        ]);
         await cliente.query("insert into workspace_members (workspace_id, user_id, role) values ($1, $2, 'member')", [espaco.id, utilizadorId]);
       }
       await cliente.query('update invitations set accepted_at = now(), accepted_by = $2 where id = $1', [convite.id, utilizadorId]);

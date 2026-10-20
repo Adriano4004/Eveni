@@ -29,7 +29,9 @@ export type AccaoAuditada =
   | 'equipa.convite_criado'
   | 'equipa.convite_revogado'
   | 'equipa.convite_aceite'
-  | 'equipa.membro_removido';
+  | 'equipa.membro_removido'
+  | 'projecto.acesso_dado'
+  | 'projecto.acesso_retirado';
 
 export async function auditar(
   pool: pg.Pool | pg.PoolClient,

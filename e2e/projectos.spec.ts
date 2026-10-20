@@ -371,3 +371,57 @@ test('uma ligação de convite inválida mostra o erro e deixa voltar ao início
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Olá, Rui' })).toBeVisible();
 });
+
+test('o dono dá acesso a um projecto, muda para leitor e retira', async ({ browser }) => {
+  const dona = await (await browser.newContext()).newPage();
+  await contaConfirmada(dona, 'Sara');
+  await dona.getByRole('button', { name: 'Novo projecto' }).click();
+  await dona.getByLabel('Nome do projecto').fill('Gala anual');
+  await dona.getByLabel('Data do evento').fill(emDias(40));
+  await expect(dona.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await dona.getByRole('button', { name: 'Criar projecto' }).click();
+  await expect(dona.getByRole('heading', { name: 'Gala anual' })).toBeVisible();
+  await expect(dona.getByText('Ainda não há mais ninguém na equipa.', { exact: false })).toBeVisible();
+
+  // O Tiago entra na equipa (o convite já tem o seu próprio teste: aqui, directamente na base de dados).
+  const membro = await (await browser.newContext()).newPage();
+  await contaConfirmada(membro, 'Tiago');
+  const cliente = new pg.Client({ connectionString: envValido.DATABASE_URL });
+  await cliente.connect();
+  const projecto = dona.url().split('/').pop()!;
+  await cliente.query(
+    `insert into workspace_members (workspace_id, user_id, role)
+     select p.workspace_id, (select id from users where name = 'Tiago' order by created_at desc limit 1), 'member'
+       from projects p where p.id = $1`,
+    [projecto],
+  );
+  await cliente.end();
+
+  // Dar acesso de editor.
+  await dona.reload();
+  await dona.getByLabel('Pessoa', { exact: true }).selectOption({ label: 'Tiago' });
+  await dona.getByLabel('Acesso', { exact: true }).selectOption({ label: 'Editor' });
+  await dona.getByRole('button', { name: 'Dar acesso' }).click();
+  await expect(dona.getByLabel('Acesso: Tiago')).toHaveValue('editor');
+  await expect(dona.getByText('Todas as pessoas da equipa já têm acesso a este projecto.')).toBeVisible();
+
+  await membro.reload();
+  await membro.getByRole('link', { name: /Gala anual/ }).click();
+  await membro.getByRole('checkbox', { name: 'Concluída: Validar que existe facto novo' }).check();
+  await expect(membro.getByText('1 de 47 tarefas concluídas')).toBeVisible();
+
+  // Passar a leitor (pede confirmação, porque lhe retira as tarefas).
+  dona.once('dialog', (d) => d.accept());
+  await dona.getByLabel('Acesso: Tiago').selectOption({ label: 'Leitor' });
+  await expect(dona.getByLabel('Acesso: Tiago')).toHaveValue('viewer');
+  await membro.reload();
+  await expect(membro.getByText('Tem acesso a este projecto só para consulta.')).toBeVisible();
+  await expect(membro.getByRole('checkbox', { name: 'Concluída: Validar que existe facto novo' })).toBeDisabled();
+
+  // Retirar.
+  dona.once('dialog', (d) => d.accept());
+  await dona.getByRole('button', { name: 'Retirar acesso' }).click();
+  await expect(dona.getByLabel('Acesso: Tiago')).toHaveCount(0);
+  await membro.reload();
+  await expect(membro.getByRole('alert')).toHaveText('Projecto não encontrado.');
+});

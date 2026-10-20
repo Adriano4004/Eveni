@@ -911,3 +911,23 @@ h1 {
   text-align: center;
   text-decoration: none;
 }
+
+.acesso__accoes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.acesso__accoes select {
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  font: inherit;
+}
+
+.dar-acesso {
+  margin-top: 12px;
+}
