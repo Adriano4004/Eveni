@@ -26,6 +26,10 @@ export interface Dependencias {
   pastaWeb?: string;
 }
 
+export function esconderTokens(url: string): string {
+  return url.replace(/([?&]token=)[^&#]*/gi, '$1[escondido]');
+}
+
 export function eRotaDeEcra(metodo: string, url: string): boolean {
   if (metodo !== 'GET' && metodo !== 'HEAD') return false;
   const caminho = url.split('?')[0] ?? '';
@@ -36,7 +40,20 @@ export function eRotaDeEcra(metodo: string, url: string): boolean {
 
 export async function criarApp({ config, base, pastaWeb, enviarEmail = criarEnvioDeEmail(config) }: Dependencias) {
   const app = Fastify({
-    logger: config.NODE_ENV === 'test' ? false : { level: 'info' },
+    logger:
+      config.NODE_ENV === 'test'
+        ? false
+        : {
+            level: 'info',
+            // As ligações enviadas por e-mail ou WhatsApp levam um token no endereço (?token=...): nunca nos logs.
+            serializers: {
+              req: (pedido: { method: string; url: string; ip?: string }) => ({
+                method: pedido.method,
+                url: esconderTokens(pedido.url),
+                ip: pedido.ip,
+              }),
+            },
+          },
     // Confiar só nos proxies do alojamento (TRUST_PROXY_HOPS), para que um cliente não consiga
     // falsificar o IP com o cabeçalho X-Forwarded-For (importante para a limitação de pedidos).
     trustProxy: (_endereco: string, salto: number) => salto < config.TRUST_PROXY_HOPS,

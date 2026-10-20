@@ -360,3 +360,14 @@ test('no plano Singular, a equipa explica que não há colaboração', async ({ 
   await expect(page.getByText('O plano Singular não inclui equipa.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Criar convite' })).toHaveCount(0);
 });
+
+test('uma ligação de convite inválida mostra o erro e deixa voltar ao início', async ({ page }) => {
+  await contaConfirmada(page, 'Rui');
+  await page.goto('/convite?token=ligacao-inventada');
+  await expect(page.getByRole('alert')).toContainText('Este convite é inválido');
+  await page.getByRole('button', { name: 'Ir para o início' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Rui' })).toBeVisible();
+  // A ligação inválida não fica guardada: recarregar o início não leva de volta ao convite.
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Olá, Rui' })).toBeVisible();
+});

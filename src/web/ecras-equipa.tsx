@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { formatarData, hojeEmLuanda } from '../shared/datas.js';
 import type { ConviteCriado, Equipa, InfoConvite } from '../shared/equipa.js';
 import { mensagens } from '../shared/mensagens.js';
-import { api, mensagemDeErro } from './api.js';
+import { api, ErroApi, mensagemDeErro } from './api.js';
 import { Campo } from './Campo.js';
 import { Formulario } from './Formulario.js';
 import { navegar } from './navegacao.js';
@@ -180,7 +180,10 @@ function ConviteParaPartilhar({ convite, espaco }: { convite: ConviteCriado; esp
 }
 
 // Quem abre a ligação do convite: vê de quem é; com sessão, aceita; sem sessão, entra ou cria conta primeiro.
-export function EcraConvite({ token, comSessao, aoAceitar }: { token: string; comSessao: boolean; aoAceitar: () => void }) {
+// `aoTerminar` esquece a ligação guardada no separador: depois de aceitar, ou quando ela já não serve
+// (inválida, usada, cancelada, expirada, equipa completa). Um 403 (e-mail por confirmar, ou sessão noutra
+// conta) resolve-se sem sair do ecrã, por isso aí a ligação mantém-se.
+export function EcraConvite({ token, comSessao, aoTerminar }: { token: string; comSessao: boolean; aoTerminar: () => void }) {
   const c = e.convite;
   const [info, setInfo] = useState<InfoConvite>();
   const [erro, setErro] = useState<string>();
@@ -194,8 +197,16 @@ export function EcraConvite({ token, comSessao, aoAceitar }: { token: string; co
     }
     api<InfoConvite>('POST', '/api/convites/ver', { token })
       .then(setInfo)
-      .catch((falha) => setErro(mensagemDeErro(falha)));
+      .catch(falhou);
   }, [token]);
+
+  function falhou(falha: unknown) {
+    setErro(mensagemDeErro(falha));
+    if (falha instanceof ErroApi && (falha.estado === 404 || falha.estado === 409)) {
+      setInfo(undefined);
+      aoTerminar();
+    }
+  }
 
   async function aceitar() {
     setAAceitar(true);
@@ -203,9 +214,9 @@ export function EcraConvite({ token, comSessao, aoAceitar }: { token: string; co
     try {
       const r = await api<{ espaco: string }>('POST', '/api/convites/aceitar', { token });
       setAceite(r.espaco);
-      aoAceitar();
+      aoTerminar();
     } catch (falha) {
-      setErro(mensagemDeErro(falha));
+      falhou(falha);
     } finally {
       setAAceitar(false);
     }
@@ -220,6 +231,11 @@ export function EcraConvite({ token, comSessao, aoAceitar }: { token: string; co
         </p>
       )}
       {!info && !erro && <p className="a-carregar">{c.carregar}</p>}
+      {erro && !info && !aceite && (
+        <button className="botao botao--secundario" type="button" onClick={() => navegar('/')}>
+          {c.irInicio}
+        </button>
+      )}
       {aceite ? (
         <>
           <p className="sucesso">{c.aceite(aceite)}</p>

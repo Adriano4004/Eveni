@@ -219,6 +219,34 @@ describe('ver e aceitar o convite', () => {
     expect(await contar("select count(*)::int as n from workspace_members where role = 'member'")).toBe(0);
   });
 
+  it('com a equipa completa (10 pessoas), o convite já não entra', async () => {
+    const { ana, token } = await convite();
+    const { rows } = await base.pool.query<{ workspace_id: string }>("select workspace_id from workspace_members wm join users u on u.id = wm.user_id where u.email = 'ana@exemplo.ao'");
+    for (let i = 0; i < 9; i++) {
+      const outra = await contaConfirmada(`m${i}@exemplo.ao`, `Membro ${i}`);
+      await base.pool.query("insert into workspace_members (workspace_id, user_id, role) values ($1, $2, 'member')", [rows[0]!.workspace_id, outra.id]);
+    }
+    expect((await c.get('/api/equipa', ana.cookie)).json().membros).toHaveLength(10);
+    const bruno = await contaConfirmada('bruno@exemplo.ao', 'Bruno Neto');
+    const r = await c.post('/api/convites/aceitar', { token }, bruno.cookie);
+    expect(r.statusCode).toBe(409);
+    expect(r.json().mensagem).toMatch(/completa/);
+  });
+
+  it('aceitar ao mesmo tempo que o dono cancela ou volta a convidar não dá erro interno', async () => {
+    for (let ronda = 0; ronda < 3; ronda++) {
+      await limparBaseDeDados(base.pool);
+      const { ana, token } = await convite();
+      const bruno = await contaConfirmada('bruno@exemplo.ao', 'Bruno Neto');
+      const { convites } = (await c.get('/api/equipa', ana.cookie)).json();
+      const respostas = await Promise.all([
+        c.post('/api/convites/aceitar', { token }, bruno.cookie),
+        ronda % 2 === 0 ? c.post(`/api/equipa/convites/${convites[0].id}/revogar`, {}, ana.cookie) : convidar(ana.cookie, 'bruno@exemplo.ao'),
+      ]);
+      for (const r of respostas) expect(r.statusCode, r.body).toBeLessThan(500);
+    }
+  });
+
   it('aceitar duas vezes ao mesmo tempo só junta a pessoa uma vez', async () => {
     const { token } = await convite();
     const bruno = await contaConfirmada('bruno@exemplo.ao', 'Bruno Neto');
@@ -257,6 +285,15 @@ describe('gerir a equipa: só o dono, só no seu espaço', () => {
     expect((await c.get('/api/equipa', ana.cookie)).json()).toMatchObject({ ocupados: 3 });
   });
 
+  it('alguém de fora da equipa também não revoga nem retira: 404', async () => {
+    const { ana, bruno } = await equipaComBruno();
+    const carla = await contaConfirmada('carla@exemplo.ao', 'Carla Lima');
+    const convite = (await convidar(ana.cookie, 'daniel@exemplo.ao')).json();
+    expect((await c.post(`/api/equipa/convites/${convite.id}/revogar`, {}, carla.cookie)).statusCode).toBe(404);
+    expect((await c.post(`/api/equipa/membros/${bruno.id}/remover`, {}, carla.cookie)).statusCode).toBe(404);
+    expect((await c.get('/api/equipa', ana.cookie)).json()).toMatchObject({ ocupados: 3 });
+  });
+
   it('o dono não se retira a si próprio; IDs mal formados dão 404', async () => {
     const { ana } = await equipaComBruno();
     expect((await c.post(`/api/equipa/membros/${ana.id}/remover`, {}, ana.cookie)).statusCode).toBe(404);
@@ -280,6 +317,23 @@ describe('gerir a equipa: só o dono, só no seu espaço', () => {
     expect((await c.get('/api/equipa', ana.cookie)).json().membros).toHaveLength(1);
     const accoes = (await base.pool.query<{ action: string }>("select action from audit_log where action like 'equipa.%' order by id")).rows.map((r) => r.action);
     expect(accoes).toEqual(['equipa.convite_criado', 'equipa.convite_aceite', 'equipa.membro_removido']);
+  });
+});
+
+describe('limites dos e-mails de convite', () => {
+  it('acima do limite diário por espaço, o convite cria-se mas não sai por e-mail', async () => {
+    const ana = await contaConfirmada('ana@exemplo.ao', 'Ana Domingos');
+    await mudarPlano(ana.email, 'grandes');
+    for (let i = 0; i < 12; i++) expect((await convidar(ana.cookie, `p${i}@exemplo.ao`)).statusCode).toBe(201);
+    const convites = c.emails.filter((m) => m.assunto === 'Convite para uma equipa no Eveni');
+    expect(convites).toHaveLength(10);
+  });
+
+  it('o limite diário total protege a quota dos e-mails de conta', async () => {
+    const ana = await anaEmpresarial();
+    await base.pool.query("insert into rate_limits (key, count, window_start) values ('emails-convite:total', 40, now())");
+    expect((await convidar(ana.cookie, 'bruno@exemplo.ao')).statusCode).toBe(201);
+    expect(c.emails.filter((m) => m.assunto === 'Convite para uma equipa no Eveni')).toHaveLength(0);
   });
 });
 

@@ -97,7 +97,7 @@ export function App() {
   }
   if (caminho === '/convite') {
     return (
-      <EcraConvite token={conviteGuardado() || tokenConvite} comSessao={estado.tipo === 'com-sessao'} aoAceitar={() => esquecerToken('/convite')} />
+      <EcraConvite token={conviteGuardado() || tokenConvite} comSessao={estado.tipo === 'com-sessao'} aoTerminar={() => esquecerToken('/convite')} />
     );
   }
   if (caminho === '/confirmar-email') {
@@ -133,7 +133,16 @@ export function App() {
         />
       );
     }
-    return <EcraInicio eu={estado.eu} aoSair={() => setEstado({ tipo: 'anonimo' })} />;
+    return (
+      <EcraInicio
+        eu={estado.eu}
+        aoSair={() => {
+          // Num telemóvel partilhado, quem entrar a seguir não deve ser levado para o convite de outra pessoa.
+          esquecerToken('/convite');
+          setEstado({ tipo: 'anonimo' });
+        }}
+      />
+    );
   }
   if (caminho === '/registo') return <EcraRegisto aoEntrar={entrou} />;
   if (caminho === '/recuperar') return <EcraRecuperar />;

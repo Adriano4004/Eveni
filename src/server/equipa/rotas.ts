@@ -13,7 +13,7 @@ import { type BaseDeDados, emTransaccao } from '../db/index.js';
 import { esconderEmail, type EnviarEmail } from '../email/index.js';
 import { emailConvite } from '../email/modelos.js';
 import { ErroHttp, validar } from '../erros.js';
-import { LIMITES, limitar } from '../seguranca/limites.js';
+import { LIMITES, limitar, registarTentativa } from '../seguranca/limites.js';
 
 // Equipa do espaço de trabalho e convites (decisão 017).
 // Gerir a equipa é sempre sobre o espaço de que a pessoa é DONA, tirado da sessão: nenhum pedido indica
@@ -119,12 +119,19 @@ export function registarRotasEquipa(
       );
       // Sem o e-mail convidado na auditoria: é um dado de terceiro.
       await auditar(cliente, 'equipa.convite_criado', { utilizadorId, ip: pedido.ip, detalhes: { conviteId: rows[0]!.id } });
-      return { ...rows[0]!, quem: dono[0]!.name, espaco: espaco.name };
+      return { ...rows[0]!, quem: dono[0]!.name, espaco: espaco.name, espacoId: espaco.id };
     });
 
     const ligacao = `${config.APP_URL}/convite?token=${encodeURIComponent(token)}`;
     // Por e-mail também (sem domínio configurado fica só nos logs); o dono partilha a ligação por WhatsApp.
-    enviarEmail(emailConvite(email, ligacao, criado.quem, criado.espaco));
+    // Com limites diários, para os convites nunca gastarem a quota dos e-mails de conta.
+    const porEspaco = await registarTentativa(pool, `emails-convite:${criado.espacoId}`, LIMITES.emailsConvitePorEspaco.janela);
+    const total = porEspaco <= LIMITES.emailsConvitePorEspaco.max ? await registarTentativa(pool, 'emails-convite:total', LIMITES.emailsConviteTotal.janela) : 0;
+    if (porEspaco <= LIMITES.emailsConvitePorEspaco.max && total <= LIMITES.emailsConviteTotal.max) {
+      enviarEmail(emailConvite(email, ligacao, criado.quem, criado.espaco));
+    } else {
+      console.warn(`[email:limite] convite ${criado.id} não enviado por e-mail (limite diário de convites); fica a ligação`);
+    }
     const corpo: ConviteCriado = {
       id: criado.id,
       email,
@@ -201,20 +208,24 @@ export function registarRotasEquipa(
     const { utilizadorId } = pedido.sessao!;
 
     return emTransaccao(pool, async (cliente) => {
-      const { rows } = await cliente.query<{ id: string; workspace_id: string; email: string }>(
-        `select id, workspace_id, email from invitations where token_hash = $1 and ${valido()} for update`,
+      // Bloqueia primeiro o espaço e só depois o convite, pela mesma ordem de convidar e revogar
+      // (ordens diferentes podiam bloquear-se mutuamente). Dois convites aceites ao mesmo tempo também
+      // não passam ambos o limite do plano.
+      const { rows: espacos } = await cliente.query<Espaco>(
+        'select w.id, w.name, w.plan_code from workspaces w join invitations i on i.workspace_id = w.id where i.token_hash = $1 for update of w',
         [hashToken(token)],
+      );
+      const espaco = espacos[0];
+      if (!espaco) throw new ErroHttp(404, m.conviteInvalido);
+      const { rows } = await cliente.query<{ id: string; email: string }>(
+        `select id, email from invitations where token_hash = $1 and workspace_id = $2 and ${valido()} for update`,
+        [hashToken(token), espaco.id],
       );
       const convite = rows[0];
       if (!convite) throw new ErroHttp(404, m.conviteInvalido);
       const { rows: eu } = await cliente.query<{ email: string }>('select email from users where id = $1', [utilizadorId]);
       if (eu[0]?.email !== convite.email) throw new ErroHttp(403, m.conviteOutroEmail(esconderEmail(convite.email)));
 
-      // Bloqueia o espaço: dois convites aceites ao mesmo tempo não passam ambos o limite do plano.
-      const { rows: espacos } = await cliente.query<Espaco>('select id, name, plan_code from workspaces where id = $1 for update', [
-        convite.workspace_id,
-      ]);
-      const espaco = espacos[0]!;
       const { rows: jaMembro } = await cliente.query('select 1 from workspace_members where workspace_id = $1 and user_id = $2', [
         espaco.id,
         utilizadorId,

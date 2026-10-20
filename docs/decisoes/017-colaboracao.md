@@ -91,6 +91,10 @@ Resultado da revisão de segurança deste PR:
 - **Limitação de pedidos:**
   - 20 convites por hora por dono;
   - 30 pedidos de ver ou aceitar convites a cada 15 minutos por IP.
+- **Limite diário de e-mails de convite:** 10 por espaço e 40 no total. Acima disso, o convite é criado na mesma, mas só se partilha pelo WhatsApp. O plano gratuito da Resend dá 100 e-mails por dia para tudo, e as confirmações e recuperações de palavra-passe não podem ficar sem quota.
+- **Contas por confirmar:** os convites feitos para um e-mail só entram na exportação e na eliminação depois de a conta confirmar esse e-mail. Uma conta por confirmar pode ser de outra pessoa.
+- **Logs do servidor:** os tokens das ligações (`?token=`) aparecem sempre escondidos. Isto vale para os convites, a confirmação de e-mail e a recuperação de palavra-passe.
+- **Texto livre nos e-mails:** o nome de quem convida e o nome do espaço são escolhidos pelo dono. Vão escapados, mas o texto não é verificado. Por isso só os planos pagos convidam, com os limites acima. Se aparecer abuso, a opção seguinte é tirar esses nomes do e-mail.
 
 Ainda não existe nesta fase:
 - dar acesso a um projecto a um membro (próximo PR);
