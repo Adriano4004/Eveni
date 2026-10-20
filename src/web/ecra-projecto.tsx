@@ -1,8 +1,21 @@
-import { useEffect, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 import { formatarData } from '../shared/datas.js';
 import { formatarKz } from '../shared/dinheiro.js';
 import { mensagens } from '../shared/mensagens.js';
 import { ESTADOS_TAREFA, type EstadoTarefa, type Pessoa, type Projecto, type TarefaProjecto } from '../shared/projectos.js';
+import {
+  type Filtros,
+  filtrarTarefas,
+  filtrosActivos,
+  intervaloDeMeses,
+  mesDe,
+  RESPONSAVEL_EU,
+  RESPONSAVEL_NINGUEM,
+  semanasDoMes,
+  somarMeses,
+  tarefasNoDia,
+  valoresDistintos,
+} from '../shared/vistas.js';
 import { api, mensagemDeErro } from './api.js';
 import { navegar } from './navegacao.js';
 
@@ -11,9 +24,11 @@ const p = e.projecto;
 
 type Alteracao = { estado?: EstadoTarefa; responsavelId?: string | null };
 
-export function EcraProjecto({ id }: { id: string }) {
+export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: string }) {
   const [projecto, setProjecto] = useState<Projecto>();
   const [erro, setErro] = useState<string>();
+  const [vista, setVista] = useState<'lista' | 'calendario'>('lista');
+  const [filtros, setFiltros] = useState<Filtros>({});
 
   useEffect(() => {
     api<Projecto>('GET', `/api/projectos/${encodeURIComponent(id)}`)
@@ -56,7 +71,8 @@ export function EcraProjecto({ id }: { id: string }) {
 
   const arquivado = projecto.estado === 'archived';
   // Fases pela ordem do template.
-  const fases = [...new Set(projecto.tarefasDoProjecto.map((t) => t.fase))];
+  const fases = valoresDistintos(projecto.tarefasDoProjecto, 'fase');
+  const visiveis = filtrarTarefas(projecto.tarefasDoProjecto, filtros, utilizadorId);
 
   return (
     <main className="cartao cartao--largo">
@@ -87,19 +103,48 @@ export function EcraProjecto({ id }: { id: string }) {
           {p.tarefas} <span className="campo__ajuda">{e.projectos.progresso(projecto.concluidas, projecto.tarefas)}</span>
         </h2>
         <ProgressoCategorias tarefas={projecto.tarefasDoProjecto} />
-        <p className="campo__ajuda">{p.emBreveTarefas}</p>
-        {fases.map((fase) => (
-          <div key={fase} className="fase">
-            <h3>{fase}</h3>
-            <ul className="tarefas">
-              {projecto.tarefasDoProjecto
-                .filter((t) => t.fase === fase)
-                .map((t) => (
-                  <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={arquivado} alterar={(a) => alterar(t, a)} />
-                ))}
-            </ul>
-          </div>
-        ))}
+
+        <div className="vistas" role="group" aria-label={p.vistas}>
+          {(['lista', 'calendario'] as const).map((v) => (
+            <button key={v} type="button" className="vistas__botao" aria-pressed={vista === v} onClick={() => setVista(v)}>
+              {v === 'lista' ? p.vistaLista : p.vistaCalendario}
+            </button>
+          ))}
+        </div>
+        <PainelFiltros tarefas={projecto.tarefasDoProjecto} membros={projecto.membros} filtros={filtros} mudar={setFiltros} />
+        {filtrosActivos(filtros) > 0 && (
+          <p className="campo__ajuda" aria-live="polite">
+            {p.aMostrar(visiveis.length, projecto.tarefas)}
+          </p>
+        )}
+        {visiveis.length === 0 && <p className="campo__ajuda">{p.nenhumaTarefa}</p>}
+
+        {vista === 'lista' &&
+          fases.map((fase) => {
+            const daFase = visiveis.filter((t) => t.fase === fase);
+            if (daFase.length === 0) return null;
+            return (
+              <div key={fase} className="fase">
+                <h3>{fase}</h3>
+                <ul className="tarefas">
+                  {daFase.map((t) => (
+                    <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={arquivado} alterar={(a) => alterar(t, a)} />
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        {vista === 'calendario' && (
+          <Calendario
+            tarefas={visiveis}
+            todas={projecto.tarefasDoProjecto}
+            dataEvento={projecto.dataEvento}
+            hoje={projecto.hoje}
+            desenharTarefa={(t) => (
+              <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={arquivado} alterar={(a) => alterar(t, a)} />
+            )}
+          />
+        )}
       </section>
 
       <section className="seccao" aria-labelledby="titulo-orcamento">
@@ -163,6 +208,189 @@ function ProgressoCategorias({ tarefas }: { tarefas: TarefaProjecto[] }) {
         ))}
       </ul>
     </details>
+  );
+}
+
+function PainelFiltros({
+  tarefas,
+  membros,
+  filtros,
+  mudar,
+}: {
+  tarefas: TarefaProjecto[];
+  membros: Pessoa[];
+  filtros: Filtros;
+  mudar: (f: Filtros) => void;
+}) {
+  const id = useId();
+  const activos = filtrosActivos(filtros);
+  const definir = (campo: keyof Filtros, valor: string | boolean) => mudar({ ...filtros, [campo]: valor === '' || valor === false ? undefined : valor });
+
+  const escolha = (campo: 'fase' | 'categoria' | 'papel', rotulo: string) => (
+    <div className="campo">
+      <label htmlFor={`${id}-${campo}`}>{rotulo}</label>
+      <select id={`${id}-${campo}`} value={filtros[campo] ?? ''} onChange={(evento) => definir(campo, evento.target.value)}>
+        <option value="">{campo === 'papel' ? p.todos : p.todas}</option>
+        {valoresDistintos(tarefas, campo).map((v) => (
+          <option key={v} value={v}>
+            {v}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  return (
+    <details className="filtros" open={activos > 0 || undefined}>
+      <summary>{activos > 0 ? p.filtrosActivos(activos) : p.filtros}</summary>
+      <div className="filtros__campos">
+        {escolha('fase', p.fase)}
+        {escolha('categoria', p.categoria)}
+        {escolha('papel', p.papel)}
+        <div className="campo">
+          <label htmlFor={`${id}-estado`}>{p.estado}</label>
+          <select id={`${id}-estado`} value={filtros.estado ?? ''} onChange={(evento) => definir('estado', evento.target.value)}>
+            <option value="">{p.todos}</option>
+            {ESTADOS_TAREFA.map((estado) => (
+              <option key={estado} value={estado}>
+                {p.estadoTarefa[estado]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="campo">
+          <label htmlFor={`${id}-responsavel`}>{p.responsavel}</label>
+          <select id={`${id}-responsavel`} value={filtros.responsavel ?? ''} onChange={(evento) => definir('responsavel', evento.target.value)}>
+            <option value="">{p.todos}</option>
+            <option value={RESPONSAVEL_EU}>{p.atribuidasAMim}</option>
+            <option value={RESPONSAVEL_NINGUEM}>{p.semResponsavel}</option>
+            {membros.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <label className="escolha">
+        <input type="checkbox" checked={filtros.soCriticas ?? false} onChange={(evento) => definir('soCriticas', evento.target.checked)} />
+        <span>{p.soCriticas}</span>
+      </label>
+      <label className="escolha">
+        <input type="checkbox" checked={filtros.soEmAtraso ?? false} onChange={(evento) => definir('soEmAtraso', evento.target.checked)} />
+        <span>{p.soEmAtraso}</span>
+      </label>
+      {activos > 0 && (
+        <button className="botao botao--secundario botao--compacto" type="button" onClick={() => mudar({})}>
+          {p.limparFiltros}
+        </button>
+      )}
+    </details>
+  );
+}
+
+// Calendário do mês, com o número de tarefas em cada dia; ao tocar num dia, mostra as tarefas desse dia.
+// Começa no mês de hoje (se o projecto o abranger) ou no primeiro mês com tarefas.
+function Calendario({
+  tarefas,
+  todas,
+  dataEvento,
+  hoje,
+  desenharTarefa,
+}: {
+  tarefas: TarefaProjecto[];
+  todas: TarefaProjecto[];
+  dataEvento: string;
+  hoje: string;
+  desenharTarefa: (t: TarefaProjecto) => ReactNode;
+}) {
+  const { primeiro, ultimo } = intervaloDeMeses(todas, dataEvento);
+  const mesDeHoje = mesDe(hoje);
+  const [mes, setMes] = useState(mesDeHoje >= primeiro && mesDeHoje <= ultimo ? mesDeHoje : primeiro);
+  const [dia, setDia] = useState<string>();
+  const [ano, numeroMes] = mes.split('-').map(Number) as [number, number];
+  const doDia = dia ? tarefasNoDia(tarefas, dia) : [];
+
+  return (
+    <div className="calendario">
+      <div className="calendario__cabecalho">
+        <button
+          className="botao botao--secundario botao--compacto"
+          type="button"
+          aria-label={p.mesAnterior}
+          disabled={mes <= primeiro}
+          onClick={() => setMes(somarMeses(mes, -1))}
+        >
+          ‹
+        </button>
+        <h3 aria-live="polite">
+          {p.meses[numeroMes - 1]} {ano}
+        </h3>
+        <button
+          className="botao botao--secundario botao--compacto"
+          type="button"
+          aria-label={p.mesSeguinte}
+          disabled={mes >= ultimo}
+          onClick={() => setMes(somarMeses(mes, 1))}
+        >
+          ›
+        </button>
+      </div>
+      <table className="calendario__grelha">
+        <thead>
+          <tr>
+            {p.diasDaSemana.map((d) => (
+              <th key={d} scope="col">
+                {d}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {semanasDoMes(mes).map((semana) => (
+            <tr key={semana.find(Boolean)}>
+              {semana.map((d, i) => {
+                if (!d) return <td key={i} />;
+                const n = tarefasNoDia(tarefas, d).length;
+                const atraso = tarefasNoDia(tarefas, d).some((t) => t.emAtraso);
+                const classes = [
+                  'calendario__dia',
+                  d === hoje && 'calendario__dia--hoje',
+                  d === dataEvento && 'calendario__dia--evento',
+                  d === dia && 'calendario__dia--escolhido',
+                ]
+                  .filter(Boolean)
+                  .join(' ');
+                return (
+                  <td key={d}>
+                    <button
+                      type="button"
+                      className={classes}
+                      aria-pressed={d === dia}
+                      aria-label={`${p.diaDoCalendario(formatarData(d), n)}${d === dataEvento ? ` · ${p.diaDoEvento}` : ''}${d === hoje ? ` · ${p.hoje}` : ''}`}
+                      onClick={() => setDia(d)}
+                    >
+                      <span>{Number(d.slice(8))}</span>
+                      {n > 0 && <span className={atraso ? 'calendario__n calendario__n--atraso' : 'calendario__n'}>{n}</span>}
+                    </button>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="calendario__legenda campo__ajuda">
+        <span className="calendario__marca calendario__marca--hoje" /> {p.hoje} · <span className="calendario__marca calendario__marca--evento" />{' '}
+        {p.diaDoEvento}
+      </p>
+      {dia && (
+        <div className="calendario__dia-escolhido">
+          <h3>{p.tarefasDoDia(formatarData(dia))}</h3>
+          {doDia.length === 0 ? <p className="campo__ajuda">{p.semTarefasNoDia}</p> : <ul className="tarefas">{doDia.map(desenharTarefa)}</ul>}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -158,3 +158,52 @@ test('trabalhar as tarefas: concluir, escolher responsável e ver os atrasos', a
   await page.getByRole('button', { name: 'Voltar ao início' }).click();
   await expect(page.getByText(`${antes - 1} críticas em atraso`)).toBeVisible();
 });
+
+test('filtrar as tarefas e ver o calendário', async ({ page }) => {
+  await contaConfirmada(page, 'Ivone');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await page.getByLabel('Nome do projecto').fill('Apresentação de resultados');
+  await page.getByLabel('Data do evento').fill(emDias(30));
+  await expect(page.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+  await expect(page.getByRole('heading', { name: 'Apresentação de resultados' })).toBeVisible();
+
+  // Filtros: só críticas, depois por categoria; limpar volta a mostrar tudo.
+  await page.getByText('Filtros', { exact: true }).click();
+  await page.getByLabel('Só críticas').check();
+  await expect(page.getByText('A mostrar 20 de 47 tarefas')).toBeVisible();
+  await expect(page.locator('li.tarefa-linha')).toHaveCount(20);
+  await page.locator('.filtros').getByLabel('Categoria').selectOption('Estratégia');
+  await expect(page.locator('li.tarefa-linha').first()).toContainText('Validar que existe facto novo');
+  await page.getByRole('button', { name: 'Limpar filtros' }).click();
+  await expect(page.locator('li.tarefa-linha')).toHaveCount(47);
+
+  // Atribuídas a mim: nenhuma, até escolher o responsável de uma tarefa.
+  await page.getByText('Filtros', { exact: true }).click();
+  await page.locator('.filtros').getByLabel('Responsável').selectOption({ label: 'Atribuídas a mim' });
+  await expect(page.getByText('Nenhuma tarefa com estes filtros.')).toBeVisible();
+  await page.getByRole('button', { name: 'Limpar filtros' }).click();
+  const tarefa = page.locator('li.tarefa-linha', { hasText: 'Validar que existe facto novo' });
+  await tarefa.locator('summary').click();
+  await tarefa.getByLabel('Responsável').selectOption({ label: 'Ivone' });
+  await expect(tarefa.locator('.tarefa__responsavel')).toHaveText('Ivone');
+  await page.getByText('Filtros', { exact: true }).click();
+  await page.locator('.filtros').getByLabel('Responsável').selectOption({ label: 'Atribuídas a mim' });
+  await expect(page.locator('li.tarefa-linha')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Limpar filtros' }).click();
+
+  // Calendário: abre no mês de hoje; o dia do evento está marcado; tocar num dia mostra as tarefas.
+  await page.getByRole('button', { name: 'Calendário' }).click();
+  const evento = emDias(30);
+  const [ano, mes] = evento.split('-').map(Number) as [number, number];
+  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  if (mesDeHoje() !== evento.slice(0, 7)) await page.getByRole('button', { name: 'Mês seguinte' }).click();
+  await expect(page.getByRole('heading', { name: `${meses[mes - 1]} ${ano}` })).toBeVisible();
+  const diaEvento = page.getByRole('button', { name: /Dia do evento/ });
+  await expect(diaEvento).toBeVisible();
+  await diaEvento.click();
+  await expect(page.getByRole('heading', { name: `Tarefas a ${formatarData(evento)}` })).toBeVisible();
+  await expect(page.locator('.calendario__dia-escolhido li.tarefa-linha').first()).toBeVisible();
+});
+
+const mesDeHoje = () => hojeEmLuanda().slice(0, 7);
