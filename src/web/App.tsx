@@ -5,6 +5,7 @@ import { api } from './api.js';
 import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
 import { EcraMesas } from './ecra-mesas.js';
+import { EcraOrcamento } from './ecra-orcamento.js';
 import { EcraRsvp } from './ecra-rsvp.js';
 import { EcraDoisFactores } from './ecras-dois-factores.js';
 import { EcraConvite, EcraEquipa } from './ecras-equipa.js';
@@ -122,6 +123,8 @@ export function App() {
   }
   if (estado.tipo === 'com-sessao') {
     if (caminho === '/projectos/novo') return <EcraNovoProjecto />;
+    const orcamento = /^\/projectos\/([^/]+)\/orcamento$/.exec(caminho)?.[1];
+    if (orcamento) return <EcraOrcamento key={orcamento} id={decodeURIComponent(orcamento)} />;
     const mesas = /^\/projectos\/([^/]+)\/mesas$/.exec(caminho)?.[1];
     if (mesas) return <EcraMesas key={mesas} id={decodeURIComponent(mesas)} />;
     const convidados = /^\/projectos\/([^/]+)\/convidados$/.exec(caminho)?.[1];

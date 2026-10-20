@@ -8,7 +8,8 @@ import type { criarGuardas } from '../contas/acesso.js';
 import { type BaseDeDados, emTransaccao } from '../db/index.js';
 import { ErroHttp, validar } from '../erros.js';
 import { LIMITES, limitar } from '../seguranca/limites.js';
-import { listarConvidados, listarMesas, projectoParaAlterar } from './rotas.js';
+import { projectoParaAlterar } from '../projectos/alterar.js';
+import { listarConvidados, listarMesas } from './rotas.js';
 
 // Mesas e lugares (decisão 018): cada convidado fica numa mesa, sem lugar numerado. A lotação conta com os
 // acompanhantes (ver lugaresDoConvidado). Passar da lotação é permitido e só dá um aviso no ecrã: as respostas

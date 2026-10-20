@@ -169,6 +169,9 @@ export const projects = pgTable(
     // Dia do evento (calendário de Luanda), não um instante.
     eventDate: date('event_date', { mode: 'string' }).notNull(),
     location: text('location'),
+    // Contingência do orçamento, em percentagem do total previsto (decisão 019). Vem do template
+    // ("Contingência (N%)") e pode ser alterada no projecto.
+    contingencyPct: integer('contingency_pct').notNull().default(10),
     status: text('status').notNull().default('active'),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
@@ -177,6 +180,7 @@ export const projects = pgTable(
   (t) => [
     index('projects_espaco').on(t.workspaceId, t.createdAt),
     check('projects_estado_valido', sql`${t.status} in ('active', 'archived')`),
+    check('projects_contingencia_valida', sql`${t.contingencyPct} between 0 and 50`),
   ],
 );
 
@@ -236,6 +240,7 @@ export const budgetItems = pgTable(
   (t) => [
     index('budget_items_projecto').on(t.projectId),
     check('budget_items_valores_positivos', sql`${t.plannedCents} >= 0 and ${t.actualCents} >= 0`),
+    check('budget_items_valores_maximos', sql`${t.plannedCents} <= 10000000000000 and ${t.actualCents} <= 10000000000000`),
   ],
 );
 
