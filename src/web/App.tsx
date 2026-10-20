@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
+import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
 import { EcraDoisFactores } from './ecras-dois-factores.js';
 import { EcraConvite, EcraEquipa } from './ecras-equipa.js';
@@ -116,6 +117,8 @@ export function App() {
   }
   if (estado.tipo === 'com-sessao') {
     if (caminho === '/projectos/novo') return <EcraNovoProjecto />;
+    const convidados = /^\/projectos\/([^/]+)\/convidados$/.exec(caminho)?.[1];
+    if (convidados) return <EcraConvidados key={convidados} id={decodeURIComponent(convidados)} />;
     const projecto = /^\/projectos\/([^/]+)$/.exec(caminho)?.[1];
     if (projecto) return <EcraProjecto key={projecto} id={decodeURIComponent(projecto)} utilizadorId={estado.eu.id} />;
     if (caminho === '/equipa') return <EcraEquipa />;

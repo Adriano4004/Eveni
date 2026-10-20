@@ -99,4 +99,6 @@ export interface Projecto extends ResumoProjecto {
   semAcesso: Pessoa[];
   tarefasDoProjecto: TarefaProjecto[];
   orcamento: ItemOrcamento[];
+  // Número de convidados (a lista vê-se noutro ecrã).
+  totalConvidados: number;
 }

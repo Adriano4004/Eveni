@@ -2,32 +2,13 @@ import { expect, type Page, test } from '@playwright/test';
 import pg from 'pg';
 import { formatarData, hojeEmLuanda, somarDias } from '../src/shared/datas.js';
 import { envValido } from '../tests/ajuda.js';
-
-const PALAVRA_PASSE = 'Kizomba-2026-evento';
+import { contaConfirmada, emDias, PALAVRA_PASSE } from './ajuda.js';
 
 test.beforeEach(({ page }) => {
   page.on('console', (m) => {
     if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) throw new Error(`Erro na consola: ${m.text()}`);
   });
 });
-
-// Conta nova com o e-mail já confirmado (directamente na base de dados de teste).
-async function contaConfirmada(page: Page, nome: string) {
-  const email = `${nome.toLowerCase()}.${Date.now()}@exemplo.ao`;
-  await page.goto('/registo');
-  await page.getByLabel('Nome').fill(nome);
-  await page.getByLabel('E-mail').fill(email);
-  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
-  await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page.getByRole('heading', { name: `Olá, ${nome}` })).toBeVisible();
-  const cliente = new pg.Client({ connectionString: envValido.DATABASE_URL });
-  await cliente.connect();
-  await cliente.query('update users set email_verified_at = now() where email = $1', [email]);
-  await cliente.end();
-  await page.reload();
-}
-
-const emDias = (dias: number) => somarDias(hojeEmLuanda(), dias);
 
 test('sem e-mail confirmado, não aparece o botão de criar projecto', async ({ page }) => {
   await page.goto('/registo');

@@ -946,3 +946,133 @@ h1 {
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
+
+/* Fase 5: convidados */
+.totais-convidados {
+  margin: 0 0 8px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.filtros-convidados {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 480px) {
+  .filtros-convidados {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.filtros-convidados input {
+  font: inherit;
+  font-size: 16px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+}
+
+.convidados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.convidado {
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.convidado summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  /* Alvo de toque generoso no telemóvel. */
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.convidado__nome {
+  font-weight: 700;
+}
+
+.convidado .etiqueta {
+  margin-left: 0;
+}
+
+.convidado__detalhe {
+  flex-basis: 100%;
+}
+
+.convidado__editar {
+  display: grid;
+  gap: 10px;
+  padding: 4px 0 16px;
+}
+
+.etiqueta--resposta-pending {
+  background: #f2f4f7;
+  color: #475467;
+}
+
+.etiqueta--resposta-yes {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.etiqueta--resposta-no {
+  background: #fef3f2;
+  color: var(--cor-erro);
+}
+
+.colagem {
+  font: inherit;
+  font-size: 16px;
+  min-height: 120px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  resize: vertical;
+}
+
+.colagem:focus-visible,
+.filtros-convidados input:focus-visible {
+  outline: 3px solid rgb(101 83 243 / 0.3);
+  border-color: var(--cor-marca);
+}
+
+.previa-importacao {
+  margin: 12px 0;
+}
+
+.previa-importacao ul,
+.sucesso ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.desdobravel summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.desdobravel summary h2 {
+  margin: 0;
+}
+
+.desdobravel[open] summary {
+  margin-bottom: 12px;
+}
+
+.importar .campo__ajuda {
+  margin-bottom: 10px;
+}

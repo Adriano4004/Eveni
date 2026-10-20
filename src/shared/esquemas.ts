@@ -1,5 +1,6 @@
 // Esquemas de validação partilhados entre o servidor e os ecrãs (uma só fonte de verdade).
 import { z } from 'zod';
+import { MAX_ACOMPANHANTES, MAX_LINHAS_IMPORTACAO, normalizarTelemovel, RESPOSTAS } from './convidados.js';
 import { dataValida } from './datas.js';
 import { mensagens } from './mensagens.js';
 import { ESTADOS_TAREFA } from './projectos.js';
@@ -152,4 +153,67 @@ export const tokenConvite = z.object({ token: z.string().min(1).max(100) });
 export const darAcesso = z.object({
   utilizadorId: z.uuid({ error: m.membroInvalido }),
   papel: z.enum(['editor', 'viewer'], { error: m.papelInvalido }),
+});
+
+// Convidados (decisão 018). Telemóvel e e-mail opcionais: vazio conta como não indicado.
+const telemovelOpcional = z
+  .string({ error: m.telemovelInvalido })
+  .trim()
+  .max(30, m.telemovelInvalido)
+  .optional()
+  .transform((v, ctx) => {
+    if (!v) return null;
+    const normalizado = normalizarTelemovel(v);
+    if (!normalizado) {
+      ctx.addIssue({ code: 'custom', message: m.telemovelInvalido });
+      return z.NEVER;
+    }
+    return normalizado;
+  });
+
+const emailOpcional = z
+  .string({ error: m.emailInvalido })
+  .trim()
+  .optional()
+  .transform((v) => v || null)
+  .pipe(email.nullable());
+
+// Número de acompanhantes: vem como número (API) ou texto (formulários, colagem). Vazio = 0.
+const numeroAcompanhantes = z
+  .union([z.number(), z.string().trim()], { error: m.acompanhantesInvalidos })
+  .transform((v) => (v === '' ? 0 : Number(v)))
+  .pipe(z.number({ error: m.acompanhantesInvalidos }).int(m.acompanhantesInvalidos).min(0, m.acompanhantesInvalidos).max(MAX_ACOMPANHANTES, m.acompanhantesInvalidos));
+
+export const dadosConvidado = z.object({
+  nome: textoDeUmaLinha(120, { obrigatorio: m.nomeConvidadoObrigatorio, longo: m.nomeConvidadoLongo, invalido: m.nomeConvidadoInvalido }),
+  telemovel: telemovelOpcional,
+  email: emailOpcional,
+  acompanhantes: numeroAcompanhantes.optional().transform((v) => v ?? 0),
+});
+export type DadosConvidado = z.infer<typeof dadosConvidado>;
+
+// Alterar um convidado: os dados e, opcionalmente, a resposta marcada à mão pelo organizador
+// (ex.: respondeu por telefone). Só quem vai tem acompanhantes confirmados, nunca mais do que os permitidos:
+// o servidor acerta os confirmados (ex.: o organizador reduz os permitidos depois da resposta), sem dar erro.
+export const actualizarConvidado = dadosConvidado.extend({
+  resposta: z.enum(RESPOSTAS, { error: m.respostaInvalida }).optional(),
+  acompanhantesConfirmados: numeroAcompanhantes.optional(),
+});
+
+// Importação: as linhas lidas da colagem (lerColagem), ainda por validar. Cada uma é validada no servidor
+// com dadosConvidado. Os limites de tamanho só travam pedidos absurdos.
+export const importarConvidados = z.object({
+  linhas: z
+    .array(
+      z.object({
+        linha: z.number().int().min(1).max(1_000_000),
+        nome: z.string().max(1000),
+        telemovel: z.string().max(1000),
+        email: z.string().max(1000),
+        acompanhantes: z.string().max(1000),
+      }),
+      { error: mensagens.convidados.importacaoVazia },
+    )
+    .min(1, mensagens.convidados.importacaoVazia)
+    .max(MAX_LINHAS_IMPORTACAO, mensagens.convidados.importacaoGrande(MAX_LINHAS_IMPORTACAO)),
 });

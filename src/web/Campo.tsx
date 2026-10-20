@@ -3,7 +3,7 @@ import { useId } from 'react';
 interface Props {
   rotulo: string;
   nome: string;
-  tipo?: 'text' | 'email' | 'password';
+  tipo?: 'text' | 'email' | 'password' | 'tel';
   autoComplete: string;
   erro?: string;
   ajuda?: string;
@@ -11,9 +11,11 @@ interface Props {
   numerico?: boolean;
   // Campo que se pode deixar em branco.
   opcional?: boolean;
+  // Valor já preenchido (ex.: ao alterar um convidado).
+  valorInicial?: string;
 }
 
-export function Campo({ rotulo, nome, tipo = 'text', autoComplete, erro, ajuda, numerico, opcional }: Props) {
+export function Campo({ rotulo, nome, tipo = 'text', autoComplete, erro, ajuda, numerico, opcional, valorInicial }: Props) {
   const id = useId();
   const idDescricao = `${id}-descricao`;
   return (
@@ -24,6 +26,7 @@ export function Campo({ rotulo, nome, tipo = 'text', autoComplete, erro, ajuda, 
         name={nome}
         type={tipo}
         autoComplete={autoComplete}
+        defaultValue={valorInicial}
         inputMode={numerico ? 'numeric' : undefined}
         pattern={numerico ? '[0-9]*' : undefined}
         required={!opcional}
