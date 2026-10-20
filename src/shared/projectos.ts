@@ -30,6 +30,9 @@ export interface Previsao {
 }
 
 export type EstadoProjecto = 'active' | 'archived';
+// owner = dono do espaço de trabalho (acesso a todos os projectos do espaço); editor e viewer = membros
+// adicionados ao projecto. O viewer só consulta.
+export type PapelNoProjecto = 'owner' | 'editor' | 'viewer';
 export const ESTADOS_TAREFA = ['pending', 'in_progress', 'done'] as const;
 export type EstadoTarefa = (typeof ESTADOS_TAREFA)[number];
 
@@ -44,6 +47,8 @@ export interface ResumoProjecto {
   concluidas: number;
   // Tarefas críticas por concluir cujo prazo (fim) já passou, no calendário de Luanda.
   criticasEmAtraso: number;
+  // O papel de quem está a ver.
+  papel: PapelNoProjecto;
 }
 
 export interface Pessoa {

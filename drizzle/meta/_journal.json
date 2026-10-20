@@ -43,6 +43,13 @@
       "when": 1792477283154,
       "tag": "0005_tarefas_estado",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792479907458,
+      "tag": "0006_acesso_projecto",
+      "breakpoints": true
     }
   ]
 }

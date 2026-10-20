@@ -36,6 +36,7 @@ export const TABELAS_PESSOAIS = {
   projects: 'exportada (espaços de que a pessoa é dona); apagada com o espaço (cascata)',
   tasks: 'exportada com o projecto; apagada com o projecto (cascata)',
   budget_items: 'exportada com o projecto; apagada com o projecto (cascata)',
+  project_members: 'exportada com o projecto (nomes de quem tem acesso); apagada com o projecto ou com a conta (cascata)',
 } as const;
 
 export interface Exportacao {

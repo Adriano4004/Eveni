@@ -46,6 +46,7 @@ export const mensagens = {
     naoEncontrado: 'Projecto não encontrado.',
     tarefaNaoEncontrada: 'Tarefa não encontrada.',
     arquivado: 'Este projecto está arquivado. Restaure-o para fazer alterações.',
+    soLeitura: 'Tem acesso a este projecto só para consulta.',
     soDonoArquiva: 'Só o dono do espaço de trabalho pode arquivar ou restaurar projectos.',
     eventoNoPassado: 'A data do evento já passou. Escolha hoje ou uma data futura.',
     eventoDemasiadoLonge: 'A data do evento está demasiado longe. Escolha uma data nos próximos 5 anos.',
@@ -204,6 +205,7 @@ export const mensagens = {
       aGuardar: 'A guardar…',
       marcarConcluida: (titulo: string) => `Concluída: ${titulo}`,
       arquivado: 'Este projecto está arquivado: pode ser consultado, mas não alterado.',
+      leitor: 'Tem acesso a este projecto só para consulta.',
       arquivar: 'Arquivar projecto',
       arquivarTexto:
         'Um projecto arquivado sai da lista principal e fica só de leitura. Pode restaurá-lo quando quiser. Continua a contar para o limite de projectos do plano.',

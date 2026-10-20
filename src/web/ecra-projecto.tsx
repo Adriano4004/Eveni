@@ -70,6 +70,8 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
   if (!projecto) return <p className="a-carregar">{p.carregar}</p>;
 
   const arquivado = projecto.estado === 'archived';
+  // Arquivado ou com acesso só de leitura: nada se altera.
+  const soLeitura = arquivado || projecto.papel === 'viewer';
   // Fases pela ordem do template.
   const fases = valoresDistintos(projecto.tarefasDoProjecto, 'fase');
   const visiveis = filtrarTarefas(projecto.tarefasDoProjecto, filtros, utilizadorId);
@@ -101,6 +103,7 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
           {projecto.podeArquivar && <BotaoArquivo projecto={projecto} aoMudar={setProjecto} />}
         </div>
       )}
+      {!arquivado && projecto.papel === 'viewer' && <p className="aviso">{p.leitor}</p>}
       {!arquivado && <AlertaAtrasos tarefas={projecto.tarefasDoProjecto} />}
 
       <section className="seccao" aria-labelledby="titulo-tarefas">
@@ -133,7 +136,7 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
                 <h3>{fase}</h3>
                 <ul className="tarefas">
                   {daFase.map((t) => (
-                    <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={arquivado} alterar={(a) => alterar(t, a)} />
+                    <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={soLeitura} alterar={(a) => alterar(t, a)} />
                   ))}
                 </ul>
               </div>
@@ -146,7 +149,7 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
             dataEvento={projecto.dataEvento}
             hoje={projecto.hoje}
             desenharTarefa={(t) => (
-              <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={arquivado} alterar={(a) => alterar(t, a)} />
+              <Tarefa key={t.id} tarefa={t} membros={projecto.membros} soLeitura={soLeitura} alterar={(a) => alterar(t, a)} />
             )}
           />
         )}
