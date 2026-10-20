@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import { z } from 'zod';
 import { diasEntre, hojeEmLuanda } from '../../shared/datas.js';
-import { type CodigoPlano, criarProjecto, previsaoProjecto } from '../../shared/esquemas.js';
+import { actualizarTarefa, type CodigoPlano, criarProjecto, previsaoProjecto } from '../../shared/esquemas.js';
 import { materializar } from '../../shared/materializacao.js';
 import { mensagens } from '../../shared/mensagens.js';
 import {
@@ -13,6 +13,7 @@ import {
   type Previsao,
   type Projecto,
   type ResumoProjecto,
+  type TarefaProjecto,
 } from '../../shared/projectos.js';
 import type { Template } from '../../shared/templates.js';
 import type { criarGuardas } from '../contas/acesso.js';
@@ -44,6 +45,7 @@ const resumoPrevisao = (p: ReturnType<typeof materializar>): Previsao => ({
 
 // IDs de projecto inválidos dão 404, como os que não existem ou não são da pessoa.
 const idProjecto = z.object({ id: z.uuid() });
+const idTarefa = z.object({ id: z.uuid(), tarefa: z.uuid() });
 
 export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, guardas: ReturnType<typeof criarGuardas>) {
   const { pool } = base;
@@ -161,16 +163,74 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     if (!projecto) throw new ErroHttp(404, m.naoEncontrado);
     return projecto;
   });
+
+  // Mudar o estado e/ou o responsável de uma tarefa.
+  // Verifica no servidor, numa só transacção: acesso ao projecto pelo espaço de trabalho, que a tarefa é
+  // desse projecto, que o projecto não está arquivado e que o responsável é membro do mesmo espaço
+  // (CLAUDE.md, secção 5, regra 5: também os IDs secundários enviados no corpo do pedido).
+  // Por agora, todos os membros do espaço podem alterar; os papéis por projecto chegam na Fase 4.
+  app.post('/api/projectos/:id/tarefas/:tarefa', { preHandler: guardas.exigirEmailConfirmado }, async (pedido): Promise<TarefaProjecto> => {
+    const parametros = idTarefa.safeParse(pedido.params);
+    if (!parametros.success) throw new ErroHttp(404, m.tarefaNaoEncontrada);
+    const { id: projectoId, tarefa: tarefaId } = parametros.data;
+    const dados = validar(actualizarTarefa, pedido.body);
+    const { utilizadorId } = pedido.sessao!;
+
+    await emTransaccao(pool, async (cliente) => {
+      // Bloqueia a tarefa e o projecto: arquivar o projecto ao mesmo tempo espera por esta alteração.
+      const { rows } = await cliente.query<{ workspace_id: string; status: EstadoProjecto }>(
+        `select p.workspace_id, p.status from tasks t join projects p on p.id = t.project_id
+          where t.id = $1 and t.project_id = $2
+            and exists (select 1 from workspace_members wm where wm.workspace_id = p.workspace_id and wm.user_id = $3)
+            for update of t, p`,
+        [tarefaId, projectoId, utilizadorId],
+      );
+      const projecto = rows[0];
+      // Tarefa inexistente, de outro projecto ou de um projecto sem acesso: a mesma resposta.
+      if (!projecto) throw new ErroHttp(404, m.tarefaNaoEncontrada);
+      if (projecto.status === 'archived') throw new ErroHttp(409, m.arquivado);
+
+      if (dados.responsavelId) {
+        const { rows: membro } = await cliente.query('select 1 from workspace_members where workspace_id = $1 and user_id = $2', [
+          projecto.workspace_id,
+          dados.responsavelId,
+        ]);
+        if (membro.length === 0) throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { responsavelId: mensagens.validacao.responsavelInvalido });
+      }
+
+      await cliente.query(
+        `update tasks set
+            status = coalesce($2, status),
+            assignee_id = case when $3 then $4::uuid else assignee_id end,
+            completed_at = case when $2 is null then completed_at
+                                when $2 = 'done' then coalesce(completed_at, now())
+                                else null end,
+            updated_at = now()
+          where id = $1`,
+        [tarefaId, dados.estado ?? null, dados.responsavelId !== undefined, dados.responsavelId ?? null],
+      );
+    });
+
+    const { rows } = await pool.query<LinhaTarefa>(`${SELECCAO_TAREFAS} where t.id = $1`, [tarefaId]);
+    return paraTarefa(rows[0]!);
+  });
 }
 
+// O dia de hoje no calendário de Luanda, calculado pela base de dados (igual a hojeEmLuanda()).
+const HOJE_SQL = "(now() at time zone 'Africa/Luanda')::date";
+
 const SELECCAO_RESUMO = `
-  select p.id, p.name, p.template_code, p.template_version, p.event_date, p.location, p.status, p.created_at,
+  select p.id, p.workspace_id, p.name, p.template_code, p.template_version, p.event_date, p.location, p.status, p.created_at,
+         ${HOJE_SQL}::text as hoje,
          (select count(*)::int from tasks t where t.project_id = p.id) as tarefas,
-         (select count(*)::int from tasks t where t.project_id = p.id and t.status = 'done') as concluidas
+         (select count(*)::int from tasks t where t.project_id = p.id and t.status = 'done') as concluidas,
+         (select count(*)::int from tasks t
+           where t.project_id = p.id and t.critical and t.status <> 'done' and t.end_date < ${HOJE_SQL}) as criticas_em_atraso
     from projects p`;
 
 interface LinhaResumo {
   id: string;
+  workspace_id: string;
   name: string;
   template_code: string;
   template_version: string;
@@ -178,8 +238,10 @@ interface LinhaResumo {
   location: string | null;
   status: EstadoProjecto;
   created_at: Date;
+  hoje: string;
   tarefas: number;
   concluidas: number;
+  criticas_em_atraso: number;
 }
 
 const paraResumo = (l: LinhaResumo): ResumoProjecto => ({
@@ -191,6 +253,50 @@ const paraResumo = (l: LinhaResumo): ResumoProjecto => ({
   estado: l.status,
   tarefas: l.tarefas,
   concluidas: l.concluidas,
+  criticasEmAtraso: l.criticas_em_atraso,
+});
+
+const SELECCAO_TAREFAS = `
+  select t.id, t.template_task_id, t.phase, t.category, t.title, t.role, t.start_date, t.end_date, t.critical,
+         t.compressed, t.note, t.status, t.completed_at, u.id as assignee_id, u.name as assignee_name,
+         (t.status <> 'done' and t.end_date < ${HOJE_SQL}) as em_atraso
+    from tasks t left join users u on u.id = t.assignee_id`;
+
+interface LinhaTarefa {
+  id: string;
+  template_task_id: string;
+  phase: string;
+  category: string;
+  title: string;
+  role: string;
+  start_date: string;
+  end_date: string;
+  critical: boolean;
+  compressed: boolean;
+  note: string | null;
+  status: EstadoTarefa;
+  completed_at: Date | null;
+  assignee_id: string | null;
+  assignee_name: string | null;
+  em_atraso: boolean;
+}
+
+const paraTarefa = (t: LinhaTarefa): TarefaProjecto => ({
+  id: t.id,
+  idTemplate: t.template_task_id,
+  fase: t.phase,
+  categoria: t.category,
+  titulo: t.title,
+  papel: t.role,
+  inicio: t.start_date,
+  fim: t.end_date,
+  critica: t.critical,
+  comprimida: t.compressed,
+  nota: t.note,
+  estado: t.status,
+  responsavel: t.assignee_id ? { id: t.assignee_id, nome: t.assignee_name ?? '' } : null,
+  emAtraso: t.em_atraso,
+  concluidaEm: t.completed_at ? t.completed_at.toISOString() : null,
 });
 
 // Autorização na própria consulta: o projecto só é lido se a pessoa for membro do espaço a que pertence.
@@ -202,23 +308,12 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
   );
   const l = rows[0];
   if (!l) return null;
-  const { rows: tarefas } = await pool.query<{
-    id: string;
-    template_task_id: string;
-    phase: string;
-    category: string;
-    title: string;
-    role: string;
-    start_date: string;
-    end_date: string;
-    critical: boolean;
-    compressed: boolean;
-    note: string | null;
-    status: EstadoTarefa;
-  }>(
-    `select id, template_task_id, phase, category, title, role, start_date, end_date, critical, compressed, note, status
-       from tasks where project_id = $1 order by position`,
-    [projectoId],
+  const { rows: tarefas } = await pool.query<LinhaTarefa>(`${SELECCAO_TAREFAS} where t.project_id = $1 order by t.position`, [projectoId]);
+  // Só o nome dos membros: nunca o e-mail nem outros dados de outras contas.
+  const { rows: membros } = await pool.query<{ id: string; name: string }>(
+    `select u.id, u.name from workspace_members wm join users u on u.id = wm.user_id
+      where wm.workspace_id = $1 order by u.name, u.id`,
+    [l.workspace_id],
   );
   const { rows: itens } = await pool.query<{
     id: string;
@@ -236,20 +331,9 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
     nomeTemplate: obterTemplate(l.template_code)?.nome ?? l.template_code,
     versaoTemplate: l.template_version,
     criadoEm: l.created_at.toISOString(),
-    tarefasDoProjecto: tarefas.map((t) => ({
-      id: t.id,
-      idTemplate: t.template_task_id,
-      fase: t.phase,
-      categoria: t.category,
-      titulo: t.title,
-      papel: t.role,
-      inicio: t.start_date,
-      fim: t.end_date,
-      critica: t.critical,
-      comprimida: t.compressed,
-      nota: t.note,
-      estado: t.status,
-    })),
+    hoje: l.hoje,
+    membros: membros.map((m) => ({ id: m.id, nome: m.name })),
+    tarefasDoProjecto: tarefas.map(paraTarefa),
     orcamento: itens.map((i) => ({
       id: i.id,
       categoria: i.category,

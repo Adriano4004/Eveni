@@ -529,3 +529,134 @@ h1 {
 .cartao--largo > .botao--compacto {
   margin-bottom: 16px;
 }
+
+/* Fase 3: trabalhar as tarefas */
+.tarefa-linha {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.tarefa-linha > details {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Alvo de toque generoso (44 px) para marcar como concluída no telemóvel. */
+.tarefa__feita {
+  width: 24px;
+  height: 24px;
+  margin: 12px 0 0;
+  flex-shrink: 0;
+  accent-color: var(--cor-marca);
+}
+
+.tarefa--feita .tarefa__titulo {
+  text-decoration: line-through;
+  color: var(--cor-texto-suave);
+}
+
+.tarefa__responsavel {
+  font-size: 0.85rem;
+  color: var(--cor-marca-escura);
+  font-weight: 600;
+}
+
+.tarefa__campos {
+  display: grid;
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .tarefa__campos {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.campo select {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  font: inherit;
+  color: var(--cor-texto);
+}
+
+.campo select:focus-visible {
+  outline: 3px solid rgb(101 83 243 / 0.35);
+  border-color: var(--cor-marca);
+}
+
+.etiqueta--atraso {
+  background: #fef3f2;
+  color: var(--cor-erro);
+}
+
+.etiqueta--in_progress {
+  background: #eff8ff;
+  color: #175cd3;
+}
+
+.etiqueta--done {
+  background: #ecfdf3;
+  color: #05603a;
+}
+
+.progresso {
+  margin: 4px 0 12px;
+}
+
+.progresso summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.progresso ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.progresso li {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) 1fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.progresso__barra {
+  height: 8px;
+  border-radius: 999px;
+  background: #e4e4e7;
+  overflow: hidden;
+}
+
+.progresso__barra > span {
+  display: block;
+  height: 100%;
+  background: var(--cor-marca);
+}
+
+.progresso__numeros {
+  font-variant-numeric: tabular-nums;
+  color: var(--cor-texto-suave);
+}
+
+.tarefa__datas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.tarefa__datas .etiqueta {
+  margin-left: 0;
+}

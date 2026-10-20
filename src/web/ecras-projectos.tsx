@@ -1,9 +1,8 @@
 import { type FormEvent, useEffect, useId, useState } from 'react';
 import { formatarData } from '../shared/datas.js';
-import { formatarKz } from '../shared/dinheiro.js';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
-import { LIMITE_PROJECTOS, type Previsao, type Projecto, type ResumoProjecto, type ResumoTemplate, type TarefaProjecto } from '../shared/projectos.js';
+import { LIMITE_PROJECTOS, type Previsao, type ResumoProjecto, type ResumoTemplate } from '../shared/projectos.js';
 import { api, ErroApi, mensagemDeErro } from './api.js';
 import { Campo } from './Campo.js';
 import { navegar } from './navegacao.js';
@@ -49,6 +48,9 @@ export function ListaProjectos({ eu }: { eu: Eu }) {
                 <strong>{projecto.nome}</strong>
                 <span>{p.evento(formatarData(projecto.dataEvento))}</span>
                 <span className="projecto-cartao__progresso">{p.progresso(projecto.concluidas, projecto.tarefas)}</span>
+                {projecto.criticasEmAtraso > 0 && projecto.estado === 'active' && (
+                  <span className="etiqueta etiqueta--atraso">{p.criticasEmAtraso(projecto.criticasEmAtraso)}</span>
+                )}
                 {projecto.estado === 'archived' && <span className="etiqueta">{p.estado.archived}</span>}
               </a>
             </li>
@@ -217,126 +219,5 @@ export function EcraNovoProjecto() {
         </button>
       </form>
     </main>
-  );
-}
-
-export function EcraProjecto({ id }: { id: string }) {
-  const p = e.projecto;
-  const [projecto, setProjecto] = useState<Projecto>();
-  const [erro, setErro] = useState<string>();
-
-  useEffect(() => {
-    api<Projecto>('GET', `/api/projectos/${encodeURIComponent(id)}`)
-      .then(setProjecto)
-      .catch((falha) => setErro(mensagemDeErro(falha)));
-  }, [id]);
-
-  const voltar = (
-    <button className="botao botao--secundario botao--compacto" type="button" onClick={() => navegar('/')}>
-      {p.voltar}
-    </button>
-  );
-
-  if (erro) {
-    return (
-      <main className="cartao">
-        <p className="formulario__erro" role="alert">
-          {erro}
-        </p>
-        {voltar}
-      </main>
-    );
-  }
-  if (!projecto) return <p className="a-carregar">{p.carregar}</p>;
-
-  // Fases pela ordem do template.
-  const fases = [...new Set(projecto.tarefasDoProjecto.map((t) => t.fase))];
-
-  return (
-    <main className="cartao cartao--largo">
-      {voltar}
-      <h1>{projecto.nome}</h1>
-      <dl className="detalhes">
-        <div>
-          <dt>{p.dataEvento}</dt>
-          <dd>{formatarData(projecto.dataEvento)}</dd>
-        </div>
-        {projecto.local && (
-          <div>
-            <dt>{p.local}</dt>
-            <dd>{projecto.local}</dd>
-          </div>
-        )}
-        <div>
-          <dt>{p.tipo}</dt>
-          <dd>{projecto.nomeTemplate}</dd>
-        </div>
-      </dl>
-
-      <section className="seccao" aria-labelledby="titulo-tarefas">
-        <h2 id="titulo-tarefas">
-          {p.tarefas} <span className="campo__ajuda">{e.projectos.progresso(projecto.concluidas, projecto.tarefas)}</span>
-        </h2>
-        <p className="campo__ajuda">{p.emBreveTarefas}</p>
-        {fases.map((fase) => (
-          <div key={fase} className="fase">
-            <h3>{fase}</h3>
-            <ul className="tarefas">
-              {projecto.tarefasDoProjecto
-                .filter((t) => t.fase === fase)
-                .map((t) => (
-                  <Tarefa key={t.id} tarefa={t} />
-                ))}
-            </ul>
-          </div>
-        ))}
-      </section>
-
-      <section className="seccao" aria-labelledby="titulo-orcamento">
-        <h2 id="titulo-orcamento">{p.orcamento}</h2>
-        <p className="campo__ajuda">{p.emBreveOrcamento}</p>
-        <ul className="orcamento">
-          {projecto.orcamento.map((item) => (
-            <li key={item.id}>
-              <span>
-                {item.descricao} <span className="campo__ajuda">{item.categoria}</span>
-                {item.obrigatoria && <span className="etiqueta">{p.obrigatoria}</span>}
-              </span>
-              <span className="orcamento__valor">
-                {p.previsto}: {formatarKz(item.previstoCentimos)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
-  );
-}
-
-function Tarefa({ tarefa: t }: { tarefa: TarefaProjecto }) {
-  const p = e.projecto;
-  return (
-    <li>
-      <details className={t.critica ? 'tarefa tarefa--critica' : 'tarefa'}>
-        <summary>
-          <span className="tarefa__titulo">{t.titulo}</span>
-          <span className="tarefa__datas">
-            {p.datas(formatarData(t.inicio), formatarData(t.fim))}
-            {t.critica && <span className="etiqueta etiqueta--critica">{p.critica}</span>}
-            {t.comprimida && <span className="etiqueta">{p.comprimida}</span>}
-          </span>
-        </summary>
-        {/* A nota é o conhecimento operacional do Eveni: em destaque, logo ao abrir a tarefa. */}
-        {t.nota && (
-          <div className="nota">
-            <strong>{p.nota}</strong>
-            <p>{t.nota}</p>
-          </div>
-        )}
-        <p className="campo__ajuda">
-          {p.categoriaPapel(t.categoria, t.papel)} · {p.estadoTarefa[t.estado]}
-        </p>
-      </details>
-    </li>
   );
 }

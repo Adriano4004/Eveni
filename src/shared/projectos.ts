@@ -30,7 +30,8 @@ export interface Previsao {
 }
 
 export type EstadoProjecto = 'active' | 'archived';
-export type EstadoTarefa = 'pending' | 'in_progress' | 'done';
+export const ESTADOS_TAREFA = ['pending', 'in_progress', 'done'] as const;
+export type EstadoTarefa = (typeof ESTADOS_TAREFA)[number];
 
 export interface ResumoProjecto {
   id: string;
@@ -41,6 +42,13 @@ export interface ResumoProjecto {
   estado: EstadoProjecto;
   tarefas: number;
   concluidas: number;
+  // Tarefas críticas por concluir cujo prazo (fim) já passou, no calendário de Luanda.
+  criticasEmAtraso: number;
+}
+
+export interface Pessoa {
+  id: string;
+  nome: string;
 }
 
 export interface TarefaProjecto {
@@ -56,6 +64,10 @@ export interface TarefaProjecto {
   comprimida: boolean;
   nota: string | null;
   estado: EstadoTarefa;
+  responsavel: Pessoa | null;
+  // Por concluir e com o prazo (fim) antes de hoje.
+  emAtraso: boolean;
+  concluidaEm: string | null;
 }
 
 export interface ItemOrcamento {
@@ -72,6 +84,10 @@ export interface Projecto extends ResumoProjecto {
   nomeTemplate: string;
   versaoTemplate: string;
   criadoEm: string;
+  // O dia de hoje em Luanda, segundo o servidor (para os ecrãs não dependerem do relógio do telemóvel).
+  hoje: string;
+  // Quem pode ser responsável por tarefas: os membros do espaço de trabalho do projecto.
+  membros: Pessoa[];
   tarefasDoProjecto: TarefaProjecto[];
   orcamento: ItemOrcamento[];
 }

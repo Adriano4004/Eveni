@@ -199,11 +199,15 @@ export const tasks = pgTable(
     compressed: boolean('compressed').notNull().default(false),
     note: text('note'),
     status: text('status').notNull().default('pending'),
+    // Responsável: uma pessoa real, membro do espaço de trabalho do projecto (não texto livre).
     assigneeId: uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
     createdAt: criadoEm(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex('tasks_template_unica').on(t.projectId, t.templateTaskId),
+    index('tasks_responsavel').on(t.assigneeId),
     check('tasks_estado_valido', sql`${t.status} in ('pending', 'in_progress', 'done')`),
     check('tasks_datas_validas', sql`${t.endDate} >= ${t.startDate}`),
   ],
