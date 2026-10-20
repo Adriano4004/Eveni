@@ -140,7 +140,7 @@ describe('acesso indevido', () => {
     const aceites = respostas.slice(0, -1).filter((r) => r.statusCode === 200).length;
     const recusadas = respostas.slice(0, -1).filter((r) => r.statusCode === 409).length;
     expect(aceites + recusadas).toBe(15);
-    // Todas as alterações aceites ficaram antes do arquivo; nenhuma depois.
+    // Todas as alterações aceites ficaram antes do arquivo (hora real de cada alteração); nenhuma depois.
     const { rows } = await base.pool.query(
       `select count(*)::int as n, count(*) filter (where t.updated_at > p.archived_at)::int as depois
          from tasks t join projects p on p.id = t.project_id where p.id = $1 and t.status = 'done'`,

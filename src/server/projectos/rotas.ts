@@ -190,7 +190,7 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
         if (projecto.papel !== 'owner') throw new ErroHttp(403, m.soDonoArquiva);
         if (projecto.status === novoEstado) return;
         await cliente.query(
-          `update projects set status = $2, archived_at = case when $2 = 'archived' then now() else null end where id = $1`,
+          `update projects set status = $2, archived_at = case when $2 = 'archived' then clock_timestamp() else null end where id = $1`,
           [projectoId, novoEstado],
         );
         await auditar(cliente, novoEstado === 'archived' ? 'projecto.arquivado' : 'projecto.restaurado', {
@@ -244,9 +244,11 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
             status = coalesce($2, status),
             assignee_id = case when $3 then $4::uuid else assignee_id end,
             completed_at = case when $2 is null then completed_at
-                                when $2 = 'done' then coalesce(completed_at, now())
+                                when $2 = 'done' then coalesce(completed_at, clock_timestamp())
                                 else null end,
-            updated_at = now()
+            -- clock_timestamp(): a hora real da alteração (now() seria a do início da transacção, que pode
+            -- ter esperado pelo bloqueio do projecto).
+            updated_at = clock_timestamp()
           where id = $1`,
         [tarefaId, dados.estado ?? null, dados.responsavelId !== undefined, dados.responsavelId ?? null],
       );
