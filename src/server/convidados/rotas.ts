@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   type Convidado,
   calcularTotais,
+  type LigacaoRsvp,
   type ListaConvidados,
   MAX_CONVIDADOS_POR_PROJECTO,
   type Resposta,
@@ -12,10 +13,12 @@ import {
 import { actualizarConvidado, type DadosConvidado, dadosConvidado, importarConvidados } from '../../shared/esquemas.js';
 import { mensagens } from '../../shared/mensagens.js';
 import type { EstadoProjecto, PapelNoProjecto } from '../../shared/projectos.js';
+import type { Config } from '../config.js';
 import type { criarGuardas } from '../contas/acesso.js';
 import { type BaseDeDados, emTransaccao } from '../db/index.js';
 import { ErroHttp, validar } from '../erros.js';
 import { LIMITES, limitar } from '../seguranca/limites.js';
+import { criarLigacoesRsvp } from './rsvp.js';
 
 // Lista de convidados de um projecto (decisão 018). Mesma regra de acesso das tarefas (papel_no_projecto):
 // todos os que têm acesso vêem; só o dono e os editores alteram, e só com o projecto activo.
@@ -87,16 +90,17 @@ async function contarConvidados(cliente: pg.PoolClient, projectoId: string): Pro
   return rows[0]!.n;
 }
 
-export function registarRotasConvidados(app: FastifyInstance, base: BaseDeDados, guardas: ReturnType<typeof criarGuardas>) {
+export function registarRotasConvidados(app: FastifyInstance, config: Config, base: BaseDeDados, guardas: ReturnType<typeof criarGuardas>) {
   const { pool } = base;
+  const ligacoes = criarLigacoesRsvp(config);
   const travar = (utilizadorId: string) => limitar(pool, `convidados:${utilizadorId}`, LIMITES.alterarConvidados);
 
   app.get('/api/projectos/:id/convidados', { preHandler: guardas.exigirSessao }, async (pedido): Promise<ListaConvidados> => {
     const parametros = idProjecto.safeParse(pedido.params);
     if (!parametros.success) throw new ErroHttp(404, mp.naoEncontrado);
     const projectoId = parametros.data.id;
-    const { rows } = await pool.query<{ id: string; name: string; status: EstadoProjecto; papel: PapelNoProjecto | null }>(
-      'select p.id, p.name, p.status, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1',
+    const { rows } = await pool.query<{ id: string; name: string; event_date: string; status: EstadoProjecto; papel: PapelNoProjecto | null }>(
+      'select p.id, p.name, p.event_date, p.status, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1',
       [projectoId, pedido.sessao!.utilizadorId],
     );
     const projecto = rows[0];
@@ -104,7 +108,7 @@ export function registarRotasConvidados(app: FastifyInstance, base: BaseDeDados,
     if (!projecto?.papel) throw new ErroHttp(404, mp.naoEncontrado);
     const convidados = await listarConvidados(pool, projectoId);
     return {
-      projecto: { id: projecto.id, nome: projecto.name },
+      projecto: { id: projecto.id, nome: projecto.name, dataEvento: projecto.event_date },
       podeAlterar: projecto.papel !== 'viewer' && projecto.status === 'active',
       convidados,
       totais: calcularTotais(convidados),
@@ -229,4 +233,32 @@ export function registarRotasConvidados(app: FastifyInstance, base: BaseDeDados,
     });
     return resposta.code(204).send();
   });
+
+  // Ligação de RSVP de um convidado, para o organizador a partilhar. Só o dono e os editores, com o projecto
+  // activo: os leitores não a recebem, porque com ela se responde em nome do convidado. "nova" troca a chave:
+  // a ligação antiga deixa de funcionar (ex.: foi enviada para a pessoa errada).
+  for (const [caminho, trocar] of [
+    ['ligacao', false],
+    ['ligacao/nova', true],
+  ] as const) {
+    app.post(`/api/projectos/:id/convidados/:convidado/${caminho}`, { preHandler: guardas.exigirEmailConfirmado }, async (pedido): Promise<LigacaoRsvp> => {
+      const parametros = idConvidado.safeParse(pedido.params);
+      if (!parametros.success) throw new ErroHttp(404, m.naoEncontrado);
+      const { id: projectoId, convidado: convidadoId } = parametros.data;
+      const { utilizadorId } = pedido.sessao!;
+      await travar(utilizadorId);
+      const chave = await emTransaccao(pool, async (cliente) => {
+        await projectoParaAlterar(cliente, projectoId, utilizadorId);
+        const { rows } = await cliente.query<{ rsvp_key: string }>(
+          trocar
+            ? 'update guests set rsvp_key = gen_random_uuid(), updated_at = clock_timestamp() where id = $1 and project_id = $2 returning rsvp_key'
+            : 'select rsvp_key from guests where id = $1 and project_id = $2',
+          [convidadoId, projectoId],
+        );
+        if (!rows[0]) throw new ErroHttp(404, m.naoEncontrado);
+        return rows[0].rsvp_key;
+      });
+      return { ligacao: ligacoes.ligacao(chave) };
+    });
+  }
 }

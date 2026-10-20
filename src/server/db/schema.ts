@@ -305,11 +305,16 @@ export const guests = pgTable(
     response: text('response').notNull().default('pending'),
     plusOnesConfirmed: integer('plus_ones_confirmed').notNull().default(0),
     respondedAt: timestamp('responded_at', { withTimezone: true }),
+    // Chave da ligação de RSVP deste convidado. A ligação leva a chave e uma assinatura (HMAC) feita com o
+    // segredo da aplicação: uma fuga só da base de dados não chega para responder por ninguém.
+    // Mudar a chave invalida a ligação antiga (ver convidados/rsvp.ts).
+    rsvpKey: uuid('rsvp_key').notNull().defaultRandom(),
     createdAt: criadoEm(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('guests_projecto').on(t.projectId, t.name),
+    uniqueIndex('guests_chave_rsvp').on(t.rsvpKey),
     uniqueIndex('guests_telemovel_unico').on(t.projectId, t.phone).where(sql`${t.phone} is not null`),
     uniqueIndex('guests_email_unico').on(t.projectId, t.email).where(sql`${t.email} is not null`),
     check('guests_resposta_valida', sql`${t.response} in ('pending', 'yes', 'no')`),

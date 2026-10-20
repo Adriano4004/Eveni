@@ -1076,3 +1076,83 @@ h1 {
 .importar .campo__ajuda {
   margin-bottom: 10px;
 }
+
+.partilhar-rsvp {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--raio);
+  background: #f1efff;
+}
+
+.partilhar-rsvp p {
+  margin: 0;
+}
+
+/* Página pública de RSVP */
+.rsvp h1 {
+  margin-top: 4px;
+}
+
+.rsvp__ola {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.rsvp__formulario {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.rsvp__escolhas {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.rsvp__escolhas legend {
+  margin-bottom: 10px;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+/* Botões grandes: fáceis de tocar num telemóvel. */
+.rsvp__opcao {
+  min-height: 56px;
+  border: 2px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.rsvp__opcao:focus-visible {
+  outline: 3px solid rgb(101 83 243 / 0.35);
+}
+
+.rsvp__opcao--yes[aria-pressed='true'] {
+  border-color: #067647;
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.rsvp__opcao--no[aria-pressed='true'] {
+  border-color: var(--cor-erro);
+  background: #fef3f2;
+  color: var(--cor-erro);
+}
+
+.partilhar-rsvp a.botao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

@@ -200,6 +200,14 @@ export const actualizarConvidado = dadosConvidado.extend({
   acompanhantesConfirmados: numeroAcompanhantes.optional(),
 });
 
+// Resposta do convidado na página pública de RSVP. O token vem da ligação; os acompanhantes só contam
+// se vai (o servidor limita-os aos permitidos).
+export const tokenRsvp = z.object({ token: z.string().min(1).max(100) });
+export const responderRsvp = tokenRsvp.extend({
+  resposta: z.enum(['yes', 'no'], { error: m.respostaInvalida }),
+  acompanhantes: numeroAcompanhantes.optional(),
+});
+
 // Importação: as linhas lidas da colagem (lerColagem), ainda por validar. Cada uma é validada no servidor
 // com dadosConvidado. Os limites de tamanho só travam pedidos absurdos.
 export const importarConvidados = z.object({
