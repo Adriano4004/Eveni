@@ -16,3 +16,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 009 | [Verificação em dois passos (2FA)](009-dois-factores.md) | Em vigor |
 | 010 | [Exportação e eliminação dos dados da conta](010-dados-da-conta.md) | Em vigor |
 | 011 | [Dados dos templates](011-templates.md) | Em vigor (com pontos a confirmar) |
+| 012 | [Motor de datas e regra de compressão](012-motor-de-datas.md) | Em vigor |
