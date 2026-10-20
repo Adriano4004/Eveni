@@ -147,9 +147,11 @@ Fonte: `docs/templates/Eveni-Templates-Projecto.xlsx` (o Adriano vai acrescentá
 
 ### Taxonomia (listas fechadas)
 - **Fases:** Pré Produção · Produção · Pós Produção
-- **Categorias de tarefa:** Estratégia · Local e Logística · Fornecedores · Comunicação · Convidados · Protocolo · Técnica · Financeiro · Legal · Equipa · Registo
-- **Papéis:** Gestor · Produção · Comunicação · Financeiro · Protocolo · Técnica · Cliente
-- **Categorias de orçamento:** Local · Divulgação · Decoração/Iluminação · Equipamentos · Alimentação/Hospedagem · Equipa de trabalho · Artístico · Segurança · Transporte · Outros
+- **Categorias de tarefa:** Estratégia · Local e Logística · Fornecedores · Comunicação · Convidados · Protocolo · Técnica · Financeiro · Legal · Equipa · Registo · Alojamento · Artístico · Produção · Segurança · Transporte
+- **Papéis:** Gestor · Produção · Comunicação · Financeiro · Protocolo · Técnica · Cliente · Registo · Legal · Segurança
+- **Categorias de orçamento:** Local · Divulgação · Decoração/Iluminação · Equipamentos · Alimentação/Hospedagem · Equipa de trabalho · Artístico · Segurança · Transporte · Legal · Outros
+
+(Valores acrescentados à folha Taxonomia do Excel por decisão do Adriano: ver `docs/decisoes/011-templates.md`.)
 
 ### Templates
 | Código | Tipo | Tarefas | Críticas | Horizonte | Comprador |
@@ -157,13 +159,13 @@ Fonte: `docs/templates/Eveni-Templates-Projecto.xlsx` (o Adriano vai acrescentá
 | T01 | Conferência de Imprensa | 47 | 20 | 21 dias | Instituição, agência |
 | T02 | Casamento | 69 | 28 | 12 meses | Pessoa singular, wedding planner |
 | T03 | Congresso | 74 | 35 | 6 meses | Instituição, associação, empresa |
-| T04 | Festival/Concerto | 86 | — | — | **Ficheiro por localizar — pedir ao Adriano** |
+| T04 | Festival/Concerto | 86 | 49 | 8 meses | Produtor cultural, promotor, agência |
 
 Cada template traz **rubricas de orçamento pré-carregadas com valor zero** (algumas obrigatórias).
 
-**Ordem de lançamento:** T01 → T03 → T02. Fórum e Conferência derivam do T03; Aniversário é uma versão reduzida do T02.
+**Ordem de lançamento:** T01 → T03 → T04 → T02 (decidida pelo Adriano a 20/10/2026). Fórum e Conferência derivam do T03; Aniversário é uma versão reduzida do T02.
 
-**Regra:** um template só passa a produção depois de ter corrido num evento real, de ponta a ponta, com um organizador que não seja o Adriano.
+**Regra:** um template só passa a produção depois de ter corrido num evento real, de ponta a ponta, com um organizador que não seja o Adriano. *(T01: cumprida, confirmado a 20/10/2026.)*
 
 ---
 
@@ -197,7 +199,7 @@ Fornecedores por espaço, avaliação pós-evento, orçamento com rubricas do te
 **Fase 7 — Relatórios**
 PDF do projecto com orçamento; modelos "para cliente", "interno", "cronograma"; white-label para agências (logo, cor, rodapé).
 
-**Fase 8 — T03, depois T02** (após decisão sobre o Laço Perfeito).
+**Fase 8 — T03, depois T04, depois T02** (o T02 após decisão sobre o Laço Perfeito).
 
 **Mais tarde:** notificações WhatsApp (Twilio ou Meta Cloud API), pagamentos (Multicaixa Express/EMIS prioritário; cartões internacionais em segundo plano), landing page pública, eventos extra.
 

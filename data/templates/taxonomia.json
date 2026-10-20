@@ -15,7 +15,12 @@
     "Financeiro",
     "Legal",
     "Equipa",
-    "Registo"
+    "Registo",
+    "Alojamento",
+    "Artístico",
+    "Produção",
+    "Segurança",
+    "Transporte"
   ],
   "papeis": [
     "Gestor",
@@ -25,7 +30,9 @@
     "Protocolo",
     "Técnica",
     "Cliente",
-    "Registo"
+    "Registo",
+    "Legal",
+    "Segurança"
   ],
   "categoriasOrcamento": [
     "Local",
@@ -37,6 +44,7 @@
     "Artístico",
     "Segurança",
     "Transporte",
-    "Outros"
+    "Outros",
+    "Legal"
   ]
 }

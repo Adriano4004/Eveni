@@ -28,9 +28,9 @@
   - A exportação passa a incluir os projectos, com tarefas e orçamento.
   - Eliminar a conta apaga-os.
 
-## Ponto a confirmar com o Adriano
+## Regra do evento real
 
-- **A regra "um template só passa a produção depois de ter corrido num evento real"** (`CLAUDE.md`, secção 9). O T01 fica disponível no staging para ser testado. Antes de abrir a produção ao público, é preciso confirmar que já correu num evento real, com um organizador que não seja o Adriano.
+**Confirmado pelo Adriano a 20/10/2026:** o T01 já correu num evento real, do princípio ao fim, com um organizador que não era o Adriano. Cumpre a regra do `CLAUDE.md` (secção 9) e pode ir para produção.
 
 ## Ainda não existe (Fase 3)
 
