@@ -22,7 +22,8 @@ export type AccaoAuditada =
   | 'sessao.entrar_falhado'
   | 'sessao.bloqueada'
   | 'sessao.sair'
-  | 'sessao.sair_todos';
+  | 'sessao.sair_todos'
+  | 'projecto.criado';
 
 export async function auditar(
   pool: pg.Pool | pg.PoolClient,

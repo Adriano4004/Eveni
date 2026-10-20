@@ -345,3 +345,187 @@ h1 {
 .botao--perigo:hover {
   background: #912018;
 }
+
+/* Projectos */
+.cartao--largo {
+  max-width: 720px;
+}
+
+.projectos,
+.tarefas,
+.orcamento,
+.avisos {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.projectos li + li,
+.tarefas li + li {
+  margin-top: 8px;
+}
+
+.projecto-cartao {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.projecto-cartao:hover,
+.projecto-cartao:focus-visible {
+  border-color: var(--cor-marca);
+}
+
+.projecto-cartao__progresso {
+  font-size: 0.9rem;
+  color: var(--cor-texto-suave);
+}
+
+.etiqueta {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #f1efff;
+  color: var(--cor-marca-escura);
+  font-size: 0.75rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.etiqueta--critica {
+  background: #fff1e6;
+  color: #9a3412;
+}
+
+.escolhas {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.escolhas legend {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.escolha {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.4;
+}
+
+.escolha input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--cor-marca);
+}
+
+.escolha > span {
+  display: grid;
+  gap: 2px;
+}
+
+.campo input[type='date'] {
+  min-height: 48px;
+}
+
+.aviso--alerta {
+  border-color: #fdba74;
+  background: #fff7ed;
+}
+
+.avisos {
+  margin: 0 0 14px;
+  display: grid;
+  gap: 6px;
+  line-height: 1.45;
+}
+
+.fase h3 {
+  margin: 20px 0 8px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-suave);
+}
+
+.tarefa {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+}
+
+.tarefa--critica {
+  border-left: 4px solid #ea580c;
+}
+
+.tarefa summary {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.tarefa__titulo {
+  font-weight: 600;
+}
+
+.tarefa__datas {
+  font-size: 0.9rem;
+  color: var(--cor-texto-suave);
+}
+
+.tarefa[open] > *:not(summary) {
+  margin: 0 14px 12px;
+}
+
+/* A nota é o coração do produto: bem visível ao abrir a tarefa. */
+.nota {
+  padding: 12px 14px;
+  border-radius: var(--raio);
+  background: #f1efff;
+  border-left: 4px solid var(--cor-marca);
+}
+
+.nota strong {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-marca-escura);
+}
+
+.nota p {
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+.orcamento li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.orcamento__valor {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cartao--largo > .botao--compacto {
+  margin-bottom: 16px;
+}

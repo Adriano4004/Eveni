@@ -64,6 +64,8 @@ export const LIMITES = {
   gerirDoisFactores: { max: 10, janela: 60 * 60 },
   // Exportar ou eliminar os dados da conta.
   dadosConta: { max: 10, janela: 60 * 60 },
+  // Criar projectos, por conta (os planos ilimitados também têm este travão contra abusos).
+  criarProjecto: { max: 30, janela: 60 * 60 },
 } as const;
 
 // Regista a tentativa e recusa com 429 quando passa do limite.

@@ -2,7 +2,7 @@
 // Depois de alterar este ficheiro: npm run db:generate, rever a migração criada em drizzle/
 // e escrever o ficheiro de reversão correspondente em drizzle/reverter/.
 import { sql } from 'drizzle-orm';
-import { bigint, bigserial, check, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { bigint, bigserial, boolean, check, date, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const criadoEm = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -148,4 +148,86 @@ export const loginChallenges = pgTable(
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   },
   (t) => [index('login_challenges_utilizador').on(t.userId)],
+);
+
+// Projecto (evento). Pertence a um espaço de trabalho: o acesso verifica-se sempre através dele.
+// Não há eliminação pelo utilizador, só arquivo; arquivados continuam a contar para o limite do plano.
+export const projects = pgTable(
+  'projects',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    // Template e versão com que foi criado: alterar o template depois não muda o projecto.
+    templateCode: text('template_code').notNull(),
+    templateVersion: text('template_version').notNull(),
+    name: text('name').notNull(),
+    // Dia do evento (calendário de Luanda), não um instante.
+    eventDate: date('event_date', { mode: 'string' }).notNull(),
+    location: text('location'),
+    status: text('status').notNull().default('active'),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    index('projects_espaco').on(t.workspaceId, t.createdAt),
+    check('projects_estado_valido', sql`${t.status} in ('active', 'archived')`),
+  ],
+);
+
+// Tarefas materializadas a partir do template: copiadas (não referenciadas), com datas reais.
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    // ID estável do template (ex.: T01-022).
+    templateTaskId: text('template_task_id').notNull(),
+    position: integer('position').notNull(),
+    phase: text('phase').notNull(),
+    category: text('category').notNull(),
+    title: text('title').notNull(),
+    role: text('role').notNull(),
+    startDate: date('start_date', { mode: 'string' }).notNull(),
+    endDate: date('end_date', { mode: 'string' }).notNull(),
+    critical: boolean('critical').notNull(),
+    // Encurtada pela regra de compressão ao criar o projecto.
+    compressed: boolean('compressed').notNull().default(false),
+    note: text('note'),
+    status: text('status').notNull().default('pending'),
+    assigneeId: uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    uniqueIndex('tasks_template_unica').on(t.projectId, t.templateTaskId),
+    check('tasks_estado_valido', sql`${t.status} in ('pending', 'in_progress', 'done')`),
+    check('tasks_datas_validas', sql`${t.endDate} >= ${t.startDate}`),
+  ],
+);
+
+// Itens de orçamento. Valores em cêntimos de Kwanza (inteiros, nunca float).
+export const budgetItems = pgTable(
+  'budget_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    category: text('category').notNull(),
+    description: text('description').notNull(),
+    required: boolean('required').notNull().default(false),
+    note: text('note'),
+    plannedCents: bigint('planned_cents', { mode: 'number' }).notNull().default(0),
+    actualCents: bigint('actual_cents', { mode: 'number' }).notNull().default(0),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    index('budget_items_projecto').on(t.projectId),
+    check('budget_items_valores_positivos', sql`${t.plannedCents} >= 0 and ${t.actualCents} >= 0`),
+  ],
 );
