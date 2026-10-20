@@ -197,8 +197,15 @@ test('filtrar as tarefas e ver o calendário', async ({ page }) => {
   const evento = emDias(30);
   const [ano, mes] = evento.split('-').map(Number) as [number, number];
   const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  if (mesDeHoje() !== evento.slice(0, 7)) await page.getByRole('button', { name: 'Mês seguinte' }).click();
-  await expect(page.getByRole('heading', { name: `${meses[mes - 1]} ${ano}` })).toBeVisible();
+  // O calendário abre no mês de hoje ou, se o projecto ainda não lá chegou, no primeiro mês com tarefas.
+  // Avançar até ao mês do evento (no máximo 2 meses à frente, com o evento a 30 dias).
+  const titulo = `${meses[mes - 1]} ${ano}`;
+  const cabecalho = page.locator('.calendario__cabecalho h3');
+  await expect(cabecalho).toBeVisible();
+  for (let i = 0; i < 3 && (await cabecalho.textContent()) !== titulo; i++) {
+    await page.getByRole('button', { name: 'Mês seguinte' }).click();
+  }
+  await expect(page.getByRole('heading', { name: titulo })).toBeVisible();
   const diaEvento = page.getByRole('button', { name: /Dia do evento/ });
   await expect(diaEvento).toBeVisible();
   await diaEvento.click();
@@ -206,4 +213,3 @@ test('filtrar as tarefas e ver o calendário', async ({ page }) => {
   await expect(page.locator('.calendario__dia-escolhido li.tarefa-linha').first()).toBeVisible();
 });
 
-const mesDeHoje = () => hojeEmLuanda().slice(0, 7);
