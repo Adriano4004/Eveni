@@ -60,9 +60,8 @@ test('criar uma conferência de imprensa com pouco tempo: avisos, confirmação 
   await expect(tarefa.getByText(/Se não há notícia, não há conferência\./)).toBeVisible();
   await expect(tarefa.getByText('Crítica')).toBeVisible();
 
-  // Rubricas do orçamento a zero, em Kwanza.
-  await expect(page.getByText('Aluguer de sala')).toBeVisible();
-  await expect(page.getByText('Previsto: 0,00 Kz').first()).toBeVisible();
+  // Resumo do orçamento a zero, em Kwanza (as rubricas vêem-se no ecrã do orçamento).
+  await expect(page.getByText('Total previsto 0,00 Kz · Real 0,00 Kz')).toBeVisible();
 
   // De volta ao início: o projecto está na lista e o plano Singular já não deixa criar outro.
   await page.getByRole('button', { name: 'Voltar ao início' }).click();

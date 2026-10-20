@@ -2,12 +2,15 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { aplicarMigracoes, criarBaseDeDados } from '../src/server/db/index.js';
 import { hojeEmLuanda, somarDias } from '../src/shared/datas.js';
 import { materializar } from '../src/shared/materializacao.js';
+import { separarContingencia } from '../src/shared/orcamento.js';
 import type { Template } from '../src/shared/templates.js';
 import T01json from '../data/templates/T01.json' with { type: 'json' };
 import { limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
 import { cookieDe, criarCliente, PALAVRA_PASSE } from './cliente.js';
 
 const T01 = T01json as Template;
+// Rubricas que viram linhas do orçamento: todas menos a "Contingência (10%)", que passa a percentagem (decisão 019).
+const RUBRICAS_T01 = separarContingencia(T01.rubricas).rubricas;
 const base = criarBaseDeDados(URL_BD_TESTE);
 let c: Awaited<ReturnType<typeof criarCliente>>;
 
@@ -164,10 +167,11 @@ describe('criar projecto', () => {
       });
     });
     expect(projecto.tarefasDoProjecto.filter((t: { critica: boolean }) => t.critica)).toHaveLength(20);
-    expect(projecto.orcamento).toHaveLength(T01.rubricas.length);
+    expect(projecto.orcamento).toHaveLength(RUBRICAS_T01.length);
     for (const [i, item] of projecto.orcamento.entries()) {
-      expect(item).toMatchObject({ descricao: T01.rubricas[i]!.descricao, obrigatoria: T01.rubricas[i]!.obrigatoria, previstoCentimos: 0, realCentimos: 0 });
+      expect(item).toMatchObject({ descricao: RUBRICAS_T01[i]!.descricao, obrigatoria: RUBRICAS_T01[i]!.obrigatoria, previstoCentimos: 0, realCentimos: 0 });
     }
+    expect(projecto.contingencia).toBe(10);
   });
 
   it('as datas guardadas não mudam de dia com o fuso horário do servidor', async () => {
@@ -363,7 +367,7 @@ describe('projectos na exportação e na eliminação da conta', () => {
     const dados = (await c.post('/api/conta/exportar', { palavraPasse: PALAVRA_PASSE }, cookie)).json();
     expect(dados.projectos).toHaveLength(1);
     expect(dados.projectos[0].tarefasDoProjecto).toHaveLength(47);
-    expect(dados.projectos[0].orcamento).toHaveLength(T01.rubricas.length);
+    expect(dados.projectos[0].orcamento).toHaveLength(RUBRICAS_T01.length);
   });
 
   it('eliminar a conta apaga os projectos, as tarefas e o orçamento', async () => {

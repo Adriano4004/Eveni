@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { diasEntre, hojeEmLuanda } from '../../shared/datas.js';
 import { actualizarTarefa, type CodigoPlano, criarProjecto, darAcesso, previsaoProjecto } from '../../shared/esquemas.js';
 import { materializar } from '../../shared/materializacao.js';
+import { separarContingencia } from '../../shared/orcamento.js';
 import { mensagens } from '../../shared/mensagens.js';
 import {
   DIAS_MAXIMOS_ATE_EVENTO,
@@ -97,6 +98,9 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
         [espaco.id, template.codigo, template.versao, dados.nome, dados.dataEvento, dados.local ?? null, utilizadorId],
       );
       const projectoId = criados[0]!.id;
+      // A rubrica "Contingência (N%)" do template passa a ser a percentagem do projecto (decisão 019).
+      const { rubricas, percentagem } = separarContingencia(template.rubricas);
+      await cliente.query('update projects set contingency_pct = $2 where id = $1', [projectoId, percentagem]);
 
       // Uma só instrução por tabela, com listas paralelas (parâmetros, nunca SQL concatenado).
       const tarefas = template.tarefas.map((t, i) => ({ t, d: previsao.tarefas[i]! }));
@@ -124,11 +128,11 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
          select $1, * from unnest($2::int[], $3::text[], $4::text[], $5::bool[], $6::text[])`,
         [
           projectoId,
-          template.rubricas.map((_, i) => i),
-          template.rubricas.map((r) => r.categoria),
-          template.rubricas.map((r) => r.descricao),
-          template.rubricas.map((r) => r.obrigatoria),
-          template.rubricas.map((r) => r.nota),
+          rubricas.map((_, i) => i),
+          rubricas.map((r) => r.categoria),
+          rubricas.map((r) => r.descricao),
+          rubricas.map((r) => r.obrigatoria),
+          rubricas.map((r) => r.nota),
         ],
       );
       await auditar(cliente, 'projecto.criado', {
@@ -343,7 +347,7 @@ const HOJE_SQL = "(now() at time zone 'Africa/Luanda')::date";
 // Resumo do projecto, com o papel de quem está a ver. `utilizador` é o marcador do parâmetro ($1, $2…),
 // nunca um valor vindo do pedido.
 const seleccaoResumo = (utilizador: '$1' | '$2') => `
-  select papel_no_projecto(p.id, ${utilizador}) as papel, p.id, p.workspace_id, p.name, p.template_code, p.template_version, p.event_date, p.location, p.status, p.created_at,
+  select papel_no_projecto(p.id, ${utilizador}) as papel, p.id, p.workspace_id, p.name, p.template_code, p.template_version, p.event_date, p.location, p.contingency_pct, p.status, p.created_at,
          ${HOJE_SQL}::text as hoje,
          (select count(*)::int from tasks t where t.project_id = p.id) as tarefas,
          (select count(*)::int from tasks t where t.project_id = p.id and t.status = 'done') as concluidas,
@@ -360,6 +364,7 @@ interface LinhaResumo {
   template_version: string;
   event_date: string;
   location: string | null;
+  contingency_pct: number;
   status: EstadoProjecto;
   created_at: Date;
   hoje: string;
@@ -457,6 +462,7 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
   return {
     ...paraResumo(l),
     totalConvidados: convidados[0]!.n,
+    contingencia: l.contingency_pct,
     nomeTemplate: obterTemplate(l.template_code)?.nome ?? l.template_code,
     versaoTemplate: l.template_version,
     criadoEm: l.created_at.toISOString(),

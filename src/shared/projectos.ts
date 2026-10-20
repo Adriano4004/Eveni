@@ -101,4 +101,6 @@ export interface Projecto extends ResumoProjecto {
   orcamento: ItemOrcamento[];
   // Número de convidados (a lista vê-se noutro ecrã).
   totalConvidados: number;
+  // Contingência do orçamento, em percentagem do subtotal previsto (decisão 019).
+  contingencia: number;
 }

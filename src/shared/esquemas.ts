@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { MAX_ACOMPANHANTES, MAX_LINHAS_IMPORTACAO, MAX_LUGARES_POR_MESA, normalizarTelemovel, RESPOSTAS } from './convidados.js';
 import { dataValida } from './datas.js';
+import { CATEGORIAS_ORCAMENTO, lerKz, MAX_CENTIMOS, MAX_CONTINGENCIA } from './orcamento.js';
 import { mensagens } from './mensagens.js';
 import { ESTADOS_TAREFA } from './projectos.js';
 import { ePalavraPasseComum } from './palavras-passe-comuns.js';
@@ -248,3 +249,34 @@ export const criarVariasMesas = z.object({
 
 // Sentar um convidado numa mesa (null = tirar da mesa).
 export const sentarConvidado = z.object({ mesaId: z.uuid({ error: m.mesaInvalida }).nullable() });
+
+// Orçamento (decisão 019). Valores: número = cêntimos (API); texto = Kwanza escrito no formulário
+// ("5 000 000,00"). Vazio = zero.
+const valorKz = z
+  .union([z.number(), z.string()], { error: m.valorInvalido })
+  .transform((v, ctx) => {
+    if (typeof v === 'number') return v;
+    if (v.trim() === '') return 0;
+    const centimos = lerKz(v);
+    if (centimos === null) {
+      ctx.addIssue({ code: 'custom', message: m.valorInvalido });
+      return z.NEVER;
+    }
+    return centimos;
+  })
+  .pipe(z.number({ error: m.valorInvalido }).int(m.valorInvalido).min(0, m.valorInvalido).max(MAX_CENTIMOS, m.valorInvalido));
+
+export const dadosRubrica = z.object({
+  categoria: z.enum(CATEGORIAS_ORCAMENTO, { error: m.categoriaOrcamentoInvalida }),
+  descricao: textoDeUmaLinha(120, { obrigatorio: m.descricaoRubricaObrigatoria, longo: m.descricaoRubricaLonga, invalido: m.descricaoRubricaInvalida }),
+  previsto: valorKz.optional().transform((v) => v ?? 0),
+  real: valorKz.optional().transform((v) => v ?? 0),
+});
+export type DadosRubrica = z.infer<typeof dadosRubrica>;
+
+export const contingencia = z.object({
+  percentagem: z
+    .union([z.number(), z.string().trim()], { error: m.contingenciaInvalida })
+    .transform((v) => (v === '' ? Number.NaN : Number(String(v).replace(/%$/, '').trim())))
+    .pipe(z.number({ error: m.contingenciaInvalida }).int(m.contingenciaInvalida).min(0, m.contingenciaInvalida).max(MAX_CONTINGENCIA, m.contingenciaInvalida)),
+});

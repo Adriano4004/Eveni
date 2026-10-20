@@ -2,6 +2,7 @@ import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useId, u
 import { formatarData } from '../shared/datas.js';
 import { formatarKz } from '../shared/dinheiro.js';
 import { mensagens } from '../shared/mensagens.js';
+import { resumirOrcamento } from '../shared/orcamento.js';
 import { ESTADOS_TAREFA, type EstadoTarefa, type Pessoa, type Projecto, type ResumoProjecto, type TarefaProjecto } from '../shared/projectos.js';
 import {
   type Filtros,
@@ -178,20 +179,10 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
 
       <section className="seccao" aria-labelledby="titulo-orcamento">
         <h2 id="titulo-orcamento">{p.orcamento}</h2>
-        <p className="campo__ajuda">{p.emBreveOrcamento}</p>
-        <ul className="orcamento">
-          {projecto.orcamento.map((item) => (
-            <li key={item.id}>
-              <span>
-                {item.descricao} <span className="campo__ajuda">{item.categoria}</span>
-                {item.obrigatoria && <span className="etiqueta">{p.obrigatoria}</span>}
-              </span>
-              <span className="orcamento__valor">
-                {p.previsto}: {formatarKz(item.previstoCentimos)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <ResumoOrcamento projecto={projecto} />
+        <button className="botao botao--secundario" type="button" onClick={() => navegar(`/projectos/${encodeURIComponent(id)}/orcamento`)}>
+          {e.orcamento.verOrcamento}
+        </button>
       </section>
 
       {projecto.podeArquivar && <AcessosProjecto projecto={projecto} aoMudar={setProjecto} />}
@@ -692,5 +683,18 @@ function Tarefa({ tarefa: t, membros, soLeitura, arquivado, alterar }: PropsTare
         </div>
       </details>
     </li>
+  );
+}
+
+// Uma linha com o total previsto (com contingência) e o real, e o alerta se o real já passou do previsto.
+function ResumoOrcamento({ projecto }: { projecto: Projecto }) {
+  const r = resumirOrcamento(projecto.orcamento, projecto.contingencia);
+  const o = e.orcamento;
+  return (
+    <>
+      <p className="campo__ajuda">{o.resumoProjecto(formatarKz(r.totalPrevisto), formatarKz(r.totalReal))}</p>
+      {r.estado === 'contingencia' && <p className="aviso">{o.estadoContingencia(formatarKz(r.variacao))}</p>}
+      {r.estado === 'excedido' && <p className="aviso aviso--alerta">{o.estadoExcedido(formatarKz(r.totalReal - r.totalPrevisto))}</p>}
+    </>
   );
 }
