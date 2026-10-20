@@ -6,6 +6,7 @@ import {
   calcularTotais,
   type LigacaoRsvp,
   type ListaConvidados,
+  type Mesa,
   MAX_CONVIDADOS_POR_PROJECTO,
   type Resposta,
   type ResultadoImportacao,
@@ -30,7 +31,8 @@ const mp = mensagens.projectos;
 const idProjecto = z.object({ id: z.uuid() });
 const idConvidado = z.object({ id: z.uuid(), convidado: z.uuid() });
 
-const SELECCAO = `select id, name, phone, email, plus_ones_allowed, response, plus_ones_confirmed, responded_at from guests`;
+const COLUNAS = 'id, name, phone, email, plus_ones_allowed, response, plus_ones_confirmed, responded_at, table_id';
+const SELECCAO = `select ${COLUNAS} from guests`;
 
 interface Linha {
   id: string;
@@ -41,6 +43,7 @@ interface Linha {
   response: Resposta;
   plus_ones_confirmed: number;
   responded_at: Date | null;
+  table_id: string | null;
 }
 
 const paraConvidado = (l: Linha): Convidado => ({
@@ -52,6 +55,7 @@ const paraConvidado = (l: Linha): Convidado => ({
   resposta: l.response,
   acompanhantesConfirmados: l.plus_ones_confirmed,
   respondidoEm: l.responded_at ? l.responded_at.toISOString() : null,
+  mesaId: l.table_id,
 });
 
 // Convidados de um projecto, por nome. Quem chama já verificou o acesso. Usada também na exportação de dados.
@@ -60,10 +64,21 @@ export async function listarConvidados(cliente: pg.Pool | pg.PoolClient, project
   return rows.map(paraConvidado);
 }
 
+// Por nome, com os números por ordem ("Mesa 2" antes de "Mesa 10").
+const ordemDasMesas = new Intl.Collator('pt-PT', { numeric: true, sensitivity: 'base' });
+
+// Mesas de um projecto, por nome. Quem chama já verificou o acesso. Usada também na exportação.
+export async function listarMesas(cliente: pg.Pool | pg.PoolClient, projectoId: string): Promise<Mesa[]> {
+  const { rows } = await cliente.query<{ id: string; name: string; seats: number }>('select id, name, seats from event_tables where project_id = $1', [
+    projectoId,
+  ]);
+  return rows.map((r) => ({ id: r.id, nome: r.name, lugares: r.seats })).sort((a, b) => ordemDasMesas.compare(a.nome, b.nome) || a.id.localeCompare(b.id));
+}
+
 // Bloqueia o projecto (primeiro o projecto, depois os convidados: a mesma ordem das tarefas) e verifica que
 // a pessoa o pode alterar. Com o projecto bloqueado, as verificações de repetidos e do limite não são
 // ultrapassadas por outro pedido em simultâneo.
-async function projectoParaAlterar(cliente: pg.PoolClient, projectoId: string, utilizadorId: string) {
+export async function projectoParaAlterar(cliente: pg.PoolClient, projectoId: string, utilizadorId: string) {
   const { rows } = await cliente.query<{ status: EstadoProjecto; papel: PapelNoProjecto | null }>(
     'select p.status, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1 for update of p',
     [projectoId, utilizadorId],
@@ -111,6 +126,7 @@ export function registarRotasConvidados(app: FastifyInstance, config: Config, ba
       projecto: { id: projecto.id, nome: projecto.name, dataEvento: projecto.event_date },
       podeAlterar: projecto.papel !== 'viewer' && projecto.status === 'active',
       convidados,
+      mesas: await listarMesas(pool, projectoId),
       totais: calcularTotais(convidados),
     };
   });
@@ -128,7 +144,7 @@ export function registarRotasConvidados(app: FastifyInstance, config: Config, ba
       await verificarRepetido(cliente, projectoId, dados, null);
       const { rows } = await cliente.query<Linha>(
         `insert into guests (project_id, name, phone, email, plus_ones_allowed) values ($1, $2, $3, $4, $5)
-         returning id, name, phone, email, plus_ones_allowed, response, plus_ones_confirmed, responded_at`,
+         returning ${COLUNAS}`,
         [projectoId, dados.nome, dados.telemovel, dados.email, dados.acompanhantes],
       );
       return paraConvidado(rows[0]!);
@@ -213,7 +229,7 @@ export function registarRotasConvidados(app: FastifyInstance, config: Config, ba
                 responded_at = case when $6 = 'pending' then null when $6 = response then responded_at else clock_timestamp() end,
                 updated_at = clock_timestamp()
           where id = $1
-          returning id, name, phone, email, plus_ones_allowed, response, plus_ones_confirmed, responded_at`,
+          returning ${COLUNAS}`,
         [convidadoId, dados.nome, dados.telemovel, dados.email, dados.acompanhantes, novaResposta, confirmados],
       );
       return paraConvidado(rows[0]!);

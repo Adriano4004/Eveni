@@ -4,6 +4,7 @@ import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
 import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
+import { EcraMesas } from './ecra-mesas.js';
 import { EcraRsvp } from './ecra-rsvp.js';
 import { EcraDoisFactores } from './ecras-dois-factores.js';
 import { EcraConvite, EcraEquipa } from './ecras-equipa.js';
@@ -121,6 +122,8 @@ export function App() {
   }
   if (estado.tipo === 'com-sessao') {
     if (caminho === '/projectos/novo') return <EcraNovoProjecto />;
+    const mesas = /^\/projectos\/([^/]+)\/mesas$/.exec(caminho)?.[1];
+    if (mesas) return <EcraMesas key={mesas} id={decodeURIComponent(mesas)} />;
     const convidados = /^\/projectos\/([^/]+)\/convidados$/.exec(caminho)?.[1];
     if (convidados) return <EcraConvidados key={convidados} id={decodeURIComponent(convidados)} />;
     const projecto = /^\/projectos\/([^/]+)$/.exec(caminho)?.[1];
