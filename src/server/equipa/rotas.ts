@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import { z } from 'zod';
-import { DIAS_VALIDADE_CONVITE, type ConviteCriado, type Equipa, type InfoConvite, LIMITE_PESSOAS } from '../../shared/equipa.js';
+import { DIAS_VALIDADE_CONVITE, type ConviteCriado, type EntradaRegisto, type Equipa, type InfoConvite, LIMITE_PESSOAS, type Registo } from '../../shared/equipa.js';
 import { type CodigoPlano, convidar, tokenConvite } from '../../shared/esquemas.js';
 import { mensagens } from '../../shared/mensagens.js';
 import type { Config } from '../config.js';
@@ -86,6 +86,50 @@ export function registarRotasEquipa(
     };
   });
 
+  // Registo de actividade do espaço: só o do espaço de que a pessoa é dona. Sem IPs (não são precisos aqui).
+  const POR_PAGINA = 50;
+  const consultaRegisto = z.object({ antes: z.coerce.number().int().positive().optional() });
+  app.get('/api/equipa/registo', { preHandler: guardas.exigirSessao }, async (pedido): Promise<Registo> => {
+    const parametros = consultaRegisto.safeParse(pedido.query);
+    if (!parametros.success) throw new ErroHttp(400, mensagens.erros.pedidoInvalido);
+    const espaco = await espacoDoDono(pool, pedido.sessao!.utilizadorId, false);
+    const { rows } = await pool.query<{
+      id: string;
+      action: EntradaRegisto['accao'];
+      created_at: Date;
+      quem: string | null;
+      projecto: string | null;
+      pessoa: string | null;
+      email: string | null;
+      papel: EntradaRegisto['papel'];
+    }>(
+      `select a.id, a.action, a.created_at, u.name as quem, p.name as projecto, m.name as pessoa, i.email, a.details->>'papel' as papel
+         from audit_log a
+         left join users u on u.id = a.user_id
+         -- Os IDs nos detalhes foram escritos pelo próprio Eveni (sempre uuid): comparar como uuid usa os índices.
+         left join projects p on p.id = (a.details->>'projectoId')::uuid and p.workspace_id = a.workspace_id
+         left join users m on m.id = (a.details->>'membroId')::uuid
+         left join invitations i on i.id = (a.details->>'conviteId')::uuid and i.workspace_id = a.workspace_id
+        where a.workspace_id = $1 and ($2::bigint is null or a.id < $2)
+        order by a.id desc
+        limit $3`,
+      [espaco.id, parametros.data.antes ?? null, POR_PAGINA + 1],
+    );
+    return {
+      entradas: rows.slice(0, POR_PAGINA).map((r) => ({
+        id: Number(r.id),
+        accao: r.action,
+        data: r.created_at.toISOString(),
+        quem: r.quem,
+        projecto: r.projecto,
+        pessoa: r.pessoa,
+        email: r.email,
+        papel: r.papel,
+      })),
+      mais: rows.length > POR_PAGINA,
+    };
+  });
+
   app.post('/api/equipa/convites', { preHandler: guardas.exigirEmailConfirmado }, async (pedido, resposta) => {
     const { utilizadorId } = pedido.sessao!;
     await limitar(pool, `convidar:${utilizadorId}`, LIMITES.convidarPorConta);
@@ -118,7 +162,7 @@ export function registarRotasEquipa(
         [espaco.id, email, hashToken(token), utilizadorId, DIAS_VALIDADE_CONVITE],
       );
       // Sem o e-mail convidado na auditoria: é um dado de terceiro.
-      await auditar(cliente, 'equipa.convite_criado', { utilizadorId, ip: pedido.ip, detalhes: { conviteId: rows[0]!.id } });
+      await auditar(cliente, 'equipa.convite_criado', { utilizadorId, ip: pedido.ip, espacoId: espaco.id, detalhes: { conviteId: rows[0]!.id } });
       return { ...rows[0]!, quem: dono[0]!.name, espaco: espaco.name, espacoId: espaco.id };
     });
 
@@ -153,7 +197,7 @@ export function registarRotasEquipa(
         [parametros.data.id, espaco.id],
       );
       if (rows.length === 0) throw new ErroHttp(404, m.conviteNaoEncontrado);
-      await auditar(cliente, 'equipa.convite_revogado', { utilizadorId, ip: pedido.ip, detalhes: { conviteId: parametros.data.id } });
+      await auditar(cliente, 'equipa.convite_revogado', { utilizadorId, ip: pedido.ip, espacoId: espaco.id, detalhes: { conviteId: parametros.data.id } });
     });
     return resposta.code(204).send();
   });
@@ -181,7 +225,7 @@ export function registarRotasEquipa(
         'update tasks set assignee_id = null, updated_at = clock_timestamp() where assignee_id = $1 and project_id in (select id from projects where workspace_id = $2)',
         [membro, espaco.id],
       );
-      await auditar(cliente, 'equipa.membro_removido', { utilizadorId, ip: pedido.ip, detalhes: { membroId: membro } });
+      await auditar(cliente, 'equipa.membro_removido', { utilizadorId, ip: pedido.ip, espacoId: espaco.id, detalhes: { membroId: membro } });
     });
     return resposta.code(204).send();
   });
@@ -246,7 +290,7 @@ export function registarRotasEquipa(
         await cliente.query("insert into workspace_members (workspace_id, user_id, role) values ($1, $2, 'member')", [espaco.id, utilizadorId]);
       }
       await cliente.query('update invitations set accepted_at = now(), accepted_by = $2 where id = $1', [convite.id, utilizadorId]);
-      await auditar(cliente, 'equipa.convite_aceite', { utilizadorId, ip: pedido.ip, detalhes: { conviteId: convite.id, espacoId: espaco.id } });
+      await auditar(cliente, 'equipa.convite_aceite', { utilizadorId, ip: pedido.ip, espacoId: espaco.id, detalhes: { conviteId: convite.id } });
       return { espaco: espaco.name };
     });
   });

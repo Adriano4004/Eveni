@@ -118,5 +118,19 @@ Resultado da revisão de segurança deste PR:
   Assim, retirar alguém da equipa no mesmo instante espera e limpa tudo.
 - **Voltar a entrar na equipa:** ao aceitar um convite, apagam-se os acessos antigos que a pessoa possa ter nesse espaço. Quem entra começa sempre sem projectos.
 
+## Registo de actividade (quarto PR da Fase 4)
+
+- **No ecrã "Equipa"**, o dono vê o registo de actividade do seu espaço, do mais recente para o mais antigo, 50 entradas de cada vez. Aparecem:
+  - projectos criados, arquivados e restaurados;
+  - acessos dados e retirados;
+  - convites enviados, cancelados e aceites;
+  - pessoas retiradas da equipa.
+- **Escrito em frases simples**, com os nomes actuais, por exemplo: "Ana Domingos deu acesso de editor a Bruno Neto no projecto «Conferência»". Quando a conta, o projecto ou o convite já não existem, aparece "Uma conta eliminada", "um projecto" ou "um e-mail".
+- **Sem dados técnicos:** não mostra IPs. Ficam guardados na auditoria interna, mas não aparecem aqui.
+- **Quem vê:** só o dono, e só o registo do seu próprio espaço. Um membro nunca vê o registo do espaço onde entrou.
+- **Base de dados:** cada entrada da auditoria passa a guardar o espaço a que diz respeito (migração `0008`). O registo é apagado juntamente com o espaço, quando o dono elimina a conta.
+- **Quando um membro elimina a conta,** o que fez no espaço de outra pessoa (por exemplo, "entrou na equipa") fica no registo desse espaço, mas **anónimo**: sem a pessoa e sem o IP. Aparece como "Uma conta eliminada". O dono continua a ver a história da sua equipa, e os dados pessoais de quem saiu são apagados.
+- **Mantém-se como antes:** as acções de conta (entradas, mudanças de palavra-passe, 2FA, exportação, eliminação) continuam na auditoria interna e na exportação dos dados de cada pessoa. Não aparecem no registo do espaço.
+
 Ainda não existe:
 - um membro sair sozinho de uma equipa.

@@ -92,12 +92,15 @@ export const auditLog = pgTable(
   {
     id: bigserial('id', { mode: 'number' }).primaryKey(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    // Espaço de trabalho a que a acção diz respeito (equipa e projectos), para o registo que o dono vê.
+    // Apagado com o espaço.
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
     action: text('action').notNull(),
     ip: inet('ip'),
     details: jsonb('details').notNull().default({}),
     createdAt: criadoEm(),
   },
-  (t) => [index('audit_log_utilizador').on(t.userId), index('audit_log_data').on(t.createdAt)],
+  (t) => [index('audit_log_utilizador').on(t.userId), index('audit_log_data').on(t.createdAt), index('audit_log_espaco').on(t.workspaceId, t.id)],
 );
 
 // Ligações de uso único enviadas por e-mail (confirmação de e-mail; mais tarde, recuperação de palavra-passe).

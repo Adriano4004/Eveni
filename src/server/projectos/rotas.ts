@@ -134,6 +134,7 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
       await auditar(cliente, 'projecto.criado', {
         utilizadorId,
         ip: pedido.ip,
+        espacoId: espaco.id,
         detalhes: { projectoId, template: template.codigo, versao: template.versao, avisos: previsao.avisos.length },
       });
       return { projectoId };
@@ -181,8 +182,8 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
       const { utilizadorId } = pedido.sessao!;
 
       await emTransaccao(pool, async (cliente) => {
-        const { rows } = await cliente.query<{ status: EstadoProjecto; papel: PapelNoProjecto | null }>(
-          'select p.status, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1 for update of p',
+        const { rows } = await cliente.query<{ status: EstadoProjecto; papel: PapelNoProjecto | null; workspace_id: string }>(
+          'select p.status, p.workspace_id, papel_no_projecto(p.id, $2) as papel from projects p where p.id = $1 for update of p',
           [projectoId, utilizadorId],
         );
         const projecto = rows[0];
@@ -196,6 +197,7 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
         await auditar(cliente, novoEstado === 'archived' ? 'projecto.arquivado' : 'projecto.restaurado', {
           utilizadorId,
           ip: pedido.ip,
+          espacoId: projecto.workspace_id,
           detalhes: { projectoId },
         });
       });
@@ -248,6 +250,7 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
       await auditar(cliente, 'projecto.acesso_dado', {
         utilizadorId,
         ip: pedido.ip,
+        espacoId,
         detalhes: { projectoId, membroId: dados.utilizadorId, papel: dados.papel },
       });
     });
@@ -260,14 +263,14 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const { id: projectoId, utilizador: membro } = parametros.data;
     const { utilizadorId } = pedido.sessao!;
     await emTransaccao(pool, async (cliente) => {
-      await donoDoProjecto(cliente, projectoId, utilizadorId);
+      const espacoId = await donoDoProjecto(cliente, projectoId, utilizadorId);
       const { rows } = await cliente.query('delete from project_members where project_id = $1 and user_id = $2 returning user_id', [projectoId, membro]);
       if (rows.length === 0) throw new ErroHttp(404, m.acessoNaoEncontrado);
       await cliente.query('update tasks set assignee_id = null, updated_at = clock_timestamp() where project_id = $1 and assignee_id = $2', [
         projectoId,
         membro,
       ]);
-      await auditar(cliente, 'projecto.acesso_retirado', { utilizadorId, ip: pedido.ip, detalhes: { projectoId, membroId: membro } });
+      await auditar(cliente, 'projecto.acesso_retirado', { utilizadorId, ip: pedido.ip, espacoId, detalhes: { projectoId, membroId: membro } });
     });
     return resposta.code(204).send();
   });

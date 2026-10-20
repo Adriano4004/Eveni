@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { formatarData, hojeEmLuanda } from '../shared/datas.js';
-import type { ConviteCriado, Equipa, InfoConvite } from '../shared/equipa.js';
+import type { ConviteCriado, EntradaRegisto, Equipa, InfoConvite, Registo } from '../shared/equipa.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api, ErroApi, mensagemDeErro } from './api.js';
 import { Campo } from './Campo.js';
@@ -146,8 +146,83 @@ export function EcraEquipa() {
           )}
         </section>
       )}
+      <RegistoActividade equipa={equipa} />
     </main>
   );
+}
+
+// Registo de actividade do espaço (só o dono vê este ecrã), 50 entradas de cada vez. Volta a carregar
+// sempre que a equipa muda (convidar, cancelar, retirar), para mostrar a acção acabada de fazer.
+function RegistoActividade({ equipa }: { equipa: Equipa }) {
+  const q = e.equipa;
+  const [entradas, setEntradas] = useState<EntradaRegisto[]>();
+  const [mais, setMais] = useState(false);
+  const [aCarregar, setACarregar] = useState(false);
+  const [erro, setErro] = useState<string>();
+
+  async function carregar(antes?: number) {
+    setACarregar(true);
+    setErro(undefined);
+    try {
+      const r = await api<Registo>('GET', `/api/equipa/registo${antes ? `?antes=${antes}` : ''}`);
+      setEntradas((actuais) => [...(antes ? (actuais ?? []) : []), ...r.entradas]);
+      setMais(r.mais);
+    } catch (falha) {
+      setErro(mensagemDeErro(falha));
+    } finally {
+      setACarregar(false);
+    }
+  }
+
+  useEffect(() => {
+    carregar();
+  }, [equipa]);
+
+  return (
+    <section className="seccao" aria-labelledby="titulo-registo">
+      <h2 id="titulo-registo">{q.registo}</h2>
+      <p className="campo__ajuda">{q.registoTexto}</p>
+      {erro && (
+        <p className="formulario__erro" role="alert">
+          {erro}
+        </p>
+      )}
+      {entradas?.length === 0 && <p className="campo__ajuda">{q.registoVazio}</p>}
+      {entradas && entradas.length > 0 && (
+        <ul className="registo">
+          {entradas.map((entrada) => (
+            <li key={entrada.id}>
+              <span>{descreverEntrada(entrada)}</span>
+              <span className="campo__ajuda">{dataEHora(entrada.data)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {mais && (
+        <button className="botao botao--secundario" type="button" disabled={aCarregar} onClick={() => carregar(entradas?.at(-1)?.id)}>
+          {aCarregar ? q.aCarregarMais : q.verMais}
+        </button>
+      )}
+    </section>
+  );
+}
+
+function descreverEntrada(r: EntradaRegisto): string {
+  const q = e.equipa;
+  const nomes = {
+    projecto: r.projecto ?? q.umProjecto,
+    pessoa: r.pessoa ?? q.alguemEquipa,
+    email: r.email ?? q.umEmail,
+    papel: r.papel ? q.papeis[r.papel] : '',
+  };
+  return q.accoes[r.accao](r.quem ?? q.alguem, nomes);
+}
+
+// Data e hora em Luanda: dd/mm/aaaa hh:mm.
+function dataEHora(instante: string): string {
+  const d = new Date(instante);
+  const hora = new Intl.DateTimeFormat('pt-PT', { timeZone: 'Africa/Luanda', hour: '2-digit', minute: '2-digit' }).format(d);
+  return `${dataDe(instante)} ${hora}`;
 }
 
 // A ligação só aparece uma vez: copiar ou partilhar por WhatsApp.
