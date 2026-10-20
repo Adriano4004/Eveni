@@ -18,6 +18,7 @@ describe('valores em Kwanza', () => {
     ['1 500,50 Kz', 150_050],
     ['1500.50', 150_050],
     ['1.500', 150_000],
+    ['1.500.50', 150_050],
     ['250 000,00 Kz', 25_000_000],
     ['0', 0],
     ['0,99', 99],
@@ -25,7 +26,7 @@ describe('valores em Kwanza', () => {
     expect(lerKz(texto)).toBe(centimos);
   });
 
-  it.each(['', 'abc', '-5', '1,234', '1.50.000', '5 000 000,000', '1e6', '100000000001', '12,5,0'])('recusa %j', (texto) => {
+  it.each(['', 'abc', '-5', '1,234', '1.50.000', '5 000 000,000', '1e6', '100000000001', '12,5,0', '12.34.56', '1234.567', '1.2345'])('recusa %j', (texto) => {
     expect(lerKz(texto)).toBeNull();
   });
 
@@ -64,6 +65,8 @@ describe('categorias e contingência', () => {
       expect(rubricas.some((r) => /conting/i.test(r.descricao))).toBe(false);
     }
     expect(separarContingencia([{ descricao: 'Sala' }]).percentagem).toBe(10);
+    // Acima do máximo permitido, fica no máximo (em vez de falhar ao criar o projecto).
+    expect(separarContingencia([{ descricao: 'Contingência (75%)' }]).percentagem).toBe(50);
   });
 
   it('totais por categoria, contingência e estado', () => {
@@ -91,6 +94,9 @@ describe('categorias e contingência', () => {
     // Arredondamento ao cêntimo.
     expect(resumirOrcamento(itens([['Local', 333, 0]]), 15).contingencia).toBe(50);
     expect(resumirOrcamento([], 10)).toMatchObject({ categorias: [], totalPrevisto: 0, estado: 'ok' });
+    // Exacto mesmo com totais enormes (300 rubricas no valor máximo, contingência de 50%).
+    const enorme = Array.from({ length: 300 }, () => ({ categoria: 'Local', previstoCentimos: 10_000_000_000_000, realCentimos: 0 }));
+    expect(resumirOrcamento(enorme, 50).contingencia).toBe(1_500_000_000_000_000);
   });
 });
 

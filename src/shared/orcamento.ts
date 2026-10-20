@@ -30,7 +30,7 @@ export function separarContingencia<T extends { descricao: string }>(rubricas: T
   let percentagem = CONTINGENCIA_POR_OMISSAO;
   const outras = rubricas.filter((r) => {
     const contingencia = /^Conting[êe]ncia\s*\((\d{1,2})\s*%\)$/i.exec(r.descricao.trim());
-    if (contingencia) percentagem = Number(contingencia[1]);
+    if (contingencia) percentagem = Math.min(Number(contingencia[1]), MAX_CONTINGENCIA);
     return !contingencia;
   });
   return { rubricas: outras, percentagem };
@@ -47,9 +47,11 @@ export function lerKz(texto: string): number | null {
   if (t === '') return null;
   if (!t.includes(',') && /\.\d{1,2}$/.test(t)) {
     const i = t.lastIndexOf('.');
-    t = `${t.slice(0, i).replaceAll('.', '')},${t.slice(i + 1)}`;
+    // Os pontos antes ficam: têm de ser separadores de milhares bem formados ("1.500.50" sim, "12.34.56" não).
+    t = `${t.slice(0, i)},${t.slice(i + 1)}`;
   }
-  const partes = /^(\d{1,3}(?:\.?\d{3})*|\d+)(?:,(\d{1,2}))?$/.exec(t);
+  // Com pontos, os grupos de milhares têm de estar bem formados ("1.234.567"); sem pontos, só algarismos.
+  const partes = /^(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?$/.exec(t);
   if (!partes) return null;
   const inteiros = Number(partes[1]!.replaceAll('.', ''));
   const centimos = inteiros * 100 + Number((partes[2] ?? '').padEnd(2, '0'));
@@ -103,8 +105,9 @@ export function resumirOrcamento(itens: Pick<ItemOrcamento, 'categoria' | 'previ
   const categorias = [...porCategoria.values()].sort((a, b) => ordem(a.categoria) - ordem(b.categoria));
   const subtotalPrevisto = categorias.reduce((s, c) => s + c.previsto, 0);
   const totalReal = categorias.reduce((s, c) => s + c.real, 0);
-  // Arredondado ao cêntimo.
-  const contingencia = Math.round((subtotalPrevisto * percentagem) / 100);
+  // Arredondado ao cêntimo, em inteiros exactos (BigInt): subtotal × percentagem pode passar do limite dos
+  // números exactos com totais muito grandes.
+  const contingencia = Number((BigInt(subtotalPrevisto) * BigInt(percentagem) + 50n) / 100n);
   const totalPrevisto = subtotalPrevisto + contingencia;
   return {
     categorias,
