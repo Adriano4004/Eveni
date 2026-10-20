@@ -177,11 +177,12 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const { utilizadorId } = pedido.sessao!;
 
     await emTransaccao(pool, async (cliente) => {
+      // Bloqueia a tarefa e o projecto: arquivar o projecto ao mesmo tempo espera por esta alteração.
       const { rows } = await cliente.query<{ workspace_id: string; status: EstadoProjecto }>(
         `select p.workspace_id, p.status from tasks t join projects p on p.id = t.project_id
           where t.id = $1 and t.project_id = $2
             and exists (select 1 from workspace_members wm where wm.workspace_id = p.workspace_id and wm.user_id = $3)
-            for update of t`,
+            for update of t, p`,
         [tarefaId, projectoId, utilizadorId],
       );
       const projecto = rows[0];
