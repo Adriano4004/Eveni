@@ -410,7 +410,8 @@ test('o dono dá acesso a um projecto, muda para leitor e retira', async ({ brow
   await membro.getByRole('checkbox', { name: 'Concluída: Validar que existe facto novo' }).check();
   await expect(membro.getByText('1 de 47 tarefas concluídas')).toBeVisible();
 
-  // Passar a leitor.
+  // Passar a leitor (pede confirmação, porque lhe retira as tarefas).
+  dona.once('dialog', (d) => d.accept());
   await dona.getByLabel('Acesso: Tiago').selectOption({ label: 'Leitor' });
   await expect(dona.getByLabel('Acesso: Tiago')).toHaveValue('viewer');
   await membro.reload();
