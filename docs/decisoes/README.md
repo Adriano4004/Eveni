@@ -18,3 +18,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 011 | [Dados dos templates](011-templates.md) | Em vigor |
 | 012 | [Motor de datas e regra de compressão](012-motor-de-datas.md) | Em vigor |
 | 013 | [Criar projectos a partir de um template](013-criar-projectos.md) | Em vigor |
+| 014 | [Trabalhar as tarefas: estado, responsável e atrasos](014-tarefas.md) | Em vigor |

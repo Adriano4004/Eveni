@@ -112,3 +112,49 @@ test('não é possível abrir o projecto de outra pessoa', async ({ browser }) =
   await expect(outra.getByRole('alert')).toHaveText('Projecto não encontrado.');
   await expect(outra.getByText('Projecto privado')).toHaveCount(0);
 });
+
+test('trabalhar as tarefas: concluir, escolher responsável e ver os atrasos', async ({ page }) => {
+  await contaConfirmada(page, 'Helena');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await page.getByLabel('Nome do projecto').fill('Conferência sobre o OGE');
+  // Evento daqui a 5 dias: há tarefas críticas com prazo já passado.
+  await page.getByLabel('Data do evento').fill(emDias(5));
+  await page.getByLabel('Li os avisos e quero criar o projecto assim.').check();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+  await expect(page.getByRole('heading', { name: 'Conferência sobre o OGE' })).toBeVisible();
+
+  // Alerta de críticas em atraso no topo.
+  const alerta = page.getByRole('status').filter({ hasText: 'em atraso' });
+  await expect(alerta).toBeVisible();
+  const textoAntes = await alerta.getByRole('heading').textContent();
+  const antes = Number(/^(\d+)/.exec(textoAntes ?? '')?.[1]);
+  expect(antes).toBeGreaterThan(1);
+  await expect(alerta.getByText('Validar que existe facto novo')).toBeVisible();
+
+  // Concluir com a caixa ao lado da tarefa.
+  await page.getByRole('checkbox', { name: 'Concluída: Validar que existe facto novo' }).check();
+  await expect(page.getByText('1 de 47 tarefas concluídas')).toBeVisible();
+  await expect(alerta.getByRole('heading')).toHaveText(`${antes - 1} tarefas críticas em atraso`);
+  await expect(alerta.getByText('Validar que existe facto novo')).toHaveCount(0);
+
+  // Escolher o responsável e o estado dentro da tarefa.
+  const tarefa = page.locator('li.tarefa-linha', { hasText: 'Definir objectivo e mensagem-chave' });
+  await tarefa.locator('summary').click();
+  await tarefa.getByLabel('Responsável').selectOption({ label: 'Helena' });
+  await expect(tarefa.locator('.tarefa__responsavel')).toHaveText('Helena');
+  await tarefa.getByLabel('Estado').selectOption({ label: 'Em curso' });
+  await expect(tarefa.locator('summary').getByText('Em curso')).toBeVisible();
+
+  // Tudo ficou guardado no servidor.
+  await page.reload();
+  await expect(page.getByText('1 de 47 tarefas concluídas')).toBeVisible();
+  await expect(page.locator('li.tarefa-linha', { hasText: 'Definir objectivo e mensagem-chave' }).locator('.tarefa__responsavel')).toHaveText('Helena');
+
+  // Progresso por categoria.
+  await page.getByText('Progresso por categoria').click();
+  await expect(page.locator('.progresso li', { hasText: 'Estratégia' })).toContainText('1 de');
+
+  // No início, o projecto mostra as críticas em atraso.
+  await page.getByRole('button', { name: 'Voltar ao início' }).click();
+  await expect(page.getByText(`${antes - 1} críticas em atraso`)).toBeVisible();
+});

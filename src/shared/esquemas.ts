@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { dataValida } from './datas.js';
 import { mensagens } from './mensagens.js';
+import { ESTADOS_TAREFA } from './projectos.js';
 import { ePalavraPasseComum } from './palavras-passe-comuns.js';
 
 const m = mensagens.validacao;
@@ -134,3 +135,11 @@ export const criarProjecto = z.object({
   aceitarAvisos: z.boolean().optional(),
 });
 export type CriarProjecto = z.infer<typeof criarProjecto>;
+
+// Alterar uma tarefa: o estado, o responsável (null = ninguém), ou os dois.
+export const actualizarTarefa = z
+  .object({
+    estado: z.enum(ESTADOS_TAREFA, { error: m.estadoTarefaInvalido }).optional(),
+    responsavelId: z.uuid({ error: m.responsavelInvalido }).nullable().optional(),
+  })
+  .refine((d) => d.estado !== undefined || d.responsavelId !== undefined, { message: mensagens.erros.pedidoInvalido, path: ['estado'] });
