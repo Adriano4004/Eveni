@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type pg from 'pg';
 import { z } from 'zod';
 import { contingencia, dadosRubrica } from '../../shared/esquemas.js';
 import { mensagens } from '../../shared/mensagens.js';
@@ -28,9 +29,15 @@ interface Linha {
   note: string | null;
   planned_cents: string;
   actual_cents: string;
+  supplier_id: string | null;
+  supplier_name: string | null;
 }
 
-const COLUNAS = 'id, category, description, required, note, planned_cents, actual_cents';
+// Rubricas com o nome do fornecedor (só o nome: os contactos vêem-se na lista de fornecedores).
+const SELECCAO = `
+  select b.id, b.category, b.description, b.required, b.note, b.planned_cents, b.actual_cents,
+         s.id as supplier_id, s.name as supplier_name
+    from budget_items b left join suppliers s on s.id = b.supplier_id`;
 
 const paraItem = (l: Linha): ItemOrcamento => ({
   id: l.id,
@@ -41,7 +48,31 @@ const paraItem = (l: Linha): ItemOrcamento => ({
   // bigint chega como texto; os valores cabem com folga num número (máximo 10^13 cêntimos).
   previstoCentimos: Number(l.planned_cents),
   realCentimos: Number(l.actual_cents),
+  fornecedor: l.supplier_id ? { id: l.supplier_id, nome: l.supplier_name ?? '' } : null,
 });
+
+// Rubricas de um projecto, pela ordem. Quem chama já verificou o acesso.
+export async function lerRubricas(cliente: pg.Pool | pg.PoolClient, projectoId: string): Promise<ItemOrcamento[]> {
+  const { rows } = await cliente.query<Linha>(`${SELECCAO} where b.project_id = $1 order by b.position, b.id`, [projectoId]);
+  return rows.map(paraItem);
+}
+
+async function lerRubrica(cliente: pg.PoolClient, rubricaId: string): Promise<ItemOrcamento> {
+  const { rows } = await cliente.query<Linha>(`${SELECCAO} where b.id = $1`, [rubricaId]);
+  return paraItem(rows[0]!);
+}
+
+// O fornecedor tem de ser do espaço de trabalho do projecto (CLAUDE.md, secção 5, regra 5: o ID vem no corpo
+// do pedido; falha da versão anterior). Bloqueio em partilha: apagar o fornecedor ao mesmo tempo espera.
+async function verificarFornecedor(cliente: pg.PoolClient, projectoId: string, fornecedorId: string | null) {
+  if (!fornecedorId) return;
+  const { rows } = await cliente.query(
+    `select 1 from suppliers s join projects p on p.workspace_id = s.workspace_id
+      where s.id = $1 and p.id = $2 for share of s`,
+    [fornecedorId, projectoId],
+  );
+  if (rows.length === 0) throw new ErroHttp(400, mensagens.erros.pedidoInvalido, { fornecedorId: mensagens.validacao.fornecedorInvalido });
+}
 
 export function registarRotasOrcamento(app: FastifyInstance, base: BaseDeDados, guardas: ReturnType<typeof criarGuardas>) {
   const { pool } = base;
@@ -61,12 +92,13 @@ export function registarRotasOrcamento(app: FastifyInstance, base: BaseDeDados, 
         [projectoId],
       );
       if (contagem[0]!.n >= MAX_RUBRICAS_POR_PROJECTO) throw new ErroHttp(409, m.limite(MAX_RUBRICAS_POR_PROJECTO));
-      const { rows } = await cliente.query<Linha>(
-        `insert into budget_items (project_id, position, category, description, planned_cents, actual_cents)
-         values ($1, $2, $3, $4, $5, $6) returning ${COLUNAS}`,
-        [projectoId, contagem[0]!.seguinte, dados.categoria, dados.descricao, dados.previsto, dados.real],
+      await verificarFornecedor(cliente, projectoId, dados.fornecedorId ?? null);
+      const { rows } = await cliente.query<{ id: string }>(
+        `insert into budget_items (project_id, position, category, description, planned_cents, actual_cents, supplier_id)
+         values ($1, $2, $3, $4, $5, $6, $7) returning id`,
+        [projectoId, contagem[0]!.seguinte, dados.categoria, dados.descricao, dados.previsto, dados.real, dados.fornecedorId ?? null],
       );
-      return paraItem(rows[0]!);
+      return lerRubrica(cliente, rows[0]!.id);
     });
     return resposta.code(201).send(item);
   });
@@ -80,19 +112,21 @@ export function registarRotasOrcamento(app: FastifyInstance, base: BaseDeDados, 
     const dados = validar(dadosRubrica, pedido.body);
     return emTransaccao(pool, async (cliente) => {
       await projectoParaAlterar(cliente, projectoId, utilizadorId);
+      await verificarFornecedor(cliente, projectoId, dados.fornecedorId ?? null);
       // A rubrica tem de ser deste projecto (CLAUDE.md, secção 5, regra 5). Nas obrigatórias, a categoria e a
-      // descrição do template mantêm-se.
-      const { rows } = await cliente.query<Linha>(
+      // descrição do template mantêm-se. Sem fornecedorId no pedido, o fornecedor fica como estava.
+      const { rows } = await cliente.query<{ id: string }>(
         `update budget_items
             set category = case when required then category else $3 end,
                 description = case when required then description else $4 end,
-                planned_cents = $5, actual_cents = $6
+                planned_cents = $5, actual_cents = $6,
+                supplier_id = case when $7 then $8::uuid else supplier_id end
           where id = $1 and project_id = $2
-          returning ${COLUNAS}`,
-        [rubrica, projectoId, dados.categoria, dados.descricao, dados.previsto, dados.real],
+          returning id`,
+        [rubrica, projectoId, dados.categoria, dados.descricao, dados.previsto, dados.real, dados.fornecedorId !== undefined, dados.fornecedorId ?? null],
       );
       if (!rows[0]) throw new ErroHttp(404, m.rubricaNaoEncontrada);
-      return paraItem(rows[0]);
+      return lerRubrica(cliente, rubrica);
     });
   });
 

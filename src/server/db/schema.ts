@@ -220,6 +220,30 @@ export const tasks = pgTable(
   ],
 );
 
+// Fornecedores de um espaço de trabalho (decisão 019): reutilizáveis entre os projectos do espaço.
+// Telemóvel no mesmo formato dos convidados (+244…), e-mail em minúsculas.
+export const suppliers = pgTable(
+  'suppliers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    category: text('category').notNull(),
+    phone: text('phone'),
+    email: text('email'),
+    notes: text('notes'),
+    createdAt: criadoEm(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('suppliers_nome_unico').on(t.workspaceId, sql`lower(${t.name})`),
+    check('suppliers_email_minusculas', sql`${t.email} = lower(${t.email})`),
+    check('suppliers_telemovel_formato', sql`${t.phone} ~ '^\\+[0-9]{8,15}$'`),
+  ],
+);
+
 // Itens de orçamento. Valores em cêntimos de Kwanza (inteiros, nunca float).
 export const budgetItems = pgTable(
   'budget_items',
@@ -235,10 +259,14 @@ export const budgetItems = pgTable(
     note: text('note'),
     plannedCents: bigint('planned_cents', { mode: 'number' }).notNull().default(0),
     actualCents: bigint('actual_cents', { mode: 'number' }).notNull().default(0),
+    // Fornecedor (do mesmo espaço de trabalho do projecto: verificado no servidor e por um gatilho na base de
+    // dados, ver drizzle/0013). Apagar o fornecedor só o tira da rubrica.
+    supplierId: uuid('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
     createdAt: criadoEm(),
   },
   (t) => [
     index('budget_items_projecto').on(t.projectId),
+    index('budget_items_fornecedor').on(t.supplierId),
     check('budget_items_valores_positivos', sql`${t.plannedCents} >= 0 and ${t.actualCents} >= 0`),
     check('budget_items_valores_maximos', sql`${t.plannedCents} <= 10000000000000 and ${t.actualCents} <= 10000000000000`),
   ],

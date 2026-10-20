@@ -17,6 +17,7 @@ import { criarEnvioDeEmail, type EnviarEmail } from './email/index.js';
 import type { BaseDeDados } from './db/index.js';
 import { ErroHttp } from './erros.js';
 import { registarRotasEquipa } from './equipa/rotas.js';
+import { registarRotasFornecedores } from './fornecedores/rotas.js';
 import { registarRotasOrcamento } from './projectos/orcamento.js';
 import { registarRotasProjectos } from './projectos/rotas.js';
 import { protegerOrigem } from './seguranca/origem.js';
@@ -112,6 +113,7 @@ export async function criarApp({ config, base, pastaWeb, enviarEmail = criarEnvi
   registarRotasRsvp(app, config, base);
   registarRotasMesas(app, base, guardas);
   registarRotasOrcamento(app, base, guardas);
+  registarRotasFornecedores(app, base, guardas);
 
   app.get('/health', async (_pedido, resposta) => {
     const bdOk = await base.verificar();

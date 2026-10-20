@@ -92,6 +92,13 @@
       "when": 1792528949538,
       "tag": "0012_orcamento",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792532306533,
+      "tag": "0013_fornecedores",
+      "breakpoints": true
     }
   ]
 }

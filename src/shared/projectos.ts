@@ -83,6 +83,8 @@ export interface ItemOrcamento {
   nota: string | null;
   previstoCentimos: number;
   realCentimos: number;
+  // Só o nome: os contactos vêem-se na lista de fornecedores (dono e editores).
+  fornecedor: Pessoa | null;
 }
 
 export interface Projecto extends ResumoProjecto {

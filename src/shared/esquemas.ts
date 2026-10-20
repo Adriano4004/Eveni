@@ -271,6 +271,12 @@ export const dadosRubrica = z.object({
   descricao: textoDeUmaLinha(120, { obrigatorio: m.descricaoRubricaObrigatoria, longo: m.descricaoRubricaLonga, invalido: m.descricaoRubricaInvalida }),
   previsto: valorKz.optional().transform((v) => v ?? 0),
   real: valorKz.optional().transform((v) => v ?? 0),
+  // Fornecedor do espaço de trabalho: vazio ou null = nenhum; ausente = não mexer.
+  fornecedorId: z
+    .union([z.literal(''), z.uuid({ error: m.fornecedorInvalido })], { error: m.fornecedorInvalido })
+    .nullable()
+    .optional()
+    .transform((v) => (v === '' ? null : v)),
 });
 export type DadosRubrica = z.infer<typeof dadosRubrica>;
 
@@ -280,3 +286,19 @@ export const contingencia = z.object({
     .transform((v) => (v === '' ? Number.NaN : Number(String(v).replace(/%$/, '').trim())))
     .pipe(z.number({ error: m.contingenciaInvalida }).int(m.contingenciaInvalida).min(0, m.contingenciaInvalida).max(MAX_CONTINGENCIA, m.contingenciaInvalida)),
 });
+
+// Fornecedores (decisão 019). Notas: texto livre, várias linhas, sem caracteres de controlo.
+export const dadosFornecedor = z.object({
+  nome: textoDeUmaLinha(120, { obrigatorio: m.nomeFornecedorObrigatorio, longo: m.nomeFornecedorLongo, invalido: m.nomeFornecedorInvalido }),
+  categoria: z.enum(CATEGORIAS_ORCAMENTO, { error: m.categoriaOrcamentoInvalida }),
+  telemovel: telemovelOpcional,
+  email: emailOpcional,
+  notas: z
+    .string({ error: m.notasInvalidas })
+    .trim()
+    .max(1000, m.notasLongas)
+    .refine((v) => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u2028\u2029]/.test(v), m.notasInvalidas)
+    .optional()
+    .transform((v) => v || null),
+});
+export type DadosFornecedor = z.infer<typeof dadosFornecedor>;
