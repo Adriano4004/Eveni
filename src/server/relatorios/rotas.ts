@@ -14,6 +14,7 @@ import { LIMITES, limitar } from '../seguranca/limites.js';
 import { desenharRelatorioCliente } from './cliente.js';
 import { desenharCronograma } from './cronograma.js';
 import { desenharRelatorioInterno } from './interno.js';
+import { marcaParaPdf } from './marca.js';
 import { montarRelatorioCliente, montarRelatorioCronograma, montarRelatorioInterno } from './modelo.js';
 
 // Relatórios em PDF de um projecto (decisão 020). Só o dono e os editores os geram (os leitores não);
@@ -53,17 +54,20 @@ export function registarRotasRelatorios(app: FastifyInstance, base: BaseDeDados,
     const agora = new Date();
     const { rows } = await pool.query<{ workspace_id: string }>('select workspace_id from projects where id = $1', [projecto.id]);
     const espacoId = rows[0]!.workspace_id;
+    // A marca da agência do espaço do projecto (planos Empresarial e Grandes), nos três relatórios.
+    const marca = await marcaParaPdf(pool, espacoId);
     let pdf: Buffer;
     if (tipo === 'cronograma') {
-      pdf = await desenharCronograma(montarRelatorioCronograma(projecto, agora));
+      pdf = await desenharCronograma(montarRelatorioCronograma(projecto, agora), marca);
     } else {
       const convidados = await listarConvidados(pool, projecto.id);
       pdf =
         tipo === 'interno'
           ? await desenharRelatorioInterno(
               montarRelatorioInterno(projecto, convidados, await listarMesas(pool, projecto.id), await listarFornecedores(pool, espacoId), agora),
+              marca,
             )
-          : await desenharRelatorioCliente(montarRelatorioCliente(projecto, calcularTotais(convidados), agora));
+          : await desenharRelatorioCliente(montarRelatorioCliente(projecto, calcularTotais(convidados), agora), marca);
     }
     await auditar(pool, 'projecto.relatorio', { utilizadorId, ip: pedido.ip, espacoId, detalhes: { projectoId: projecto.id, tipo } });
     return resposta

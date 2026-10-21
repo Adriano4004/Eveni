@@ -1,12 +1,12 @@
 import { mensagens } from '../../shared/mensagens.js';
 import type { RelatorioCronograma } from './modelo.js';
-import { cabecalho, criarDocumento, paragrafo, seccao, tabela, terminar } from './pdf.js';
+import { cabecalho, criarDocumento, type MarcaPdf, paragrafo, seccao, tabela, terminar } from './pdf.js';
 
 const q = mensagens.relatorios;
 
 // Cronograma (decisão 020): uma tabela por semana, com as tarefas pela data de início.
-export function desenharCronograma(r: RelatorioCronograma): Promise<Buffer> {
-  const doc = criarDocumento(`${r.titulo} — ${r.subtitulo}`);
+export function desenharCronograma(r: RelatorioCronograma, marca?: MarcaPdf | null): Promise<Buffer> {
+  const doc = criarDocumento(`${r.titulo} — ${r.subtitulo}`, marca);
   cabecalho(doc, r.titulo, r.subtitulo, r.detalhes, r.geradoEm);
   paragrafo(doc, r.progresso.texto);
   paragrafo(doc, q.legendaCronograma);

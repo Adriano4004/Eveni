@@ -1,13 +1,13 @@
 import { mensagens } from '../../shared/mensagens.js';
 import type { RelatorioCliente } from './modelo.js';
-import { cabecalho, criarDocumento, paragrafo, seccao, tabela, terminar, totais } from './pdf.js';
+import { cabecalho, criarDocumento, type MarcaPdf, paragrafo, seccao, tabela, terminar, totais } from './pdf.js';
 
 const q = mensagens.relatorios;
 
 // Relatório para o cliente (decisão 020): resumo, marcos (tarefas críticas) e orçamento com previsto e real.
 // Sem notas internas, sem fornecedores, sem a equipa.
-export function desenharRelatorioCliente(r: RelatorioCliente): Promise<Buffer> {
-  const doc = criarDocumento(`${r.titulo} — ${r.subtitulo}`);
+export function desenharRelatorioCliente(r: RelatorioCliente, marca?: MarcaPdf | null): Promise<Buffer> {
+  const doc = criarDocumento(`${r.titulo} — ${r.subtitulo}`, marca);
   cabecalho(doc, r.titulo, r.subtitulo, r.detalhes, r.geradoEm);
 
   seccao(doc, q.resumo);

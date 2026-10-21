@@ -46,3 +46,28 @@
   - A semana do evento vem assinalada, e as tarefas em atraso a vermelho.
   - **Não leva** notas nem valores: pode ser partilhado com a equipa alargada ou com o cliente.
   - Endereço: `/api/projectos/<id>/relatorios/cronograma.pdf`. As regras de quem gera são as mesmas (dono e editores).
+
+## Marca da agência (quarto PR) — decisões do Adriano a 21/10/2026
+
+1. **A marca da agência aparece nos três relatórios:** para o cliente, interno e cronograma.
+2. **Fica uma menção discreta "Feito com Eveni"** no rodapé.
+3. **A agência configura:**
+   - o logótipo (PNG ou JPG, até 500 KB);
+   - a cor principal;
+   - um texto de rodapé (até 200 caracteres).
+
+### Regras
+
+- **Só nos planos Empresarial e Grandes.** No Singular o ecrã explica que não está incluído, e os PDF levam a marca do Eveni. Se um espaço passar ao Singular, a marca fica guardada mas deixa de ser usada.
+- **Quem configura:** só o dono, no seu próprio espaço (ecrã "Marca nos relatórios", no início).
+- **Nos PDF de um projecto usa-se a marca do espaço desse projecto**, mesmo quando é um editor de outro espaço que gera o relatório.
+- **O logótipo:**
+  - guarda-se na base de dados (sem serviço de ficheiros à parte);
+  - o servidor confirma que é mesmo PNG ou JPEG pelos primeiros bytes (o tipo declarado não basta), que tem no máximo 500 KB e que se consegue ler;
+  - SVG e outros formatos são recusados;
+  - um logótipo estragado nunca impede o PDF: sai sem ele.
+- **Nos PDF:**
+  - o logótipo vai no topo, no lugar de "Eveni · Gestão de eventos";
+  - a cor vai nos títulos das secções;
+  - o rodapé da agência fica por cima de "Feito com Eveni · Página n de N".
+- **Exportação:** a cor, o rodapé e o logótipo saem na exportação de dados do dono, e são apagados com o espaço.

@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { MAX_ACOMPANHANTES, MAX_LINHAS_IMPORTACAO, MAX_LUGARES_POR_MESA, normalizarTelemovel, RESPOSTAS } from './convidados.js';
 import { dataValida } from './datas.js';
+import { MAX_RODAPE } from './marca.js';
 import { CATEGORIAS_ORCAMENTO, lerKz, MAX_CENTIMOS, MAX_CONTINGENCIA } from './orcamento.js';
 import { mensagens } from './mensagens.js';
 import { ESTADOS_TAREFA } from './projectos.js';
@@ -317,3 +318,23 @@ export const avaliarFornecedor = z.object({
     .optional()
     .transform((v) => v || null),
 });
+
+// Marca da agência nos PDF: cor (#rrggbb) e texto de rodapé. Vazios = sem cor / sem rodapé próprios.
+export const dadosMarca = z.object({
+  cor: z
+    .string({ error: m.corInvalida })
+    .trim()
+    .optional()
+    .transform((v) => (v ? v.toLowerCase() : null))
+    .refine((v) => v === null || /^#[0-9a-f]{6}$/.test(v), m.corInvalida),
+  rodape: z
+    .string({ error: m.rodapeInvalido })
+    .trim()
+    .max(MAX_RODAPE, m.rodapeLongo)
+    .refine((v) => !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(v), m.rodapeInvalido)
+    .optional()
+    .transform((v) => v || null),
+});
+
+// Logótipo: a imagem lida no telemóvel, como "data:image/png;base64,…". O servidor verifica o resto.
+export const logoMarca = z.object({ imagem: z.string({ error: m.logoInvalido }).max(800_000, m.logoGrande).startsWith('data:image/', m.logoInvalido) });
