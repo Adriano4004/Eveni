@@ -185,6 +185,17 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
         </button>
       </section>
 
+      {projecto.papel !== 'viewer' && (
+        <section className="seccao" aria-labelledby="titulo-relatorios">
+          <h2 id="titulo-relatorios">{p.relatorios}</h2>
+          <p className="campo__ajuda">{p.relatoriosTexto}</p>
+          <a className="botao botao--secundario botao--ligacao" href={`/api/projectos/${encodeURIComponent(id)}/relatorios/cliente.pdf`} download>
+            {p.relatorioCliente}
+          </a>
+          <p className="campo__ajuda">{p.relatorioClienteTexto}</p>
+        </section>
+      )}
+
       {projecto.podeArquivar && <AcessosProjecto projecto={projecto} aoMudar={setProjecto} />}
 
       {!arquivado && projecto.podeArquivar && (

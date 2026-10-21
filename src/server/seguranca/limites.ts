@@ -84,6 +84,8 @@ export const LIMITES = {
   alterarOrcamento: { max: 1000, janela: 60 * 60 },
   // Fornecedores, por conta: só trava abusos.
   alterarFornecedores: { max: 500, janela: 60 * 60 },
+  // Relatórios PDF, por conta (cada um custa algum trabalho ao servidor).
+  relatorios: { max: 60, janela: 60 * 60 },
   // Página pública de RSVP, por IP. Largo: num casamento, muitos convidados da mesma operadora móvel podem
   // responder ao mesmo tempo pelo mesmo IP. Adivinhar ligações não serve de nada (são assinadas).
   rsvpPorIp: { max: 300, janela: 15 * 60 },

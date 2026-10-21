@@ -26,6 +26,7 @@ export type AccaoAuditada =
   | 'projecto.criado'
   | 'projecto.arquivado'
   | 'projecto.restaurado'
+  | 'projecto.relatorio'
   | 'equipa.convite_criado'
   | 'equipa.convite_revogado'
   | 'equipa.convite_aceite'

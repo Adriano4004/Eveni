@@ -57,6 +57,7 @@ export type AccaoRegisto =
   | 'projecto.restaurado'
   | 'projecto.acesso_dado'
   | 'projecto.acesso_retirado'
+  | 'projecto.relatorio'
   | 'equipa.convite_criado'
   | 'equipa.convite_revogado'
   | 'equipa.convite_aceite'
@@ -73,7 +74,11 @@ export interface EntradaRegisto {
   pessoa: string | null;
   email: string | null;
   papel: 'editor' | 'viewer' | null;
+  // Nos relatórios: o tipo (cliente, interno, cronograma).
+  relatorio: TipoRelatorio | null;
 }
+
+export type TipoRelatorio = 'cliente' | 'interno' | 'cronograma';
 
 export interface Registo {
   entradas: EntradaRegisto[];
