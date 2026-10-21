@@ -165,7 +165,7 @@ Cada template traz **rubricas de orçamento pré-carregadas com valor zero** (al
 
 **Ordem de lançamento:** T01 → T03 → T04 → T02 (decidida pelo Adriano a 20/10/2026). Fórum e Conferência derivam do T03; Aniversário é uma versão reduzida do T02.
 
-**Regra:** um template só passa a produção depois de ter corrido num evento real, de ponta a ponta, com um organizador que não seja o Adriano. *(T01: cumprida, confirmado a 20/10/2026.)*
+**Regra:** um template só passa a produção depois de ter corrido num evento real, de ponta a ponta, com um organizador que não seja o Adriano. *(T01: cumprida, confirmado a 20/10/2026. T03: cumprida, confirmado a 21/10/2026.)*
 
 ---
 

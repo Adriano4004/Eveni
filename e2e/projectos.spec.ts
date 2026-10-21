@@ -75,6 +75,28 @@ test('criar uma conferência de imprensa com pouco tempo: avisos, confirmação 
   await expect(page.getByRole('heading', { name: 'Apresentação <b>da campanha</b>' })).toBeVisible();
 });
 
+test('criar um congresso: escolher o T03, ver os avisos de prazo e as 74 tarefas', async ({ page }) => {
+  await contaConfirmada(page, 'Gilda');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await page.getByRole('radio', { name: /Congresso/ }).check();
+  await page.getByLabel('Nome do projecto').fill('Congresso Nacional de Engenharia');
+
+  // Um congresso pede 180 dias: a 60 dias, as primeiras tarefas críticas já não cabem.
+  await page.getByLabel('Data do evento').fill(emDias(60));
+  await expect(page.getByText(/Faltam 60 dias e este tipo de projecto pede 180/)).toBeVisible();
+  await expect(page.getByText('Definir objectivo e resultados esperados')).toBeVisible();
+
+  await page.getByLabel('Data do evento').fill(emDias(200));
+  await expect(page.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Congresso Nacional de Engenharia' })).toBeVisible();
+  await expect(page.getByText('0 de 74 tarefas concluídas')).toBeVisible();
+  const tarefa = page.locator('details', { hasText: 'Definir objectivo e resultados esperados' });
+  await tarefa.locator('summary').click();
+  await expect(tarefa.getByText(/O que tem de ser verdade a D\+30/)).toBeVisible();
+});
+
 test('não é possível abrir o projecto de outra pessoa', async ({ browser }) => {
   const dona = await (await browser.newContext()).newPage();
   await contaConfirmada(dona, 'Fatima');
