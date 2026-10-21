@@ -27,3 +27,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 020 | [Relatórios em PDF](020-relatorios.md) | Em vigor |
 | 021 | [Lançamento do T03 Congresso](021-lancamento-t03.md) | Em vigor |
 | 022 | [Fórum e Conferência, derivados do T03](022-forum-conferencia.md) | Em vigor |
+| 023 | [Lançamento do T04 Festival / Concerto](023-lancamento-t04.md) | Em vigor |

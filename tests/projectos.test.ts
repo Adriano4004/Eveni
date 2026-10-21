@@ -8,6 +8,7 @@ import T01json from '../data/templates/T01.json' with { type: 'json' };
 import T03json from '../data/templates/T03.json' with { type: 'json' };
 import T05json from '../data/templates/T05.json' with { type: 'json' };
 import T06json from '../data/templates/T06.json' with { type: 'json' };
+import T04json from '../data/templates/T04.json' with { type: 'json' };
 import { limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
 import { cookieDe, criarCliente, PALAVRA_PASSE } from './cliente.js';
 
@@ -15,6 +16,7 @@ const T01 = T01json as Template;
 // Rubricas que viram linhas do orçamento: todas menos a "Contingência (10%)", que passa a percentagem (decisão 019).
 const RUBRICAS_T01 = separarContingencia(T01.rubricas).rubricas;
 const T03 = T03json as Template;
+const T04 = T04json as Template;
 const base = criarBaseDeDados(URL_BD_TESTE);
 let c: Awaited<ReturnType<typeof criarCliente>>;
 
@@ -58,7 +60,7 @@ describe('templates disponíveis', () => {
     expect((await c.get('/api/templates')).statusCode).toBe(401);
   });
 
-  it('o T01, o T03 e os derivados do T03 estão disponíveis, com os números do template', async () => {
+  it('o T01, o T03, os derivados do T03 e o T04 estão disponíveis, com os números do template', async () => {
     const cookie = cookieDe(await c.registar());
     const r = await c.get('/api/templates', cookie);
     expect(r.statusCode).toBe(200);
@@ -67,14 +69,15 @@ describe('templates disponíveis', () => {
       expect.objectContaining({ codigo: 'T03', nome: 'Congresso', tarefas: 74, criticas: 35, diasNecessarios: 180 }),
       expect.objectContaining({ codigo: 'T05', nome: 'Fórum', tarefas: 62, criticas: 30, diasNecessarios: 90 }),
       expect.objectContaining({ codigo: 'T06', nome: 'Conferência', tarefas: 70, criticas: 35, diasNecessarios: 120 }),
+      expect.objectContaining({ codigo: 'T04', nome: 'Festival / Concerto', tarefas: 86, criticas: 49, diasNecessarios: 240 }),
     ]);
   });
 
-  it('o T02 e o T04 ainda não se podem usar', async () => {
+  it('o T02 ainda não se pode usar', async () => {
     const cookie = cookieDe(await c.registar());
-    for (const template of ['T02', 'T04']) {
-      expect((await c.post('/api/projectos/previsao', { template, dataEvento: emDias(300) }, cookie)).statusCode, template).toBe(400);
-    }
+    expect((await c.post('/api/projectos/previsao', { template: 'T02', dataEvento: emDias(400) }, cookie)).statusCode).toBe(400);
+    expect((await c.post('/api/projectos', { template: 'T02', nome: 'Casamento', dataEvento: emDias(400) }, await contaConfirmada('bia@exemplo.ao'))).statusCode).toBe(400);
+    expect(await contar('projects')).toBe(0);
   });
 });
 
@@ -238,6 +241,28 @@ describe('criar projecto', () => {
     expect(esperado.length).toBeGreaterThan(0);
     expect(r.json().avisos).toEqual(esperado);
     expect(await contar('projects')).toBe(0);
+  });
+
+  it('cria um festival (T04) com as 86 tarefas, as rubricas a zero e contingência de 15%', async () => {
+    const cookie = await contaConfirmada();
+    const curto = await criar(cookie, { template: 'T04', nome: 'Festival de Kizomba', dataEvento: emDias(90) });
+    expect(curto.statusCode).toBe(409);
+    expect(curto.json().avisos).toEqual(materializar(T04.tarefas, emDias(90), hojeEmLuanda()).avisos);
+    expect(curto.json().avisos.length).toBeGreaterThan(0);
+
+    const r = await criar(cookie, { template: 'T04', nome: 'Festival de Kizomba', dataEvento: emDias(250) });
+    expect(r.statusCode).toBe(201);
+    expect(r.json().avisos).toEqual([]);
+    const projecto = (await c.get(`/api/projectos/${r.json().id}`, cookie)).json();
+    expect(projecto).toMatchObject({ template: 'T04', nomeTemplate: 'Festival / Concerto', versaoTemplate: T04.versao, tarefas: 86, contingencia: 15 });
+    const esperado = materializar(T04.tarefas, emDias(250), hojeEmLuanda());
+    expect(projecto.tarefasDoProjecto.map((t: { idTemplate: string; inicio: string; fim: string; nota: string | null }) => [t.idTemplate, t.inicio, t.fim, t.nota])).toEqual(
+      T04.tarefas.map((t, i) => [t.id, esperado.tarefas[i]!.inicio, esperado.tarefas[i]!.fim, t.nota]),
+    );
+    expect(projecto.tarefasDoProjecto.filter((t: { critica: boolean }) => t.critica)).toHaveLength(49);
+    const rubricas = separarContingencia(T04.rubricas).rubricas;
+    expect(projecto.orcamento.map((i: { descricao: string }) => i.descricao)).toEqual(rubricas.map((x) => x.descricao));
+    expect(projecto.orcamento.every((i: { previstoCentimos: number; realCentimos: number }) => i.previstoCentimos === 0 && i.realCentimos === 0)).toBe(true);
   });
 
   it('as datas guardadas não mudam de dia com o fuso horário do servidor', async () => {

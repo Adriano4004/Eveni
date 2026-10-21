@@ -7,8 +7,8 @@ import { RAIZ } from '../raiz.js';
 // Templates que se podem usar para criar projectos, pela ordem de lançamento combinada
 // (docs/decisoes/011-templates.md): T01 → T03 → T04 → T02. Os outros já estão convertidos, mas ficam de fora
 // até serem lançados. O T03 foi lançado a 21/10/2026 (decisão 021), com o Fórum (T05) e a Conferência (T06),
-// que derivam dele (decisão 022).
-export const TEMPLATES_DISPONIVEIS = ['T01', 'T03', 'T05', 'T06'] as const;
+// que derivam dele (decisão 022). O T04 foi lançado a 21/10/2026 (decisão 023).
+export const TEMPLATES_DISPONIVEIS = ['T01', 'T03', 'T05', 'T06', 'T04'] as const;
 
 function carregar(codigo: string): Template {
   const template = JSON.parse(readFileSync(join(RAIZ, 'data', 'templates', `${codigo}.json`), 'utf8')) as Template;
