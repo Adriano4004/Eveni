@@ -24,3 +24,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 017 | [Colaboração: convites e acesso por projecto](017-colaboracao.md) | Em vigor |
 | 018 | [Convidados e RSVP](018-convidados.md) | Em vigor |
 | 019 | [Orçamento e fornecedores](019-orcamento-fornecedores.md) | Em vigor |
+| 020 | [Relatórios em PDF](020-relatorios.md) | Em vigor |

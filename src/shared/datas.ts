@@ -54,3 +54,9 @@ export function formatarData(data: string): string {
   const [ano, mes, dia] = data.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
+// Um instante em Luanda: dd/mm/aaaa hh:mm.
+export function formatarDataEHora(instante: Date): string {
+  const hora = new Intl.DateTimeFormat('pt-PT', { timeZone: FUSO_HORARIO, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(instante);
+  return `${formatarData(hojeEmLuanda(instante))} ${hora}`;
+}

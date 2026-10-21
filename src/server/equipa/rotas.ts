@@ -102,8 +102,10 @@ export function registarRotasEquipa(
       pessoa: string | null;
       email: string | null;
       papel: EntradaRegisto['papel'];
+      relatorio: EntradaRegisto['relatorio'];
     }>(
-      `select a.id, a.action, a.created_at, u.name as quem, p.name as projecto, m.name as pessoa, i.email, a.details->>'papel' as papel
+      `select a.id, a.action, a.created_at, u.name as quem, p.name as projecto, m.name as pessoa, i.email, a.details->>'papel' as papel,
+              case when a.action = 'projecto.relatorio' then a.details->>'tipo' end as relatorio
          from audit_log a
          left join users u on u.id = a.user_id
          -- Os IDs nos detalhes foram escritos pelo próprio Eveni (sempre uuid): comparar como uuid usa os índices.
@@ -125,6 +127,7 @@ export function registarRotasEquipa(
         pessoa: r.pessoa,
         email: r.email,
         papel: r.papel,
+        relatorio: r.relatorio,
       })),
       mais: rows.length > POR_PAGINA,
     };

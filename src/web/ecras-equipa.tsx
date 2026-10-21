@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { formatarData, hojeEmLuanda } from '../shared/datas.js';
+import { formatarData, formatarDataEHora, hojeEmLuanda } from '../shared/datas.js';
 import type { ConviteCriado, EntradaRegisto, Equipa, InfoConvite, Registo } from '../shared/equipa.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api, ErroApi, mensagemDeErro } from './api.js';
@@ -193,7 +193,7 @@ function RegistoActividade({ equipa }: { equipa: Equipa }) {
           {entradas.map((entrada) => (
             <li key={entrada.id}>
               <span>{descreverEntrada(entrada)}</span>
-              <span className="campo__ajuda">{dataEHora(entrada.data)}</span>
+              <span className="campo__ajuda">{formatarDataEHora(new Date(entrada.data))}</span>
             </li>
           ))}
         </ul>
@@ -214,15 +214,9 @@ function descreverEntrada(r: EntradaRegisto): string {
     pessoa: r.pessoa ?? q.alguemEquipa,
     email: r.email ?? q.umEmail,
     papel: r.papel ? q.papeis[r.papel] : '',
+    relatorio: r.relatorio ? q.relatorios[r.relatorio] : q.relatorios.cliente,
   };
   return q.accoes[r.accao](r.quem ?? q.alguem, nomes);
-}
-
-// Data e hora em Luanda: dd/mm/aaaa hh:mm.
-function dataEHora(instante: string): string {
-  const d = new Date(instante);
-  const hora = new Intl.DateTimeFormat('pt-PT', { timeZone: 'Africa/Luanda', hour: '2-digit', minute: '2-digit' }).format(d);
-  return `${dataDe(instante)} ${hora}`;
 }
 
 // A ligação só aparece uma vez: copiar ou partilhar por WhatsApp.
