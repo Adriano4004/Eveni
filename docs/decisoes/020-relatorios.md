@@ -71,8 +71,14 @@
     - cada bloco tem de caber no ficheiro e ter o CRC certo, com o IHDR primeiro e o IEND no fim;
     - no máximo 2000 × 2000 píxeis;
     - os entrelaçados são recusados;
-    - a imagem é descomprimida inteira, com um tecto de tamanho, e tem de dar exactamente o tamanho esperado.
-  - **JPEG:** cada bloco tem de caber no ficheiro, e as dimensões (no máximo 2000 × 2000) e os canais têm de ser razoáveis.
+    - a imagem é descomprimida inteira, com um tecto de tamanho, e tem de dar exactamente o tamanho esperado;
+    - o filtro de cada linha tem de ser válido;
+    - PNG animados (APNG) são recusados.
+  - **JPEG:**
+    - os blocos são lidos do mesmo modo que a biblioteca de PDF os lê, mas sem tolerâncias, para as duas leituras não poderem divergir;
+    - as dimensões (no máximo 2000 × 2000) e os canais têm de ser razoáveis.
+  - **No fim**, a biblioteca de PDF tem de ter lido exactamente as mesmas dimensões que esta verificação.
+  - **Node.js 22.12 ou mais recente**, por causa do cálculo do CRC (`package.json`).
 - **Nos PDF:**
   - o logótipo vai no topo, no lugar de "Eveni · Gestão de eventos";
   - a cor vai nos títulos das secções;

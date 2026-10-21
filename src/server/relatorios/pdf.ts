@@ -33,11 +33,13 @@ const corDe = (doc: Documento) => marcas.get(doc)?.cor ?? COR_MARCA;
 // Primeiro a verificação estrutural (imagens.ts), que trava ficheiros feitos para bloquear ou derrubar o
 // servidor; só depois o pdfkit o abre.
 export function imagemValida(imagem: Buffer): boolean {
-  if (!pngValido(imagem) && !jpegValido(imagem)) return false;
+  const dimensoes = pngValido(imagem) ?? jpegValido(imagem);
+  if (!dimensoes) return false;
   try {
     // openImage existe no pdfkit, mas não nos tipos (@types/pdfkit).
-    (new PDFDocument({ autoFirstPage: false }) as unknown as { openImage(i: Buffer): unknown }).openImage(imagem);
-    return true;
+    const lida = (new PDFDocument({ autoFirstPage: false }) as unknown as { openImage(i: Buffer): { width: number; height: number } }).openImage(imagem);
+    // O pdfkit tem de ter lido exactamente as mesmas dimensões que a nossa verificação.
+    return lida.width === dimensoes.largura && lida.height === dimensoes.altura;
   } catch {
     return false;
   }

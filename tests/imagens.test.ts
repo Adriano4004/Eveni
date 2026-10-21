@@ -37,45 +37,56 @@ const pngPequeno = (opcoes: { idat?: Buffer; ihdr?: Buffer; fim?: Buffer } = {})
 
 describe('PNG', () => {
   it('aceita PNG verdadeiros (com e sem transparência), incluindo um feito à mão', () => {
-    expect(pngValido(PNG)).toBe(true);
-    expect(pngValido(PNG_ALFA)).toBe(true);
-    expect(pngValido(pngPequeno())).toBe(true);
+    expect(!!pngValido(PNG)).toBe(true);
+    expect(!!pngValido(PNG_ALFA)).toBe(true);
+    expect(!!pngValido(pngPequeno())).toBe(true);
   });
 
   it('comprimento de bloco "negativo" (0xFFFFFFF4): recusado logo, sem ficar preso', () => {
     const preso = Buffer.alloc(12);
     preso.writeUInt32BE(0xfffffff4, 0);
     preso.write('abcd', 4, 'latin1');
-    expect(pngValido(Buffer.concat([ASSINATURA, ihdr(2, 2), preso, bloco('IEND', Buffer.alloc(0))]))).toBe(false);
+    expect(!!pngValido(Buffer.concat([ASSINATURA, ihdr(2, 2), preso, bloco('IEND', Buffer.alloc(0))]))).toBe(false);
   });
 
   it('blocos maiores do que o ficheiro, CRC errado, sem IEND, lixo depois do IEND, ou IHDR fora do sítio: recusados', () => {
     const grande = Buffer.alloc(8);
     grande.writeUInt32BE(0x7ffffff0, 0);
     grande.write('IDAT', 4, 'latin1');
-    expect(pngValido(Buffer.concat([ASSINATURA, ihdr(2, 2), grande]))).toBe(false);
-    expect(pngValido(Buffer.concat([ASSINATURA, bloco('IHDR', ihdr(2, 2).subarray(8, 21), true)]))).toBe(false);
-    expect(pngValido(pngPequeno({ fim: Buffer.alloc(0) }))).toBe(false);
-    expect(pngValido(Buffer.concat([pngPequeno(), Buffer.from('lixo')]))).toBe(false);
-    expect(pngValido(Buffer.concat([ASSINATURA, bloco('IDAT', deflateSync(linhas)), ihdr(2, 2), bloco('IEND', Buffer.alloc(0))]))).toBe(false);
+    expect(!!pngValido(Buffer.concat([ASSINATURA, ihdr(2, 2), grande]))).toBe(false);
+    expect(!!pngValido(Buffer.concat([ASSINATURA, bloco('IHDR', ihdr(2, 2).subarray(8, 21), true)]))).toBe(false);
+    expect(!!pngValido(pngPequeno({ fim: Buffer.alloc(0) }))).toBe(false);
+    expect(!!pngValido(Buffer.concat([pngPequeno(), Buffer.from('lixo')]))).toBe(false);
+    expect(!!pngValido(Buffer.concat([ASSINATURA, bloco('IDAT', deflateSync(linhas)), ihdr(2, 2), bloco('IEND', Buffer.alloc(0))]))).toBe(false);
   });
 
   it('dimensões enormes, entrelaçado ou tipo de cor inválido: recusados', () => {
-    expect(pngValido(pngPequeno({ ihdr: ihdr(65535, 65535) }))).toBe(false);
-    expect(pngValido(pngPequeno({ ihdr: ihdr(2001, 10) }))).toBe(false);
-    expect(pngValido(pngPequeno({ ihdr: ihdr(2, 2, 6, 1) }))).toBe(false);
-    expect(pngValido(pngPequeno({ ihdr: ihdr(2, 2, 5) }))).toBe(false);
+    expect(!!pngValido(pngPequeno({ ihdr: ihdr(65535, 65535) }))).toBe(false);
+    expect(!!pngValido(pngPequeno({ ihdr: ihdr(2001, 10) }))).toBe(false);
+    expect(!!pngValido(pngPequeno({ ihdr: ihdr(2, 2, 6, 1) }))).toBe(false);
+    expect(!!pngValido(pngPequeno({ ihdr: ihdr(2, 2, 5) }))).toBe(false);
   });
 
   it('dados comprimidos estragados ou que não dão o tamanho certo: recusados', () => {
-    expect(pngValido(pngPequeno({ idat: Buffer.from('nao e zlib nenhum') }))).toBe(false);
-    expect(pngValido(pngPequeno({ idat: deflateSync(linhas.subarray(0, 10)) }))).toBe(false);
+    expect(!!pngValido(pngPequeno({ idat: Buffer.from('nao e zlib nenhum') }))).toBe(false);
+    expect(!!pngValido(pngPequeno({ idat: deflateSync(linhas.subarray(0, 10)) }))).toBe(false);
+  });
+
+  it('um filtro de linha inválido (só se vê depois de descomprimir): recusado', () => {
+    const filtroMau = Buffer.from(linhas);
+    filtroMau[9] = 5;
+    expect(!!pngValido(pngPequeno({ idat: deflateSync(filtroMau) }))).toBe(false);
+  });
+
+  it('PNG animado (APNG): recusado', () => {
+    const actl = bloco('acTL', Buffer.alloc(8));
+    expect(!!pngValido(Buffer.concat([ASSINATURA, ihdr(2, 2), actl, bloco('IDAT', deflateSync(linhas)), bloco('IEND', Buffer.alloc(0))]))).toBe(false);
   });
 
   it('bomba de descompressão (50 MB de zeros numa imagem 2×2): recusada sem descomprimir tudo', () => {
     const bomba = deflateSync(Buffer.alloc(50 * 1024 * 1024));
     const inicio = Date.now();
-    expect(pngValido(pngPequeno({ idat: bomba }))).toBe(false);
+    expect(!!pngValido(pngPequeno({ idat: bomba }))).toBe(false);
     expect(Date.now() - inicio).toBeLessThan(2000);
   });
 });
@@ -89,16 +100,24 @@ describe('JPEG', () => {
   };
 
   it('aceita JPEG verdadeiros', () => {
-    expect(jpegValido(JPG)).toBe(true);
-    expect(jpegValido(jpeg(100, 40))).toBe(true);
+    expect(!!jpegValido(JPG)).toBe(true);
+    expect(!!jpegValido(jpeg(100, 40))).toBe(true);
   });
 
   it('dimensões enormes, blocos maiores do que o ficheiro, sem SOF ou canais estranhos: recusados', () => {
-    expect(jpegValido(jpeg(65535, 65535))).toBe(false);
-    expect(jpegValido(jpeg(100, 40, 7))).toBe(false);
-    expect(jpegValido(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0xff, 0xff]))).toBe(false);
-    expect(jpegValido(Buffer.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x02, 0xff, 0xd9]))).toBe(false);
-    expect(jpegValido(Buffer.from('nada'))).toBe(false);
+    expect(!!jpegValido(jpeg(65535, 65535))).toBe(false);
+    expect(!!jpegValido(jpeg(100, 40, 7))).toBe(false);
+    expect(!!jpegValido(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0xff, 0xff]))).toBe(false);
+    expect(!!jpegValido(Buffer.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x02, 0xff, 0xd9]))).toBe(false);
+    expect(!!jpegValido(Buffer.from('nada'))).toBe(false);
+  });
+
+  it('preenchimentos e marcadores sem dados antes das dimensões: recusados (o nosso percurso e o do pdfkit não podem divergir)', () => {
+    const bom = jpeg(100, 40);
+    expect(!!jpegValido(Buffer.concat([bom.subarray(0, 2), Buffer.from([0xff]), bom.subarray(2)]))).toBe(false);
+    expect(!!jpegValido(Buffer.concat([bom.subarray(0, 2), Buffer.from([0xff, 0xd0]), bom.subarray(2)]))).toBe(false);
+    expect(!!jpegValido(Buffer.concat([bom.subarray(0, 2), Buffer.from([0x00]), bom.subarray(2)]))).toBe(false);
+    expect(jpegValido(bom)).toEqual({ largura: 100, altura: 40 });
   });
 });
 
