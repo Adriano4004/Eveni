@@ -97,6 +97,21 @@ test('criar um congresso: escolher o T03, ver os avisos de prazo e as 74 tarefas
   await expect(tarefa.getByText(/O que tem de ser verdade a D\+30/)).toBeVisible();
 });
 
+test('o Fórum e a Conferência aparecem com a descrição, e a Conferência não se confunde com a de imprensa', async ({ page }) => {
+  await contaConfirmada(page, 'Helena');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await expect(page.getByRole('radio', { name: /Conferência de Imprensa/ })).toHaveCount(1);
+  await expect(page.getByText(/Um dia de palestras, com inscrições abertas/)).toBeVisible();
+  await page.getByRole('radio', { name: /Fórum/ }).check();
+  await page.getByLabel('Nome do projecto').fill('Fórum da Juventude Empreendedora');
+  await page.getByLabel('Data do evento').fill(emDias(100));
+  await expect(page.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+  await expect(page.getByRole('heading', { name: 'Fórum da Juventude Empreendedora' })).toBeVisible();
+  await expect(page.getByText('0 de 62 tarefas concluídas')).toBeVisible();
+  await expect(page.getByText('Criar site ou página do evento')).toBeVisible();
+});
+
 test('não é possível abrir o projecto de outra pessoa', async ({ browser }) => {
   const dona = await (await browser.newContext()).newPage();
   await contaConfirmada(dona, 'Fatima');

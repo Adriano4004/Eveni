@@ -1,5 +1,6 @@
 // Converte o Excel dos templates (docs/templates/Eveni-Templates-Projecto.xlsx) em ficheiros de dados
-// versionados (data/templates/*.json). Para escrever os ficheiros, depois de cada alteração ao Excel:
+// versionados (data/templates/*.json), mais os derivados de outro template (scripts/templates-derivados.ts).
+// Para escrever os ficheiros, depois de cada alteração ao Excel ou aos derivados:
 //
 //   npm run templates:converter      (scripts/converter-templates-cli.ts)
 //
@@ -8,6 +9,7 @@
 import { createHash } from 'node:crypto';
 import ExcelJS from 'exceljs';
 import type { RubricaTemplate, Taxonomia, TarefaTemplate, Template } from '../src/shared/templates.js';
+import { DERIVADOS, type DefinicaoDerivado, DIAS_SEM_ALTERACAO } from './templates-derivados.js';
 
 export const CAMINHO_EXCEL = 'docs/templates/Eveni-Templates-Projecto.xlsx';
 export const PASTA_DADOS = 'data/templates';
@@ -164,7 +166,45 @@ export function versaoDe(t: Omit<Template, 'versao'>): string {
   return createHash('sha256').update(JSON.stringify(t)).digest('hex').slice(0, 12);
 }
 
-export async function converter(caminho = CAMINHO_EXCEL): Promise<{ taxonomia: Taxonomia; templates: Template[] }> {
+// Prazo da origem no derivado: igual no último mês e depois do evento; antes disso, encolhido na proporção
+// entre os dois horizontes (o primeiro dia da origem passa a ser o primeiro dia do derivado).
+export function encolherOffset(offset: number, horizonteOrigem: number, horizonte: number): number {
+  if (offset >= -DIAS_SEM_ALTERACAO) return offset;
+  const escala = (horizonte - DIAS_SEM_ALTERACAO) / (horizonteOrigem - DIAS_SEM_ALTERACAO);
+  return -DIAS_SEM_ALTERACAO + Math.round((offset + DIAS_SEM_ALTERACAO) * escala) + 0;
+}
+
+// Constrói um template derivado (scripts/templates-derivados.ts). Uma definição que aponte para tarefas ou
+// rubricas que já não existem na origem pára a conversão, em vez de deixar passar um derivado errado.
+export function derivar(def: DefinicaoDerivado, origem: Omit<Template, 'versao'>): Omit<Template, 'versao'> {
+  const erro = (texto: string) => new Error(`${def.codigo} (derivado do ${origem.codigo}): ${texto}`);
+  const ids = new Set(origem.tarefas.map((t) => t.id));
+  for (const id of [...def.saem, ...def.mantemPrazos, ...Object.keys(def.titulos)]) {
+    if (!ids.has(id)) throw erro(`a tarefa ${id} não existe na origem`);
+  }
+  for (const id of def.mantemPrazos) if (def.saem.includes(id)) throw erro(`a tarefa ${id} sai e mantém prazos ao mesmo tempo`);
+  const descricoes = new Set(origem.rubricas.map((r) => r.descricao));
+  for (const d of [...def.rubricasQueSaem, ...Object.keys(def.rubricas)]) {
+    if (!descricoes.has(d)) throw erro(`a rubrica "${d}" não existe na origem`);
+  }
+  const horizonteOrigem = Math.max(...origem.tarefas.map((t) => -t.inicio));
+  if (def.horizonte <= DIAS_SEM_ALTERACAO || def.horizonte > horizonteOrigem) throw erro(`horizonte de ${def.horizonte} dias fora do intervalo`);
+
+  const tarefas = origem.tarefas
+    .filter((t) => !def.saem.includes(t.id))
+    .map((t) => {
+      const mantem = def.mantemPrazos.includes(t.id);
+      const [inicio, fim] = mantem ? [t.inicio, t.fim] : [t.inicio, t.fim].map((o) => encolherOffset(o, horizonteOrigem, def.horizonte));
+      if (inicio! < -def.horizonte) throw erro(`a tarefa ${t.id} começa antes do horizonte`);
+      return { ...t, id: t.id.replace(origem.codigo, def.codigo), titulo: def.titulos[t.id] ?? t.titulo, inicio: inicio!, fim: fim! };
+    });
+  const rubricas = origem.rubricas
+    .filter((r) => !def.rubricasQueSaem.includes(r.descricao))
+    .map((r) => ({ ...r, descricao: def.rubricas[r.descricao] ?? r.descricao }));
+  return { codigo: def.codigo, nome: def.nome, descricao: def.descricao, tarefas, rubricas };
+}
+
+export async function converter(caminho = CAMINHO_EXCEL, derivados = DERIVADOS): Promise<{ taxonomia: Taxonomia; templates: Template[] }> {
   const livro = new ExcelJS.Workbook();
   await livro.xlsx.readFile(caminho);
   const folha = (nome: string) => {
@@ -182,6 +222,14 @@ export async function converter(caminho = CAMINHO_EXCEL): Promise<{ taxonomia: T
       validarTemplate(semVersao, taxonomia);
       return { ...semVersao, versao: versaoDe(semVersao) };
     });
+  for (const def of derivados) {
+    if (templates.some((t) => t.codigo === def.codigo)) throw new Error(`${def.codigo}: já existe no Excel e como derivado`);
+    const origem = templates.find((t) => t.codigo === def.origem);
+    if (!origem) throw new Error(`${def.codigo}: template de origem ${def.origem} em falta no Excel`);
+    const derivado = derivar(def, origem);
+    validarTemplate(derivado, taxonomia);
+    templates.push({ ...derivado, versao: versaoDe(derivado) });
+  }
   return { taxonomia, templates };
 }
 

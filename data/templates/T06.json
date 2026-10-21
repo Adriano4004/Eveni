@@ -1,0 +1,876 @@
+{
+  "codigo": "T06",
+  "nome": "Conferência",
+  "descricao": "Um dia de palestras, com inscrições abertas (não é para a imprensa) · Comprador: instituição, associação, empresa · Horizonte típico: 4 meses",
+  "tarefas": [
+    {
+      "id": "T06-001",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Definir objectivo e resultados esperados",
+      "papel": "Gestor",
+      "inicio": -120,
+      "fim": -120,
+      "critica": true,
+      "nota": "O que tem de ser verdade a D+30 para isto ter valido a pena. Escrever antes de qualquer outra coisa."
+    },
+    {
+      "id": "T06-002",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Definir tema e eixos temáticos",
+      "papel": "Gestor",
+      "inicio": -117,
+      "fim": -117,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-003",
+      "fase": "Pré Produção",
+      "categoria": "Equipa",
+      "titulo": "Constituir comissão organizadora",
+      "papel": "Gestor",
+      "inicio": -114,
+      "fim": -114,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-005",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Definir data e duração",
+      "papel": "Gestor",
+      "inicio": -114,
+      "fim": -114,
+      "critica": true,
+      "nota": "Verificar o calendário de eventos do sector e a agenda governamental. Colidir com um evento maior esvazia a sala."
+    },
+    {
+      "id": "T06-006",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Orçamento preliminar",
+      "papel": "Financeiro",
+      "inicio": -111,
+      "fim": -111,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-007",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Definir modelo de receita",
+      "papel": "Financeiro",
+      "inicio": -108,
+      "fim": -108,
+      "critica": true,
+      "nota": "Inscrições, patrocínio, apoio institucional. Definir o peso de cada um antes de gastar."
+    },
+    {
+      "id": "T06-008",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Calcular ponto de equilíbrio",
+      "papel": "Financeiro",
+      "inicio": -108,
+      "fim": -108,
+      "critica": true,
+      "nota": "Quantas inscrições pagam o evento. Se o número for maior do que a capacidade da sala, o modelo está errado — e é agora que se descobre, não a D-30."
+    },
+    {
+      "id": "T06-009",
+      "fase": "Pré Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Visitar e reservar o espaço",
+      "papel": "Produção",
+      "inicio": -102,
+      "fim": -102,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-010",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Definir formato: presencial ou híbrido",
+      "papel": "Gestor",
+      "inicio": -102,
+      "fim": -102,
+      "critica": false,
+      "nota": "Híbrido custa mais do que parece e rende menos do que se espera. Decidir por razão, não por moda."
+    },
+    {
+      "id": "T06-011",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Elaborar dossier de patrocínio",
+      "papel": "Comunicação",
+      "inicio": -96,
+      "fim": -90,
+      "critica": true,
+      "nota": "O que o patrocinador recebe, em números. Exposição vaga não vende."
+    },
+    {
+      "id": "T06-012",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Definir escalões de patrocínio e contrapartidas",
+      "papel": "Financeiro",
+      "inicio": -96,
+      "fim": -96,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-013",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Definir oradores principais",
+      "papel": "Gestor",
+      "inicio": -96,
+      "fim": -96,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-014",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Lista nominal de patrocinadores-alvo",
+      "papel": "Financeiro",
+      "inicio": -93,
+      "fim": -93,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-015",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Abordagem a patrocinadores",
+      "papel": "Financeiro",
+      "inicio": -90,
+      "fim": -48,
+      "critica": true,
+      "nota": "Começar cedo. Os orçamentos de patrocínio das empresas angolanas fecham no primeiro trimestre — depois disso, não há verba, há boa vontade."
+    },
+    {
+      "id": "T06-016",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Convite formal aos oradores",
+      "papel": "Comunicação",
+      "inicio": -90,
+      "fim": -90,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-018",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Criar site ou página do evento",
+      "papel": "Comunicação",
+      "inicio": -84,
+      "fim": -84,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-019",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Plano de comunicação e divulgação",
+      "papel": "Comunicação",
+      "inicio": -72,
+      "fim": -72,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-020",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Confirmação escrita dos oradores",
+      "papel": "Comunicação",
+      "inicio": -72,
+      "fim": -72,
+      "critica": true,
+      "nota": "Escrita. Um 'sim' verbal a D-100 é um 'não' a D-20."
+    },
+    {
+      "id": "T06-021",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Definir escalões de inscrição",
+      "papel": "Financeiro",
+      "inicio": -69,
+      "fim": -69,
+      "critica": false,
+      "nota": "Antecipada, normal, estudante. O escalão antecipado é o que testa a procura a tempo de corrigir."
+    },
+    {
+      "id": "T06-022",
+      "fase": "Pré Produção",
+      "categoria": "Financeiro",
+      "titulo": "Configurar pagamento das inscrições",
+      "papel": "Financeiro",
+      "inicio": -66,
+      "fim": -66,
+      "critica": true,
+      "nota": "Multicaixa Express e referência. Exigir cartão internacional exclui a maioria do público angolano."
+    },
+    {
+      "id": "T06-023",
+      "fase": "Pré Produção",
+      "categoria": "Convidados",
+      "titulo": "Abrir inscrições",
+      "papel": "Gestor",
+      "inicio": -66,
+      "fim": -66,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-024",
+      "fase": "Pré Produção",
+      "categoria": "Transporte",
+      "titulo": "Vistos e viagens para oradores estrangeiros",
+      "papel": "Produção",
+      "inicio": -90,
+      "fim": -45,
+      "critica": true,
+      "nota": "Começar 90 dias antes, mesmo com isenção anunciada. É a causa número um de oradores que não chegam."
+    },
+    {
+      "id": "T06-025",
+      "fase": "Pré Produção",
+      "categoria": "Alojamento",
+      "titulo": "Alojamento dos oradores",
+      "papel": "Produção",
+      "inicio": -66,
+      "fim": -66,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-026",
+      "fase": "Pré Produção",
+      "categoria": "Fornecedores",
+      "titulo": "Contratar catering",
+      "papel": "Produção",
+      "inicio": -66,
+      "fim": -66,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-027",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar som, luz e projecção",
+      "papel": "Técnica",
+      "inicio": -66,
+      "fim": -66,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-028",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Produção de materiais gráficos",
+      "papel": "Comunicação",
+      "inicio": -60,
+      "fim": -60,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-029",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Campanha de divulgação",
+      "papel": "Comunicação",
+      "inicio": -57,
+      "fim": -5,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-031",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar tradução simultânea, se aplicável",
+      "papel": "Técnica",
+      "inicio": -57,
+      "fim": -57,
+      "critica": false,
+      "nota": "Confirmar cabines, número de receptores e dois intérpretes por par linguístico. Um intérprete sozinho não aguenta um dia."
+    },
+    {
+      "id": "T06-032",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Contratar registo vídeo e streaming",
+      "papel": "Técnica",
+      "inicio": -57,
+      "fim": -57,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-034",
+      "fase": "Pré Produção",
+      "categoria": "Legal",
+      "titulo": "Contratos de patrocínio assinados",
+      "papel": "Legal",
+      "inicio": -48,
+      "fim": -48,
+      "critica": true,
+      "nota": "Assinados, não acordados. Patrocínio sem contrato é intenção."
+    },
+    {
+      "id": "T06-035",
+      "fase": "Pré Produção",
+      "categoria": "Estratégia",
+      "titulo": "Programa preliminar",
+      "papel": "Gestor",
+      "inicio": -48,
+      "fim": -48,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-036",
+      "fase": "Pré Produção",
+      "categoria": "Segurança",
+      "titulo": "Contratar segurança",
+      "papel": "Produção",
+      "inicio": -48,
+      "fim": -48,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-037",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Definir protocolo de entidades oficiais",
+      "papel": "Protocolo",
+      "inicio": -39,
+      "fim": -39,
+      "critica": true,
+      "nota": "Precedências, lugares reservados, tempo de intervenção. Errar uma precedência em Angola custa relações que demoram anos a reparar."
+    },
+    {
+      "id": "T06-038",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Convites a entidades oficiais",
+      "papel": "Protocolo",
+      "inicio": -39,
+      "fim": -39,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-039",
+      "fase": "Pré Produção",
+      "categoria": "Equipa",
+      "titulo": "Contratar staff de apoio e hospedeiras",
+      "papel": "Produção",
+      "inicio": -39,
+      "fim": -39,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-040",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Definir sistema de credenciação",
+      "papel": "Protocolo",
+      "inicio": -39,
+      "fim": -39,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-041",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Conferência de imprensa de lançamento",
+      "papel": "Comunicação",
+      "inicio": -30,
+      "fim": -30,
+      "critica": false,
+      "nota": "Reutilizar o template T01. É o mesmo trabalho, já mapeado."
+    },
+    {
+      "id": "T06-042",
+      "fase": "Pré Produção",
+      "categoria": "Comunicação",
+      "titulo": "Programa final publicado",
+      "papel": "Comunicação",
+      "inicio": -30,
+      "fim": -30,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-043",
+      "fase": "Pré Produção",
+      "categoria": "Fornecedores",
+      "titulo": "Kit do participante",
+      "papel": "Produção",
+      "inicio": -30,
+      "fim": -30,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-044",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Acreditação de imprensa",
+      "papel": "Protocolo",
+      "inicio": -20,
+      "fim": -2,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-045",
+      "fase": "Pré Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Sinalética do espaço",
+      "papel": "Produção",
+      "inicio": -20,
+      "fim": -20,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-046",
+      "fase": "Pré Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Plano de sala e fluxos",
+      "papel": "Produção",
+      "inicio": -20,
+      "fim": -20,
+      "critica": false,
+      "nota": "Onde entra, onde se credencia, onde come, onde fuma. Os fluxos mal pensados criam filas que definem a memória do evento."
+    },
+    {
+      "id": "T06-047",
+      "fase": "Pré Produção",
+      "categoria": "Registo",
+      "titulo": "Preparar certificados de participação",
+      "papel": "Registo",
+      "inicio": -15,
+      "fim": -15,
+      "critica": true,
+      "nota": "Em Angola o certificado é motivo de inscrição, não acessório. Nome correcto, sem excepção."
+    },
+    {
+      "id": "T06-048",
+      "fase": "Pré Produção",
+      "categoria": "Técnica",
+      "titulo": "Confirmar gerador de emergência",
+      "papel": "Técnica",
+      "inicio": -15,
+      "fim": -15,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-049",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Produzir crachás",
+      "papel": "Protocolo",
+      "inicio": -10,
+      "fim": -10,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-050",
+      "fase": "Pré Produção",
+      "categoria": "Protocolo",
+      "titulo": "Confirmação de entidades oficiais",
+      "papel": "Protocolo",
+      "inicio": -10,
+      "fim": -10,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-051",
+      "fase": "Pré Produção",
+      "categoria": "Equipa",
+      "titulo": "Formação do staff",
+      "papel": "Gestor",
+      "inicio": -7,
+      "fim": -7,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-052",
+      "fase": "Pré Produção",
+      "categoria": "Produção",
+      "titulo": "Ensaio geral",
+      "papel": "Produção",
+      "inicio": -1,
+      "fim": -1,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-053",
+      "fase": "Pré Produção",
+      "categoria": "Equipa",
+      "titulo": "Briefing final da equipa",
+      "papel": "Gestor",
+      "inicio": -1,
+      "fim": -1,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-054",
+      "fase": "Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Montagem",
+      "papel": "Produção",
+      "inicio": -1,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-055",
+      "fase": "Produção",
+      "categoria": "Técnica",
+      "titulo": "Testes técnicos finais",
+      "papel": "Técnica",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-056",
+      "fase": "Produção",
+      "categoria": "Protocolo",
+      "titulo": "Abertura da credenciação",
+      "papel": "Protocolo",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": "Abrir 90 minutos antes. A fila da credenciação é o que atrasa a sessão de abertura."
+    },
+    {
+      "id": "T06-057",
+      "fase": "Produção",
+      "categoria": "Protocolo",
+      "titulo": "Sessão de abertura e protocolo",
+      "papel": "Protocolo",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-058",
+      "fase": "Produção",
+      "categoria": "Produção",
+      "titulo": "Gestão do programa e cumprimento de horários",
+      "papel": "Gestor",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": "Um orador que se estende 15 minutos destrói o resto do dia. O moderador precisa de mandato explícito para cortar."
+    },
+    {
+      "id": "T06-059",
+      "fase": "Produção",
+      "categoria": "Comunicação",
+      "titulo": "Apoio aos oradores",
+      "papel": "Comunicação",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-060",
+      "fase": "Produção",
+      "categoria": "Comunicação",
+      "titulo": "Gestão da imprensa",
+      "papel": "Comunicação",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-061",
+      "fase": "Produção",
+      "categoria": "Registo",
+      "titulo": "Registo de presenças por sessão",
+      "papel": "Registo",
+      "inicio": 0,
+      "fim": 0,
+      "critica": true,
+      "nota": "Dado que os patrocinadores vão pedir. Sem ele, o relatório é opinião."
+    },
+    {
+      "id": "T06-062",
+      "fase": "Produção",
+      "categoria": "Comunicação",
+      "titulo": "Cobertura em redes sociais",
+      "papel": "Comunicação",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-063",
+      "fase": "Produção",
+      "categoria": "Produção",
+      "titulo": "Gestão de incidentes",
+      "papel": "Produção",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-064",
+      "fase": "Produção",
+      "categoria": "Protocolo",
+      "titulo": "Sessão de encerramento",
+      "papel": "Protocolo",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-065",
+      "fase": "Produção",
+      "categoria": "Local e Logística",
+      "titulo": "Desmontagem",
+      "papel": "Produção",
+      "inicio": 0,
+      "fim": 0,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-066",
+      "fase": "Pós Produção",
+      "categoria": "Registo",
+      "titulo": "Inquérito de satisfação",
+      "papel": "Registo",
+      "inicio": 2,
+      "fim": 2,
+      "critica": false,
+      "nota": "Enviar a D+2, não a D+15. A memória e a taxa de resposta caem juntas."
+    },
+    {
+      "id": "T06-067",
+      "fase": "Pós Produção",
+      "categoria": "Registo",
+      "titulo": "Envio de certificados",
+      "papel": "Registo",
+      "inicio": 3,
+      "fim": 3,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-068",
+      "fase": "Pós Produção",
+      "categoria": "Comunicação",
+      "titulo": "Agradecimento a oradores e patrocinadores",
+      "papel": "Comunicação",
+      "inicio": 7,
+      "fim": 7,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-069",
+      "fase": "Pós Produção",
+      "categoria": "Registo",
+      "titulo": "Clipping e relatório de cobertura",
+      "papel": "Registo",
+      "inicio": 10,
+      "fim": 10,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-070",
+      "fase": "Pós Produção",
+      "categoria": "Financeiro",
+      "titulo": "Relatório para patrocinadores",
+      "papel": "Financeiro",
+      "inicio": 15,
+      "fim": 15,
+      "critica": true,
+      "nota": "Presenças, cobertura mediática, exposição de marca, contactos gerados. É este documento que renova o patrocínio no ano seguinte — não a qualidade do evento."
+    },
+    {
+      "id": "T06-071",
+      "fase": "Pós Produção",
+      "categoria": "Comunicação",
+      "titulo": "Disponibilizar apresentações e vídeos",
+      "papel": "Comunicação",
+      "inicio": 15,
+      "fim": 15,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-072",
+      "fase": "Pós Produção",
+      "categoria": "Registo",
+      "titulo": "Actualizar base de contactos",
+      "papel": "Registo",
+      "inicio": 15,
+      "fim": 15,
+      "critica": false,
+      "nota": null
+    },
+    {
+      "id": "T06-073",
+      "fase": "Pós Produção",
+      "categoria": "Financeiro",
+      "titulo": "Fecho de contas: previsto vs real",
+      "papel": "Financeiro",
+      "inicio": 30,
+      "fim": 30,
+      "critica": true,
+      "nota": null
+    },
+    {
+      "id": "T06-074",
+      "fase": "Pós Produção",
+      "categoria": "Estratégia",
+      "titulo": "Relatório final e lições",
+      "papel": "Gestor",
+      "inicio": 30,
+      "fim": 30,
+      "critica": true,
+      "nota": null
+    }
+  ],
+  "rubricas": [
+    {
+      "categoria": "Local",
+      "descricao": "Aluguer do espaço",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Som, luz e projecção",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Tradução simultânea",
+      "obrigatoria": false,
+      "nota": "Cabines, receptores, dois intérpretes por par."
+    },
+    {
+      "categoria": "Equipamentos",
+      "descricao": "Gerador",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Artístico",
+      "descricao": "Honorários de oradores",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Transporte",
+      "descricao": "Viagens de oradores",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Alimentação/Hospedagem",
+      "descricao": "Alojamento de oradores",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Alimentação/Hospedagem",
+      "descricao": "Coffee-breaks e almoços",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Divulgação",
+      "descricao": "Campanha e materiais gráficos",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Divulgação",
+      "descricao": "Site do evento",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Divulgação",
+      "descricao": "Kit do participante",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Equipa de trabalho",
+      "descricao": "Staff e hospedeiras",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Segurança",
+      "descricao": "Segurança",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Artístico",
+      "descricao": "Registo vídeo e streaming",
+      "obrigatoria": false,
+      "nota": null
+    },
+    {
+      "categoria": "Outros",
+      "descricao": "Certificados e crachás",
+      "obrigatoria": true,
+      "nota": null
+    },
+    {
+      "categoria": "Outros",
+      "descricao": "Contingência (10%)",
+      "obrigatoria": true,
+      "nota": null
+    }
+  ],
+  "versao": "8f5cf9b9aac0"
+}
