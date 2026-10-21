@@ -112,6 +112,28 @@ test('o Fórum e a Conferência aparecem com a descrição, e a Conferência nã
   await expect(page.getByText('Criar site ou página do evento')).toBeVisible();
 });
 
+test('criar um festival: escolher o T04, ver os avisos de prazo e a nota da época das chuvas', async ({ page }) => {
+  await contaConfirmada(page, 'Isabel');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await page.getByRole('radio', { name: /Festival \/ Concerto/ }).check();
+  await page.getByLabel('Nome do projecto').fill('Festival de Kizomba da Ilha');
+
+  // Um festival pede 240 dias: a 90 dias, as primeiras tarefas críticas já não cabem.
+  await page.getByLabel('Data do evento').fill(emDias(90));
+  await expect(page.getByText(/Faltam 90 dias e este tipo de projecto pede 240/)).toBeVisible();
+  await expect(page.getByText('Definir data e verificar época das chuvas')).toBeVisible();
+
+  await page.getByLabel('Data do evento').fill(emDias(250));
+  await expect(page.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Festival de Kizomba da Ilha' })).toBeVisible();
+  await expect(page.getByText('0 de 86 tarefas concluídas')).toBeVisible();
+  const tarefa = page.locator('details', { hasText: 'Definir data e verificar época das chuvas' });
+  await tarefa.locator('summary').click();
+  await expect(tarefa.locator('.nota')).toContainText('época das chuvas de Novembro a Abril');
+});
+
 test('não é possível abrir o projecto de outra pessoa', async ({ browser }) => {
   const dona = await (await browser.newContext()).newPage();
   await contaConfirmada(dona, 'Fatima');
