@@ -33,3 +33,11 @@
   - os **marcos**, isto é, as tarefas críticas por ordem de prazo;
   - o **orçamento por categoria e rubrica**, com previsto e real, os totais com a contingência e o aviso se o real passou do previsto.
   - **Não leva** notas internas, fornecedores, contactos nem a equipa.
+- **O relatório interno** (segundo PR) é para a equipa, não para o cliente: o subtítulo diz "não enviar ao cliente". Leva:
+  - o resumo;
+  - quem tem acesso ao projecto e com que papel;
+  - **todas as tarefas** por fase, com prazo, responsável, estado, as críticas marcadas e a **nota** de cada uma;
+  - o **orçamento com o fornecedor** de cada rubrica;
+  - os **fornecedores escolhidos neste projecto**, com contactos, notas e avaliação média (os outros fornecedores do espaço não entram);
+  - a **lista de convidados**, com telemóvel, resposta, acompanhantes e mesa. É útil no dia, à entrada e para o *follow-up* telefónico.
+- **Os endereços dos relatórios** são `/api/projectos/<id>/relatorios/cliente.pdf` e `/api/projectos/<id>/relatorios/interno.pdf`. Qualquer outro nome dá "não encontrado".

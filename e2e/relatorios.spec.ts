@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { contaConfirmada, emDias } from './ajuda.js';
 
-test('descarregar o relatório para o cliente em PDF', async ({ page }) => {
+test('descarregar o relatório para o cliente e o interno em PDF', async ({ page }) => {
   await contaConfirmada(page, 'Rita');
   await page.getByRole('button', { name: 'Novo projecto' }).click();
   await page.getByLabel('Nome do projecto').fill('Conferência Anual');
@@ -17,4 +17,8 @@ test('descarregar o relatório para o cliente em PDF', async ({ page }) => {
   const caminho = await ficheiro.path();
   const { readFileSync } = await import('node:fs');
   expect(readFileSync(caminho).subarray(0, 5).toString()).toBe('%PDF-');
+
+  const interno = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Relatório interno (PDF)' }).click();
+  expect((await interno).suggestedFilename()).toMatch(/^eveni-interno-conferencia-anual-\d{4}-\d{2}-\d{2}\.pdf$/);
 });

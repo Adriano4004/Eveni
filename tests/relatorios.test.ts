@@ -1,9 +1,11 @@
 // Relatórios PDF (decisão 020): conteúdo (modelo) e a rota que gera o PDF, com quem pode.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { aplicarMigracoes, criarBaseDeDados } from '../src/server/db/index.js';
-import { montarRelatorioCliente } from '../src/server/relatorios/modelo.js';
+import { montarRelatorioCliente, montarRelatorioInterno } from '../src/server/relatorios/modelo.js';
 import { nomeDoFicheiro } from '../src/server/relatorios/rotas.js';
+import type { Convidado, Mesa } from '../src/shared/convidados.js';
 import { hojeEmLuanda, somarDias } from '../src/shared/datas.js';
+import type { Fornecedor } from '../src/shared/fornecedores.js';
 import type { ItemOrcamento, Projecto } from '../src/shared/projectos.js';
 import { limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
 import { cookieDe, criarCliente } from './cliente.js';
@@ -153,5 +155,64 @@ describe('gerar o PDF', () => {
     const { ana, projecto } = await cenario();
     await base.pool.query("insert into rate_limits (key, count, window_start) values ('relatorios:' || $1, 60, now())", [ana.id]);
     expect((await pdf(ana.cookie, projecto)).statusCode).toBe(429);
+  });
+});
+
+const interno = (cookie: string, projecto: string) => c.get(`/api/projectos/${projecto}/relatorios/interno.pdf`, cookie);
+
+describe('relatório interno', () => {
+  it('leva tarefas com responsável e nota, fornecedores (só os do projecto) com contactos, e convidados com mesa', async () => {
+    const { ana, bruno, projecto: id } = await cenario();
+    let projecto: Projecto = (await c.get(`/api/projectos/${id}`, ana.cookie)).json();
+    const tarefa = projecto.tarefasDoProjecto.find((t) => t.nota)!;
+    await c.post(`/api/projectos/${id}/tarefas/${tarefa.id}`, { responsavelId: bruno.id }, ana.cookie);
+    const som: Fornecedor = (await c.post('/api/fornecedores', { nome: 'Som Kianda', categoria: 'Equipamentos', telemovel: '923456789' }, ana.cookie)).json();
+    await c.post('/api/fornecedores', { nome: 'Outro, sem ligação', categoria: 'Local' }, ana.cookie);
+    const item = projecto.orcamento[1]!;
+    await c.post(`/api/projectos/${id}/orcamento/${item.id}`, { categoria: item.categoria, descricao: item.descricao, fornecedorId: som.id }, ana.cookie);
+    const mesa: Mesa = (await c.post(`/api/projectos/${id}/mesas`, { nome: 'Mesa 1', lugares: 8 }, ana.cookie)).json();
+    const g: Convidado = (await c.post(`/api/projectos/${id}/convidados`, { nome: 'TPA', telemovel: '924000111', acompanhantes: 1 }, ana.cookie)).json();
+    await c.post(`/api/projectos/${id}/convidados/${g.id}/mesa`, { mesaId: mesa.id }, ana.cookie);
+
+    projecto = (await c.get(`/api/projectos/${id}`, ana.cookie)).json();
+    const lista = (await c.get(`/api/projectos/${id}/convidados`, ana.cookie)).json();
+    const fornecedores: Fornecedor[] = (await c.get('/api/fornecedores', ana.cookie)).json();
+    const r = montarRelatorioInterno(projecto, lista.convidados, lista.mesas, fornecedores, new Date());
+
+    expect(r.subtitulo).toBe('Relatório interno (não enviar ao cliente)');
+    expect(r.equipa).toEqual([
+      ['Ana Domingos', 'Dono'],
+      ['Bruno Neto', 'Editor'],
+      ['Carla Lima', 'Leitor'],
+    ]);
+    expect(r.fases.map((f) => f.fase)).toEqual(['Pré Produção', 'Produção', 'Pós Produção']);
+    const comNota = r.fases.flatMap((f) => f.tarefas).find((t) => t.titulo === tarefa.titulo)!;
+    expect(comNota).toMatchObject({ responsavel: 'Bruno Neto', nota: tarefa.nota });
+    expect(r.fases.flatMap((f) => f.tarefas)).toHaveLength(47);
+    expect(r.orcamento.categorias.flatMap((c) => c.itens).find((i) => i.descricao === item.descricao)!.fornecedor).toBe('Som Kianda');
+    expect(r.fornecedores).toEqual([{ nome: 'Som Kianda', categoria: 'Equipamentos', contactos: '+244 923 456 789', avaliacao: 'Sem avaliações', notas: null }]);
+    expect(r.listaConvidados).toEqual([{ nome: 'TPA', telemovel: '+244 924 000 111', resposta: 'Sem resposta', acompanhantes: '1', mesa: 'Mesa 1' }]);
+  });
+
+  it('dono e editor geram; leitora, de fora e sem sessão não; regista o tipo', async () => {
+    const { ana, bruno, carla, eva, projecto } = await cenario();
+    const r = await interno(bruno.cookie, projecto);
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-disposition']).toMatch(/filename="eveni-interno-lancamento-kianda-2026-/);
+    expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+    expect((await interno(carla.cookie, projecto)).statusCode).toBe(403);
+    expect((await interno(eva.cookie, projecto)).statusCode).toBe(404);
+    expect((await interno('', projecto)).statusCode).toBe(401);
+    expect((await c.get(`/api/projectos/${projecto}/relatorios/outro.pdf`, ana.cookie)).statusCode).toBe(404);
+    const registo = (await c.get('/api/equipa/registo', ana.cookie)).json().entradas;
+    expect(registo[0]).toMatchObject({ accao: 'projecto.relatorio', quem: 'Bruno Neto', relatorio: 'interno' });
+  });
+
+  it('o relatório para o cliente continua sem fornecedores nem notas', async () => {
+    const { ana, projecto: id } = await cenario();
+    const projecto: Projecto = (await c.get(`/api/projectos/${id}`, ana.cookie)).json();
+    const r = montarRelatorioCliente(projecto, { convidados: 0, vao: 0, naoVao: 0, semResposta: 0, pessoas: 0 }, new Date());
+    expect(Object.keys(r)).not.toContain('fornecedores');
+    expect(Object.keys(r)).not.toContain('listaConvidados');
   });
 });
