@@ -63,9 +63,16 @@
 - **Nos PDF de um projecto usa-se a marca do espaço desse projecto**, mesmo quando é um editor de outro espaço que gera o relatório.
 - **O logótipo:**
   - guarda-se na base de dados (sem serviço de ficheiros à parte);
-  - o servidor confirma que é mesmo PNG ou JPEG pelos primeiros bytes (o tipo declarado não basta), que tem no máximo 500 KB e que se consegue ler;
+  - o servidor confirma que é mesmo PNG ou JPEG pelos primeiros bytes (o tipo declarado não basta) e que tem no máximo 500 KB;
   - SVG e outros formatos são recusados;
   - um logótipo estragado nunca impede o PDF: sai sem ele.
+- **Verificação estrutural do logótipo (`src/server/relatorios/imagens.ts`).** A biblioteca de PDF confia no ficheiro, e a revisão de segurança mostrou que um PNG feito de propósito podia bloquear o servidor, fazê-lo cair ou esgotar a memória. Por isso, antes de o guardar e antes de o pôr num PDF:
+  - **PNG:**
+    - cada bloco tem de caber no ficheiro e ter o CRC certo, com o IHDR primeiro e o IEND no fim;
+    - no máximo 2000 × 2000 píxeis;
+    - os entrelaçados são recusados;
+    - a imagem é descomprimida inteira, com um tecto de tamanho, e tem de dar exactamente o tamanho esperado.
+  - **JPEG:** cada bloco tem de caber no ficheiro, e as dimensões (no máximo 2000 × 2000) e os canais têm de ser razoáveis.
 - **Nos PDF:**
   - o logótipo vai no topo, no lugar de "Eveni · Gestão de eventos";
   - a cor vai nos títulos das secções;

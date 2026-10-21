@@ -116,6 +116,17 @@ describe('configurar a marca', () => {
     expect((await c.post('/api/marca', { cor: '#000000' })).statusCode).toBe(401);
   });
 
+  it('uma imagem feita para bloquear o servidor é recusada, e o servidor continua a responder', async () => {
+    const { ana } = await cenario();
+    // Assinatura PNG + um bloco com comprimento "negativo" (0xFFFFFFF4): o leitor de PNG ficava preso para sempre.
+    const preso = Buffer.alloc(12);
+    preso.writeUInt32BE(0xfffffff4, 0);
+    preso.write('abcd', 4, 'latin1');
+    const r = await c.post('/api/marca/logo', { imagem: dataUrl('image/png', Buffer.concat([PNG.subarray(0, 8), preso])) }, ana.cookie);
+    expect(r.statusCode).toBe(400);
+    expect((await c.get('/api/marca', ana.cookie)).statusCode).toBe(200);
+  });
+
   it('imagens inválidas e dados inválidos dão 400 com o erro junto ao campo', async () => {
     const { ana } = await cenario();
     const r = await c.post('/api/marca/logo', { imagem: dataUrl('image/png', Buffer.from('nada')) }, ana.cookie);

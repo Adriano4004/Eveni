@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import PDFDocument from 'pdfkit';
 import { mensagens } from '../../shared/mensagens.js';
 import { RAIZ } from '../raiz.js';
+import { jpegValido, pngValido } from './imagens.js';
 
 // Desenho dos PDF (decisão 020), com o pdfkit: só JavaScript, sem browser no servidor.
 // Letra Liberation Sans (licença OFL, em assets/fontes): cobre todos os caracteres do português, ao contrário
@@ -28,8 +29,11 @@ export interface MarcaPdf {
 const marcas = new WeakMap<Documento, MarcaPdf>();
 const corDe = (doc: Documento) => marcas.get(doc)?.cor ?? COR_MARCA;
 
-// O logótipo é uma imagem que o pdfkit consegue ler? (verificado ao guardar e outra vez ao desenhar)
+// O logótipo é uma imagem segura de desenhar? (verificado ao guardar e outra vez ao desenhar)
+// Primeiro a verificação estrutural (imagens.ts), que trava ficheiros feitos para bloquear ou derrubar o
+// servidor; só depois o pdfkit o abre.
 export function imagemValida(imagem: Buffer): boolean {
+  if (!pngValido(imagem) && !jpegValido(imagem)) return false;
   try {
     // openImage existe no pdfkit, mas não nos tipos (@types/pdfkit).
     (new PDFDocument({ autoFirstPage: false }) as unknown as { openImage(i: Buffer): unknown }).openImage(imagem);
