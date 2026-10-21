@@ -97,10 +97,12 @@ export function tabela(
   const larguras = colunas.map((c) => c.largura * largura);
   const folga = 4;
 
-  const desenharLinha = (celulas: string[], estilo: { fonte: 'normal' | 'negrito'; cor: string; fundo?: string }) => {
+  // `forcar`: desenhar mesmo sem caber (uma linha mais alta do que uma página inteira continua na seguinte,
+  // em vez de desaparecer).
+  const desenharLinha = (celulas: string[], estilo: { fonte: 'normal' | 'negrito'; cor: string; fundo?: string }, forcar = false) => {
     doc.font(estilo.fonte).fontSize(9);
     const altura = Math.max(...celulas.map((t, j) => doc.heightOfString(t, { width: larguras[j]! - 2 * folga }))) + 2 * folga;
-    if (doc.y + altura > fundoUtil(doc)) return false;
+    if (!forcar && doc.y + altura > fundoUtil(doc)) return false;
     const y = doc.y;
     if (estilo.fundo) doc.rect(x0, y, largura, altura).fill(estilo.fundo);
     let x = x0;
@@ -126,7 +128,7 @@ export function tabela(
     if (!desenharLinha(celulas, estilo)) {
       doc.addPage();
       cabecalhoTabela();
-      desenharLinha(celulas, estilo);
+      desenharLinha(celulas, estilo, true);
     }
   });
   doc.moveDown(0.5);

@@ -123,6 +123,15 @@ describe('gerar o PDF', () => {
     expect(paginas(r.rawPayload)).toBeGreaterThan(5);
   });
 
+  it('uma linha mais alta do que uma página não desaparece nem bloqueia', async () => {
+    const { ana, projecto } = await cenario();
+    // Mais comprido do que os formulários permitem (directamente na base de dados de teste).
+    await base.pool.query("update tasks set title = repeat('Texto muito comprido ', 400) where project_id = $1 and critical", [projecto]);
+    const r = await pdf(ana.cookie, projecto);
+    expect(r.statusCode).toBe(200);
+    expect(paginas(r.rawPayload)).toBeGreaterThan(10);
+  });
+
   it('o editor gera; a leitora, alguém de fora e sem sessão não', async () => {
     const { bruno, carla, eva, projecto } = await cenario();
     expect((await pdf(bruno.cookie, projecto)).statusCode).toBe(200);
