@@ -1378,3 +1378,63 @@ h1 {
 .nota--texto {
   white-space: pre-line;
 }
+
+/* Fase 6: avaliação dos fornecedores */
+.avaliar {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.avaliar p {
+  margin: 0;
+}
+
+.estrelas {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Alvo de toque de 44 px por estrela. */
+.estrelas__botao {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #b54708;
+  cursor: pointer;
+}
+
+.estrelas__botao:focus-visible {
+  outline: 3px solid rgb(101 83 243 / 0.35);
+  border-radius: var(--raio);
+}
+
+.media-estrelas {
+  font-size: 0.85rem;
+  color: #b54708;
+  font-weight: 600;
+}
+
+.historico-avaliacoes ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.historico-avaliacoes li {
+  padding: 6px 0;
+  border-top: 1px solid var(--cor-borda);
+  color: #b54708;
+}
+
+.historico-avaliacoes li p {
+  margin: 4px 0 0;
+  color: var(--cor-texto);
+}

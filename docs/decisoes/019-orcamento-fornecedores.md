@@ -66,6 +66,18 @@
 - **Apagar um fornecedor** tira-o das rubricas onde estava escolhido. Nunca apaga as rubricas.
 - **Exportação:** os fornecedores dos espaços de que a pessoa é dona saem na exportação de dados.
 
-## Próximo PR desta fase
+## Avaliação dos fornecedores (terceiro PR)
 
-3. Avaliação dos fornecedores depois do evento.
+- **Quando:** a partir do dia do evento, inclusive (calendário de Luanda).
+- **Quem avalia:**
+  - o dono do espaço e os editores do projecto;
+  - também com o projecto arquivado, porque arquivar é o que se faz no fim do evento, e é então que se avalia.
+  - Os leitores não vêem nem fazem avaliações.
+- **Que fornecedores:** só os escolhidos nalguma rubrica do orçamento desse projecto. Isto garante que são do mesmo espaço; a base de dados verifica-o também, com o mesmo gatilho das rubricas.
+- **Uma avaliação por fornecedor e por evento**, de 1 a 5 estrelas, com um comentário opcional (até 500 caracteres). Avaliar outra vez substitui a anterior.
+- **Média:**
+  - aparece na lista de fornecedores (ex.: "★ 4,3 (3 avaliações)");
+  - o histórico, evento a evento, vê-se ao abrir o fornecedor (só o dono).
+- **Dados da conta:**
+  - a exportação inclui as avaliações dos fornecedores dos espaços de que a pessoa é dona e as que ela própria fez;
+  - quando quem avaliou elimina a conta, a avaliação fica, mas anónima.

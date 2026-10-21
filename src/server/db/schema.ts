@@ -381,3 +381,28 @@ export const guests = pgTable(
     check('guests_telemovel_formato', sql`${t.phone} ~ '^\\+[0-9]{8,15}$'`),
   ],
 );
+
+// Avaliação de um fornecedor depois de um evento (decisão 019): de 1 a 5 estrelas e um comentário curto.
+// Uma por fornecedor e projecto (pode ser mudada). O fornecedor tem de ser do espaço do projecto (gatilho, 0014).
+export const supplierRatings = pgTable(
+  'supplier_ratings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    supplierId: uuid('supplier_id')
+      .notNull()
+      .references(() => suppliers.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    stars: integer('stars').notNull(),
+    comment: text('comment'),
+    ratedBy: uuid('rated_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: criadoEm(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('supplier_ratings_unica').on(t.supplierId, t.projectId),
+    index('supplier_ratings_projecto').on(t.projectId),
+    check('supplier_ratings_estrelas_validas', sql`${t.stars} between 1 and 5`),
+  ],
+);

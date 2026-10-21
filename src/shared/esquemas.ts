@@ -302,3 +302,18 @@ export const dadosFornecedor = z.object({
     .transform((v) => v || null),
 });
 export type DadosFornecedor = z.infer<typeof dadosFornecedor>;
+
+// Avaliação de um fornecedor depois do evento.
+export const avaliarFornecedor = z.object({
+  estrelas: z
+    .union([z.number(), z.string().trim()], { error: m.estrelasInvalidas })
+    .transform((v) => (v === '' ? Number.NaN : Number(v)))
+    .pipe(z.number({ error: m.estrelasInvalidas }).int(m.estrelasInvalidas).min(1, m.estrelasInvalidas).max(5, m.estrelasInvalidas)),
+  comentario: z
+    .string({ error: m.comentarioInvalido })
+    .trim()
+    .max(500, m.comentarioLongo)
+    .refine((v) => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u2028\u2029]/.test(v), m.comentarioInvalido)
+    .optional()
+    .transform((v) => v || null),
+});

@@ -45,6 +45,7 @@ export const TABELAS_PESSOAIS = {
   guests: 'exportada com o projecto (espaços de que a pessoa é dona); apagada com o projecto (cascata)',
   event_tables: 'exportada com o projecto (mesas); apagada com o projecto (cascata)',
   suppliers: 'exportada (fornecedores dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
+  supplier_ratings: 'exportada (as dos fornecedores dos espaços de que a pessoa é dona e as que ela fez); apagada com o fornecedor ou o projecto (cascata); as feitas noutros espaços ficam anónimas',
 } as const;
 
 export interface Exportacao {
@@ -67,6 +68,8 @@ export interface Exportacao {
   acessosAProjectos: { projectoId: string; projecto: string; espaco: string; papel: string; desde: string }[];
   // Fornecedores dos espaços de que a pessoa é dona.
   fornecedores: Fornecedor[];
+  // Avaliações dos fornecedores desses espaços, e as que a pessoa fez noutros espaços.
+  avaliacoesFornecedores: { fornecedor: string; projecto: string; estrelas: number; comentario: string | null; feitaPorMim: boolean; data: string }[];
   convitesEnviados: { email: string; criadoEm: string; estado: EstadoConvite }[];
   convitesRecebidos: { espaco: string; criadoEm: string; estado: EstadoConvite }[];
 }
@@ -134,6 +137,14 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
   }
   const fornecedores: Fornecedor[] = [];
   for (const w of espacos.filter((e) => e.role === 'owner')) fornecedores.push(...(await listarFornecedores(pool, w.id)));
+  const { rows: avaliacoes } = await pool.query<{ fornecedor: string; projecto: string; stars: number; comment: string | null; minha: boolean; updated_at: Date }>(
+    `select s.name as fornecedor, p.name as projecto, r.stars, r.comment, coalesce(r.rated_by = $1, false) as minha, r.updated_at
+       from supplier_ratings r join suppliers s on s.id = r.supplier_id join projects p on p.id = r.project_id
+      where r.rated_by = $1
+         or s.workspace_id in (select workspace_id from workspace_members where user_id = $1 and role = 'owner')
+      order by r.updated_at, r.id`,
+    [utilizadorId],
+  );
   return {
     geradoEm: new Date().toISOString(),
     conta: {
@@ -170,6 +181,14 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       desde: a.created_at.toISOString(),
     })),
     fornecedores,
+    avaliacoesFornecedores: avaliacoes.map((a) => ({
+      fornecedor: a.fornecedor,
+      projecto: a.projecto,
+      estrelas: a.stars,
+      comentario: a.comment,
+      feitaPorMim: a.minha,
+      data: a.updated_at.toISOString(),
+    })),
     convitesEnviados: enviados.map((c) => ({ email: c.email, criadoEm: c.created_at.toISOString(), estado: c.estado })),
     convitesRecebidos: recebidos.map((c) => ({ espaco: c.espaco, criadoEm: c.created_at.toISOString(), estado: c.estado })),
   };
