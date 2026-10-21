@@ -99,6 +99,13 @@
       "when": 1792532306533,
       "tag": "0013_fornecedores",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792551504112,
+      "tag": "0014_avaliacoes",
+      "breakpoints": true
     }
   ]
 }

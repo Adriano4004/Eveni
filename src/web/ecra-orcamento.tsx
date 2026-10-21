@@ -7,6 +7,7 @@ import type { ItemOrcamento, Projecto } from '../shared/projectos.js';
 import { api, mensagemDeErro } from './api.js';
 import { Campo } from './Campo.js';
 import { Desdobravel } from './Desdobravel.js';
+import { AvaliarFornecedores } from './AvaliarFornecedores.js';
 import { CamposFornecedor } from './ecra-fornecedores.js';
 import { Formulario } from './Formulario.js';
 import { navegar } from './navegacao.js';
@@ -198,6 +199,7 @@ export function EcraOrcamento({ id }: { id: string }) {
           </Formulario>
         </Desdobravel>
       )}
+      {projecto.papel !== 'viewer' && <AvaliarFornecedores projectoId={projecto.id} />}
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { formatarTelemovel } from '../shared/convidados.js';
-import type { Fornecedor } from '../shared/fornecedores.js';
+import { formatarData } from '../shared/datas.js';
+import { type AvaliacaoNoHistorico, type Fornecedor, formatarMedia } from '../shared/fornecedores.js';
 import { mensagens } from '../shared/mensagens.js';
 import { CATEGORIAS_ORCAMENTO } from '../shared/orcamento.js';
 import { api, mensagemDeErro } from './api.js';
@@ -134,10 +135,12 @@ function LinhaFornecedor({ fornecedor: f, aoMudar, aoApagar }: { fornecedor: For
         <summary>
           <span className="convidado__nome">{f.nome}</span>
           <span className="etiqueta">{f.categoria}</span>
+          <span className="media-estrelas">{f.media === null ? q.semAvaliacoes : q.media(formatarMedia(f.media), f.avaliacoes)}</span>
           {contactos && <span className="campo__ajuda convidado__detalhe">{contactos}</span>}
         </summary>
         <div className="convidado__editar">
           {f.notas && <p className="nota nota--texto">{f.notas}</p>}
+          {f.avaliacoes > 0 && <Historico fornecedorId={f.id} />}
           {f.telemovel && (
             <div className="botoes-lado-a-lado">
               <a className="botao botao--secundario botao--ligacao" href={`tel:${f.telemovel}`}>
@@ -217,5 +220,35 @@ export function CamposFornecedor({ erros, fornecedor }: { erros: Record<string, 
         </p>
       </div>
     </>
+  );
+}
+
+// Avaliações de um fornecedor, evento a evento (carregadas ao abrir).
+function Historico({ fornecedorId }: { fornecedorId: string }) {
+  const [historico, setHistorico] = useState<AvaliacaoNoHistorico[]>();
+  const [erro, setErro] = useState<string>();
+  useEffect(() => {
+    api<AvaliacaoNoHistorico[]>('GET', `/api/fornecedores/${fornecedorId}/avaliacoes`)
+      .then(setHistorico)
+      .catch((falha) => setErro(mensagemDeErro(falha)));
+  }, [fornecedorId]);
+  return (
+    <div className="historico-avaliacoes">
+      <strong>{q.historico}</strong>
+      {erro && <p className="formulario__erro">{erro}</p>}
+      {!historico && !erro && <p className="campo__ajuda">{q.aCarregarHistorico}</p>}
+      {historico?.length === 0 && <p className="campo__ajuda">{q.historicoVazio}</p>}
+      {historico && historico.length > 0 && (
+        <ul>
+          {historico.map((h) => (
+            <li key={`${h.projecto}-${h.avaliadaEm}`}>
+              <span aria-label={mensagens.ecras.avaliacoes.estrela(h.estrelas)}>{'★'.repeat(h.estrelas) + '☆'.repeat(5 - h.estrelas)}</span>{' '}
+              <span className="campo__ajuda">{q.historicoLinha(h.projecto, formatarData(h.dataEvento))}</span>
+              {h.comentario && <p className="nota--texto">{h.comentario}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
