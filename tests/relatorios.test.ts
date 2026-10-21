@@ -1,7 +1,7 @@
 // Relatórios PDF (decisão 020): conteúdo (modelo) e a rota que gera o PDF, com quem pode.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { aplicarMigracoes, criarBaseDeDados } from '../src/server/db/index.js';
-import { montarRelatorioCliente, montarRelatorioInterno } from '../src/server/relatorios/modelo.js';
+import { montarRelatorioCliente, montarRelatorioCronograma, montarRelatorioInterno } from '../src/server/relatorios/modelo.js';
 import { nomeDoFicheiro } from '../src/server/relatorios/rotas.js';
 import type { Convidado, Mesa } from '../src/shared/convidados.js';
 import { hojeEmLuanda, somarDias } from '../src/shared/datas.js';
@@ -214,5 +214,53 @@ describe('relatório interno', () => {
     const r = montarRelatorioCliente(projecto, { convidados: 0, vao: 0, naoVao: 0, semResposta: 0, pessoas: 0 }, new Date());
     expect(Object.keys(r)).not.toContain('fornecedores');
     expect(Object.keys(r)).not.toContain('listaConvidados');
+  });
+});
+
+const cronograma = (cookie: string, projecto: string) => c.get(`/api/projectos/${projecto}/relatorios/cronograma.pdf`, cookie);
+const paraIso = (d: string) => d.split('/').reverse().join('-');
+
+describe('cronograma', () => {
+  it('semanas de segunda a domingo, tarefas por data de início, D-n até D+n, semana do evento marcada, sem notas', async () => {
+    const { ana, projecto: id } = await cenario();
+    const projecto: Projecto = (await c.get(`/api/projectos/${id}`, ana.cookie)).json();
+    const r = montarRelatorioCronograma(projecto, new Date());
+    expect(r.subtitulo).toBe('Cronograma');
+    const tarefas = r.semanas.flatMap((s) => s.tarefas);
+    expect(tarefas).toHaveLength(47);
+    // Por data de início.
+    const inicios = tarefas.map((t) => paraIso(t.datas.slice(0, 10)));
+    expect(inicios).toEqual([...inicios].sort());
+    for (const s of r.semanas) {
+      const [de, ate] = s.titulo.match(/\d{2}\/\d{2}\/\d{4}/g)!.map(paraIso);
+      // Segunda a domingo (1970-01-05 foi segunda-feira).
+      expect(new Date(`${de}T12:00:00Z`).getUTCDay()).toBe(1);
+      expect(new Date(`${ate}T12:00:00Z`).getUTCDay()).toBe(0);
+      for (const t of s.tarefas) {
+        const inicio = paraIso(t.datas.slice(0, 10));
+        expect(inicio >= de! && inicio <= ate!).toBe(true);
+      }
+    }
+    expect(r.semanas.filter((s) => s.doEvento)).toHaveLength(1);
+    const doEvento = r.semanas.find((s) => s.doEvento)!;
+    expect(doEvento.tarefas.some((t) => t.relativo === 'D0')).toBe(true);
+    expect(tarefas.find((t) => paraIso(t.datas.slice(0, 10)) < projecto.dataEvento)!.relativo).toMatch(/^D-\d+$/);
+    expect(tarefas.at(-1)!.relativo).toMatch(/^D\+\d+$/);
+    expect(JSON.stringify(r)).not.toContain('Nota');
+    expect(JSON.stringify(r)).not.toContain('Kz');
+  });
+
+  it('dono e editor geram; leitora, de fora e sem sessão não; regista o tipo', async () => {
+    const { ana, bruno, carla, eva, projecto } = await cenario();
+    const r = await cronograma(ana.cookie, projecto);
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-disposition']).toMatch(/filename="eveni-cronograma-lancamento-kianda-2026-/);
+    expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+    expect((await cronograma(bruno.cookie, projecto)).statusCode).toBe(200);
+    expect((await cronograma(carla.cookie, projecto)).statusCode).toBe(403);
+    expect((await cronograma(eva.cookie, projecto)).statusCode).toBe(404);
+    expect((await cronograma('', projecto)).statusCode).toBe(401);
+    const registo = (await c.get('/api/equipa/registo', ana.cookie)).json().entradas;
+    expect(registo[0]).toMatchObject({ accao: 'projecto.relatorio', relatorio: 'cronograma' });
   });
 });

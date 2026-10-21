@@ -45,7 +45,7 @@ export function somarMeses(mes: string, n: number): string {
 }
 
 // Dia da semana com segunda-feira = 0 (como nos calendários portugueses).
-function diaDaSemana(data: string): number {
+export function diaDaSemana(data: string): number {
   // 1970-01-05 foi uma segunda-feira.
   return (((diasEntre('1970-01-05', data) % 7) + 7) % 7);
 }
