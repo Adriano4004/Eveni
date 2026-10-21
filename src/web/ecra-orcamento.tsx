@@ -2,10 +2,12 @@ import { useEffect, useId, useState } from 'react';
 import { formatarKz } from '../shared/dinheiro.js';
 import { mensagens } from '../shared/mensagens.js';
 import { CATEGORIAS_ORCAMENTO, kzParaCampo, resumirOrcamento } from '../shared/orcamento.js';
+import type { Fornecedor } from '../shared/fornecedores.js';
 import type { ItemOrcamento, Projecto } from '../shared/projectos.js';
 import { api, mensagemDeErro } from './api.js';
 import { Campo } from './Campo.js';
 import { Desdobravel } from './Desdobravel.js';
+import { CamposFornecedor } from './ecra-fornecedores.js';
 import { Formulario } from './Formulario.js';
 import { navegar } from './navegacao.js';
 
@@ -16,16 +18,27 @@ const q = mensagens.ecras.orcamento;
 export function EcraOrcamento({ id }: { id: string }) {
   const [projecto, setProjecto] = useState<Projecto>();
   const [erro, setErro] = useState<string>();
+  // Fornecedores do espaço do projecto, para escolher nas rubricas (só dono e editores os recebem).
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
+  const [fornecedorCriado, setFornecedorCriado] = useState<string>();
   const caminho = `/api/projectos/${encodeURIComponent(id)}`;
 
   const carregar = () =>
     api<Projecto>('GET', caminho)
       .then(setProjecto)
       .catch((falha) => setErro(mensagemDeErro(falha)));
+  const carregarFornecedores = () =>
+    api<Fornecedor[]>('GET', `${caminho}/fornecedores`)
+      .then(setFornecedores)
+      .catch(() => setFornecedores([]));
 
   useEffect(() => {
     carregar();
   }, [id]);
+  const podeEscolher = projecto && projecto.papel !== 'viewer' && projecto.estado === 'active';
+  useEffect(() => {
+    if (podeEscolher) carregarFornecedores();
+  }, [podeEscolher]);
 
   const voltar = (
     <button className="botao botao--secundario botao--compacto" type="button" onClick={() => navegar(`/projectos/${encodeURIComponent(id)}`)}>
@@ -122,6 +135,7 @@ export function EcraOrcamento({ id }: { id: string }) {
                 <Rubrica
                   key={i.id}
                   item={i}
+                  fornecedores={fornecedores}
                   caminho={caminho}
                   podeAlterar={podeAlterar}
                   aoMudar={mudarItem}
@@ -157,7 +171,30 @@ export function EcraOrcamento({ id }: { id: string }) {
               await carregar();
             }}
           >
-            {(erros) => <CamposRubrica erros={erros} />}
+            {(erros) => <CamposRubrica erros={erros} fornecedores={fornecedores} />}
+          </Formulario>
+        </Desdobravel>
+      )}
+
+      {podeAlterar && (
+        <Desdobravel titulo={q.fornecedorNovo} aberto={false}>
+          <p className="campo__ajuda">{q.fornecedorNovoTexto}</p>
+          {fornecedorCriado && (
+            <p className="sucesso" role="status">
+              {q.fornecedorCriado(fornecedorCriado)}
+            </p>
+          )}
+          <Formulario
+            botao={q.fornecedorNovo}
+            aEnviar={q.aAcrescentar}
+            limparAoEnviar
+            enviar={async (dados) => {
+              const f = await api<Fornecedor>('POST', `${caminho}/fornecedores`, dados);
+              setFornecedorCriado(f.nome);
+              await carregarFornecedores();
+            }}
+          >
+            {(erros) => <CamposFornecedor erros={erros} />}
           </Formulario>
         </Desdobravel>
       )}
@@ -183,7 +220,7 @@ function EscolhaCategoria({ valor, erro }: { valor?: string; erro?: string }) {
 }
 
 // Campos de uma rubrica. Nas obrigatórias do template, a categoria e a descrição não mudam: vão escondidas.
-function CamposRubrica({ erros, item }: { erros: Record<string, string>; item?: ItemOrcamento }) {
+function CamposRubrica({ erros, item, fornecedores }: { erros: Record<string, string>; item?: ItemOrcamento; fornecedores: Fornecedor[] }) {
   return (
     <>
       {item?.obrigatoria ? (
@@ -216,19 +253,43 @@ function CamposRubrica({ erros, item }: { erros: Record<string, string>; item?: 
         erro={erros.real}
         valorInicial={item ? kzParaCampo(item.realCentimos) : undefined}
       />
+      <EscolhaFornecedor fornecedores={fornecedores} actual={item?.fornecedor ?? null} erro={erros.fornecedorId} />
     </>
+  );
+}
+
+// Fornecedores do espaço. O fornecedor actual da rubrica está sempre entre as opções, mesmo antes de a lista
+// chegar: senão o campo mostraria "Nenhum" e guardar tirava-o da rubrica.
+function EscolhaFornecedor({ fornecedores, actual, erro }: { fornecedores: Fornecedor[]; actual: { id: string; nome: string } | null; erro?: string }) {
+  const id = useId();
+  const opcoes = actual && !fornecedores.some((f) => f.id === actual.id) ? [{ id: actual.id, rotulo: actual.nome }] : [];
+  opcoes.push(...fornecedores.map((f) => ({ id: f.id, rotulo: `${f.nome} (${f.categoria})` })));
+  return (
+    <div className="campo">
+      <label htmlFor={id}>{q.fornecedor}</label>
+      <select id={id} name="fornecedorId" defaultValue={actual?.id ?? ''} aria-invalid={erro ? true : undefined}>
+        <option value="">{q.nenhumFornecedor}</option>
+        {opcoes.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.rotulo}
+          </option>
+        ))}
+      </select>
+      {erro && <p className="campo__erro">{erro}</p>}
+    </div>
   );
 }
 
 interface PropsRubrica {
   item: ItemOrcamento;
+  fornecedores: Fornecedor[];
   caminho: string;
   podeAlterar: boolean;
   aoMudar: (i: ItemOrcamento) => void;
   aoRemover: () => void;
 }
 
-function Rubrica({ item: i, caminho, podeAlterar, aoMudar, aoRemover }: PropsRubrica) {
+function Rubrica({ item: i, fornecedores, caminho, podeAlterar, aoMudar, aoRemover }: PropsRubrica) {
   const [guardado, setGuardado] = useState(false);
   const acima = i.realCentimos > i.previstoCentimos;
   return (
@@ -248,6 +309,7 @@ function Rubrica({ item: i, caminho, podeAlterar, aoMudar, aoRemover }: PropsRub
               {q.real}: {formatarKz(i.realCentimos)}
             </span>
           </span>
+          {i.fornecedor && <span className="rubrica__fornecedor">{i.fornecedor.nome}</span>}
         </summary>
         <div className="rubrica__corpo">
           {i.nota && (
@@ -266,7 +328,7 @@ function Rubrica({ item: i, caminho, podeAlterar, aoMudar, aoRemover }: PropsRub
                   setGuardado(true);
                 }}
               >
-                {(erros) => <CamposRubrica erros={erros} item={i} />}
+                {(erros) => <CamposRubrica erros={erros} item={i} fornecedores={fornecedores} />}
               </Formulario>
               {guardado && (
                 <p className="sucesso" role="status">

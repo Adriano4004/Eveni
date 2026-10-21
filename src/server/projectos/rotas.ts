@@ -24,6 +24,7 @@ import { type BaseDeDados, emTransaccao } from '../db/index.js';
 import { ErroHttp, validar } from '../erros.js';
 import { LIMITES, limitar } from '../seguranca/limites.js';
 import { listarTemplates, obterTemplate } from './catalogo.js';
+import { lerRubricas } from './orcamento.js';
 
 const m = mensagens.projectos;
 
@@ -447,17 +448,6 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
       order by u.name, u.id`,
     [l.workspace_id, projectoId],
   );
-  const { rows: itens } = await pool.query<{
-    id: string;
-    category: string;
-    description: string;
-    required: boolean;
-    note: string | null;
-    planned_cents: string;
-    actual_cents: string;
-  }>('select id, category, description, required, note, planned_cents, actual_cents from budget_items where project_id = $1 order by position', [
-    projectoId,
-  ]);
   const { rows: convidados } = await pool.query<{ n: number }>('select count(*)::int as n from guests where project_id = $1', [projectoId]);
   return {
     ...paraResumo(l),
@@ -471,16 +461,7 @@ export async function lerProjecto(pool: pg.Pool, projectoId: string, utilizadorI
     podeArquivar: l.papel === 'owner',
     semAcesso: l.papel === 'owner' ? await membrosSemAcesso(pool, l.workspace_id, projectoId) : [],
     tarefasDoProjecto: tarefas.map(paraTarefa),
-    orcamento: itens.map((i) => ({
-      id: i.id,
-      categoria: i.category,
-      descricao: i.description,
-      obrigatoria: i.required,
-      nota: i.note,
-      // bigint chega como texto; os valores cabem com folga num número (até 9 × 10^15 cêntimos).
-      previstoCentimos: Number(i.planned_cents),
-      realCentimos: Number(i.actual_cents),
-    })),
+    orcamento: await lerRubricas(pool, projectoId),
   };
 }
 

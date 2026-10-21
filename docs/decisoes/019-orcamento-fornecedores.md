@@ -42,7 +42,30 @@
   - quando o real total passa também a contingência, aparece um alerta a vermelho, igualmente no ecrã do projecto.
 - **Exportação:** os valores e a percentagem saem na exportação de dados do dono.
 
-## Próximos PRs desta fase
+## Fornecedores (segundo PR)
 
-2. Fornecedores do espaço de trabalho e ligação às rubricas do orçamento.
+- **Quem vê e gere** (decisão de segurança por omissão; pode ser revista pelo Adriano):
+
+| Pessoa | Lista do espaço (com contactos) | Escolher nas rubricas | Acrescentar | Alterar / apagar |
+|---|---|---|---|---|
+| Dono do espaço | Sim (ecrã "Fornecedores") | Sim | Sim | Sim |
+| Editor do projecto | Sim, a partir do orçamento do projecto | Sim | Sim, a partir do orçamento | Não |
+| Leitor do projecto | Não: vê só o nome do fornecedor de cada rubrica | Não | Não | Não |
+| Fora do espaço | Não | Não | Não | Não |
+
+  O leitor fica de fora porque pode ser, por exemplo, o cliente de uma agência, que não deve ver a lista de fornecedores nem os seus contactos.
+- **Dados de cada fornecedor:**
+  - nome, único no espaço sem ligar a maiúsculas;
+  - categoria, das categorias do orçamento;
+  - telemóvel, no mesmo formato dos convidados (`+244…`);
+  - e-mail e notas (até 1000 caracteres).
+  - No máximo 1000 fornecedores por espaço.
+- **Fornecedor de outro espaço de trabalho é sempre recusado numa rubrica** (falha da versão anterior: IDOR no fornecedor do orçamento). Verifica-se em dois sítios:
+  - no servidor;
+  - na base de dados, com um gatilho, para nenhum caminho esquecido o contornar.
+- **Apagar um fornecedor** tira-o das rubricas onde estava escolhido. Nunca apaga as rubricas.
+- **Exportação:** os fornecedores dos espaços de que a pessoa é dona saem na exportação de dados.
+
+## Próximo PR desta fase
+
 3. Avaliação dos fornecedores depois do evento.

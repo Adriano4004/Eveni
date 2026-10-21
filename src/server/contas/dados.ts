@@ -8,6 +8,8 @@ import type { EnviarEmail } from '../email/index.js';
 import { emailContaEliminada } from '../email/modelos.js';
 import { ErroHttp, validar } from '../erros.js';
 import { listarConvidados, listarMesas } from '../convidados/rotas.js';
+import { listarFornecedores } from '../fornecedores/rotas.js';
+import type { Fornecedor } from '../../shared/fornecedores.js';
 import { lerProjecto } from '../projectos/rotas.js';
 import type { Convidado, Mesa } from '../../shared/convidados.js';
 import type { Projecto } from '../../shared/projectos.js';
@@ -42,6 +44,7 @@ export const TABELAS_PESSOAIS = {
   project_members: 'exportada (acessos da pessoa a projectos de outros espaços: projecto, espaço, papel, desde); apagada com o projecto ou com a conta (cascata)',
   guests: 'exportada com o projecto (espaços de que a pessoa é dona); apagada com o projecto (cascata)',
   event_tables: 'exportada com o projecto (mesas); apagada com o projecto (cascata)',
+  suppliers: 'exportada (fornecedores dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
 } as const;
 
 export interface Exportacao {
@@ -62,6 +65,8 @@ export interface Exportacao {
   projectos: (Projecto & { convidados: Convidado[]; mesas: Mesa[] })[];
   // Projectos de outros espaços a que a pessoa tem acesso (como editora ou leitora).
   acessosAProjectos: { projectoId: string; projecto: string; espaco: string; papel: string; desde: string }[];
+  // Fornecedores dos espaços de que a pessoa é dona.
+  fornecedores: Fornecedor[];
   convitesEnviados: { email: string; criadoEm: string; estado: EstadoConvite }[];
   convitesRecebidos: { espaco: string; criadoEm: string; estado: EstadoConvite }[];
 }
@@ -127,6 +132,8 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
     const projecto = await lerProjecto(pool, id, utilizadorId);
     if (projecto) projectos.push({ ...projecto, convidados: await listarConvidados(pool, id), mesas: await listarMesas(pool, id) });
   }
+  const fornecedores: Fornecedor[] = [];
+  for (const w of espacos.filter((e) => e.role === 'owner')) fornecedores.push(...(await listarFornecedores(pool, w.id)));
   return {
     geradoEm: new Date().toISOString(),
     conta: {
@@ -162,6 +169,7 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       papel: a.role,
       desde: a.created_at.toISOString(),
     })),
+    fornecedores,
     convitesEnviados: enviados.map((c) => ({ email: c.email, criadoEm: c.created_at.toISOString(), estado: c.estado })),
     convitesRecebidos: recebidos.map((c) => ({ espaco: c.espaco, criadoEm: c.created_at.toISOString(), estado: c.estado })),
   };

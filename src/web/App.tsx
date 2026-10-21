@@ -4,6 +4,7 @@ import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
 import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
+import { EcraFornecedores } from './ecra-fornecedores.js';
 import { EcraMesas } from './ecra-mesas.js';
 import { EcraOrcamento } from './ecra-orcamento.js';
 import { EcraRsvp } from './ecra-rsvp.js';
@@ -132,6 +133,7 @@ export function App() {
     const projecto = /^\/projectos\/([^/]+)$/.exec(caminho)?.[1];
     if (projecto) return <EcraProjecto key={projecto} id={decodeURIComponent(projecto)} utilizadorId={estado.eu.id} />;
     if (caminho === '/equipa') return <EcraEquipa />;
+    if (caminho === '/fornecedores') return <EcraFornecedores />;
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;
     if (caminho === '/conta/dados') {
