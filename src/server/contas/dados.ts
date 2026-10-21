@@ -45,6 +45,7 @@ export const TABELAS_PESSOAIS = {
   guests: 'exportada com o projecto (espaços de que a pessoa é dona); apagada com o projecto (cascata)',
   event_tables: 'exportada com o projecto (mesas); apagada com o projecto (cascata)',
   suppliers: 'exportada (fornecedores dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
+  workspace_brands: 'exportada (cor, rodapé e logótipo dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
   supplier_ratings: 'exportada (as dos fornecedores dos espaços de que a pessoa é dona e as que ela fez); apagada com o fornecedor ou o projecto (cascata); as feitas noutros espaços ficam anónimas',
 } as const;
 
@@ -68,6 +69,8 @@ export interface Exportacao {
   acessosAProjectos: { projectoId: string; projecto: string; espaco: string; papel: string; desde: string }[];
   // Fornecedores dos espaços de que a pessoa é dona.
   fornecedores: Fornecedor[];
+  // Marca nos relatórios dos espaços de que a pessoa é dona (o logótipo como data URL).
+  marcas: { espaco: string; cor: string | null; rodape: string | null; logo: string | null }[];
   // Avaliações dos fornecedores desses espaços, e as que a pessoa fez noutros espaços.
   avaliacoesFornecedores: { fornecedor: string; projecto: string; estrelas: number; comentario: string | null; feitaPorMim: boolean; data: string }[];
   convitesEnviados: { email: string; criadoEm: string; estado: EstadoConvite }[];
@@ -145,6 +148,12 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       order by r.updated_at, r.id`,
     [utilizadorId],
   );
+  const { rows: marcas } = await pool.query<{ espaco: string; color: string | null; footer: string | null; logo: Buffer | null; logo_type: string | null }>(
+    `select w.name as espaco, b.color, b.footer, b.logo, b.logo_type
+       from workspace_brands b join workspaces w on w.id = b.workspace_id
+      where b.workspace_id in (select workspace_id from workspace_members where user_id = $1 and role = 'owner')`,
+    [utilizadorId],
+  );
   return {
     geradoEm: new Date().toISOString(),
     conta: {
@@ -181,6 +190,12 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       desde: a.created_at.toISOString(),
     })),
     fornecedores,
+    marcas: marcas.map((b) => ({
+      espaco: b.espaco,
+      cor: b.color,
+      rodape: b.footer,
+      logo: b.logo ? `data:${b.logo_type};base64,${b.logo.toString('base64')}` : null,
+    })),
     avaliacoesFornecedores: avaliacoes.map((a) => ({
       fornecedor: a.fornecedor,
       projecto: a.projecto,

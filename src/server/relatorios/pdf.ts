@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import PDFDocument from 'pdfkit';
 import { mensagens } from '../../shared/mensagens.js';
 import { RAIZ } from '../raiz.js';
+import { jpegValido, pngValido } from './imagens.js';
 
 // Desenho dos PDF (decisão 020), com o pdfkit: só JavaScript, sem browser no servidor.
 // Letra Liberation Sans (licença OFL, em assets/fontes): cobre todos os caracteres do português, ao contrário
@@ -17,6 +18,33 @@ const COR_LINHA = '#e4e7ec';
 
 export type Documento = PDFKit.PDFDocument;
 
+// Marca da agência (planos Empresarial e Grandes). Sem ela, os PDF levam a marca do Eveni.
+export interface MarcaPdf {
+  cor: string | null;
+  rodape: string | null;
+  logo: Buffer | null;
+}
+
+// A marca de cada documento em curso (o pdfkit não guarda dados nossos no documento).
+const marcas = new WeakMap<Documento, MarcaPdf>();
+const corDe = (doc: Documento) => marcas.get(doc)?.cor ?? COR_MARCA;
+
+// O logótipo é uma imagem segura de desenhar? (verificado ao guardar e outra vez ao desenhar)
+// Primeiro a verificação estrutural (imagens.ts), que trava ficheiros feitos para bloquear ou derrubar o
+// servidor; só depois o pdfkit o abre.
+export function imagemValida(imagem: Buffer): boolean {
+  const dimensoes = pngValido(imagem) ?? jpegValido(imagem);
+  if (!dimensoes) return false;
+  try {
+    // openImage existe no pdfkit, mas não nos tipos (@types/pdfkit).
+    const lida = (new PDFDocument({ autoFirstPage: false }) as unknown as { openImage(i: Buffer): { width: number; height: number } }).openImage(imagem);
+    // O pdfkit tem de ter lido exactamente as mesmas dimensões que a nossa verificação.
+    return lida.width === dimensoes.largura && lida.height === dimensoes.altura;
+  } catch {
+    return false;
+  }
+}
+
 export interface Coluna {
   titulo: string;
   // Fracção da largura útil (somam 1).
@@ -24,7 +52,7 @@ export interface Coluna {
   alinhar?: 'left' | 'right';
 }
 
-export function criarDocumento(titulo: string): Documento {
+export function criarDocumento(titulo: string, marca?: MarcaPdf | null): Documento {
   const doc = new PDFDocument({
     size: 'A4',
     margins: { top: MARGEM, bottom: MARGEM + 20, left: MARGEM, right: MARGEM },
@@ -35,6 +63,7 @@ export function criarDocumento(titulo: string): Documento {
   doc.registerFont('normal', join(FONTES, 'LiberationSans-Regular.ttf'));
   doc.registerFont('negrito', join(FONTES, 'LiberationSans-Bold.ttf'));
   doc.font('normal').fontSize(10).fillColor(COR_TEXTO);
+  if (marca) marcas.set(doc, { ...marca, logo: marca.logo && imagemValida(marca.logo) ? marca.logo : null });
   return doc;
 }
 
@@ -47,8 +76,16 @@ function espaco(doc: Documento, altura: number) {
 }
 
 export function cabecalho(doc: Documento, titulo: string, subtitulo: string, detalhes: [string, string][], geradoEm: string) {
-  doc.font('negrito').fontSize(9).fillColor(COR_MARCA).text(mensagens.relatorios.marca.toUpperCase(), { characterSpacing: 1 });
-  doc.moveDown(0.6);
+  const marca = marcas.get(doc);
+  if (marca?.logo) {
+    // O logótipo da agência, até 160 × 50 pontos, sem deformar.
+    const y = doc.y;
+    doc.image(marca.logo, doc.page.margins.left, y, { fit: [160, 50] });
+    doc.y = y + 58;
+  } else if (!marca) {
+    doc.font('negrito').fontSize(9).fillColor(COR_MARCA).text(mensagens.relatorios.marca.toUpperCase(), { characterSpacing: 1 });
+    doc.moveDown(0.6);
+  }
   doc.font('negrito').fontSize(20).fillColor(COR_TEXTO).text(titulo);
   doc.font('normal').fontSize(12).fillColor(COR_SUAVE).text(subtitulo);
   doc.moveDown(0.8);
@@ -67,9 +104,10 @@ function linha(doc: Documento, cor = COR_LINHA) {
 }
 
 export function seccao(doc: Documento, titulo: string) {
-  espaco(doc, 60);
+  // Espaço para o título e as primeiras linhas: um título não fica sozinho no fundo da página.
+  espaco(doc, 110);
   doc.moveDown(0.8);
-  doc.font('negrito').fontSize(13).fillColor(COR_MARCA).text(titulo, doc.page.margins.left);
+  doc.font('negrito').fontSize(13).fillColor(corDe(doc)).text(titulo, doc.page.margins.left);
   doc.moveDown(0.3);
 }
 
@@ -158,17 +196,28 @@ export function terminar(doc: Documento): Promise<Buffer> {
     doc.on('error', rejeitar);
   });
   const { start, count } = doc.bufferedPageRange();
+  const marca = marcas.get(doc);
+  // Com marca da agência: o rodapé dela e, discreto, "Feito com Eveni" (decisão 020).
+  const assinatura = marca ? mensagens.relatorios.feitoComEveni : mensagens.relatorios.marca;
+  const largura = doc.page.width - 2 * MARGEM;
   for (let i = start; i < start + count; i++) {
     doc.switchToPage(i);
     // Escrever na margem de baixo sem criar uma página nova.
     const margem = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
+    if (marca?.rodape) {
+      doc
+        .font('normal')
+        .fontSize(8)
+        .fillColor(COR_TEXTO)
+        .text(marca.rodape, MARGEM, doc.page.height - MARGEM - 12, { width: largura, height: 10, align: 'center', lineBreak: false, ellipsis: true });
+    }
     doc
       .font('normal')
       .fontSize(8)
       .fillColor(COR_SUAVE)
-      .text(`${mensagens.relatorios.marca}  ·  ${mensagens.relatorios.pagina(i - start + 1, count)}`, MARGEM, doc.page.height - MARGEM, {
-        width: doc.page.width - 2 * MARGEM,
+      .text(`${assinatura}  ·  ${mensagens.relatorios.pagina(i - start + 1, count)}`, MARGEM, doc.page.height - MARGEM, {
+        width: largura,
         align: 'center',
         lineBreak: false,
       });

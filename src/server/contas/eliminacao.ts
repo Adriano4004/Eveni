@@ -25,6 +25,7 @@ function chavesDaConta(email: string, utilizadorId: string) {
       `orcamento:${utilizadorId}`,
       `fornecedores:${utilizadorId}`,
       `relatorios:${utilizadorId}`,
+      `marca:${utilizadorId}`,
     ],
     prefixos: [`entrar-email-ip:${email}:`, `recuperar-email-ip:${email}:`, `entrar-2fa-erros:${utilizadorId}:`],
   };

@@ -46,3 +46,41 @@
   - A semana do evento vem assinalada, e as tarefas em atraso a vermelho.
   - **Não leva** notas nem valores: pode ser partilhado com a equipa alargada ou com o cliente.
   - Endereço: `/api/projectos/<id>/relatorios/cronograma.pdf`. As regras de quem gera são as mesmas (dono e editores).
+
+## Marca da agência (quarto PR) — decisões do Adriano a 21/10/2026
+
+1. **A marca da agência aparece nos três relatórios:** para o cliente, interno e cronograma.
+2. **Fica uma menção discreta "Feito com Eveni"** no rodapé.
+3. **A agência configura:**
+   - o logótipo (PNG ou JPG, até 500 KB);
+   - a cor principal;
+   - um texto de rodapé (até 200 caracteres).
+
+### Regras
+
+- **Só nos planos Empresarial e Grandes.** No Singular o ecrã explica que não está incluído, e os PDF levam a marca do Eveni. Se um espaço passar ao Singular, a marca fica guardada mas deixa de ser usada.
+- **Quem configura:** só o dono, no seu próprio espaço (ecrã "Marca nos relatórios", no início).
+- **Nos PDF de um projecto usa-se a marca do espaço desse projecto**, mesmo quando é um editor de outro espaço que gera o relatório.
+- **O logótipo:**
+  - guarda-se na base de dados (sem serviço de ficheiros à parte);
+  - o servidor confirma que é mesmo PNG ou JPEG pelos primeiros bytes (o tipo declarado não basta) e que tem no máximo 500 KB;
+  - SVG e outros formatos são recusados;
+  - um logótipo estragado nunca impede o PDF: sai sem ele.
+- **Verificação estrutural do logótipo (`src/server/relatorios/imagens.ts`).** A biblioteca de PDF confia no ficheiro, e a revisão de segurança mostrou que um PNG feito de propósito podia bloquear o servidor, fazê-lo cair ou esgotar a memória. Por isso, antes de o guardar e antes de o pôr num PDF:
+  - **PNG:**
+    - cada bloco tem de caber no ficheiro e ter o CRC certo, com o IHDR primeiro e o IEND no fim;
+    - no máximo 2000 × 2000 píxeis;
+    - os entrelaçados são recusados;
+    - a imagem é descomprimida inteira, com um tecto de tamanho, e tem de dar exactamente o tamanho esperado;
+    - o filtro de cada linha tem de ser válido;
+    - PNG animados (APNG) são recusados.
+  - **JPEG:**
+    - os blocos são lidos do mesmo modo que a biblioteca de PDF os lê, mas sem tolerâncias, para as duas leituras não poderem divergir;
+    - as dimensões (no máximo 2000 × 2000) e os canais têm de ser razoáveis.
+  - **No fim**, a biblioteca de PDF tem de ter lido exactamente as mesmas dimensões que esta verificação.
+  - **Node.js 22.12 ou mais recente**, por causa do cálculo do CRC (`package.json`).
+- **Nos PDF:**
+  - o logótipo vai no topo, no lugar de "Eveni · Gestão de eventos";
+  - a cor vai nos títulos das secções;
+  - o rodapé da agência fica por cima de "Feito com Eveni · Página n de N".
+- **Exportação:** a cor, o rodapé e o logótipo saem na exportação de dados do dono, e são apagados com o espaço.

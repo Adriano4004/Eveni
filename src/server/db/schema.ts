@@ -2,7 +2,7 @@
 // Depois de alterar este ficheiro: npm run db:generate, rever a migração criada em drizzle/
 // e escrever o ficheiro de reversão correspondente em drizzle/reverter/.
 import { sql } from 'drizzle-orm';
-import { bigint, bigserial, boolean, check, date, foreignKey, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { bigint, bigserial, boolean, check, customType, date, foreignKey, index, inet, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const criadoEm = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -404,5 +404,30 @@ export const supplierRatings = pgTable(
     uniqueIndex('supplier_ratings_unica').on(t.supplierId, t.projectId),
     index('supplier_ratings_projecto').on(t.projectId),
     check('supplier_ratings_estrelas_validas', sql`${t.stars} between 1 and 5`),
+  ],
+);
+
+const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
+
+// Marca de uma agência nos relatórios PDF (decisão 020): logótipo, cor e rodapé. Só se usa nos planos
+// Empresarial e Grandes; no Singular fica guardada, mas os PDF levam a marca do Eveni.
+export const workspaceBrands = pgTable(
+  'workspace_brands',
+  {
+    workspaceId: uuid('workspace_id')
+      .primaryKey()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    // #rrggbb
+    color: text('color'),
+    footer: text('footer'),
+    // PNG ou JPEG, até 500 KB (verificado no servidor antes de guardar).
+    logo: bytea('logo'),
+    logoType: text('logo_type'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('workspace_brands_cor_valida', sql`${t.color} ~ '^#[0-9a-f]{6}$'`),
+    check('workspace_brands_rodape_curto', sql`char_length(${t.footer}) <= 200`),
+    check('workspace_brands_logo_tipo', sql`(${t.logo} is null and ${t.logoType} is null) or (${t.logoType} in ('image/png', 'image/jpeg') and octet_length(${t.logo}) <= 512000)`),
   ],
 );

@@ -1,13 +1,13 @@
 import { mensagens } from '../../shared/mensagens.js';
 import type { RelatorioInterno } from './modelo.js';
-import { cabecalho, criarDocumento, paragrafo, seccao, tabela, terminar, totais } from './pdf.js';
+import { cabecalho, criarDocumento, type MarcaPdf, paragrafo, seccao, tabela, terminar, totais } from './pdf.js';
 
 const q = mensagens.relatorios;
 
 // Relatório interno (decisão 020): para a equipa, não para o cliente. Tarefas com responsável e nota,
 // orçamento com fornecedor, fornecedores com contactos e avaliação, convidados com telemóvel e mesa.
-export function desenharRelatorioInterno(r: RelatorioInterno): Promise<Buffer> {
-  const doc = criarDocumento(`${r.titulo} — ${r.subtitulo}`);
+export function desenharRelatorioInterno(r: RelatorioInterno, marca?: MarcaPdf | null): Promise<Buffer> {
+  const doc = criarDocumento(`${r.titulo} — ${r.subtitulo}`, marca);
   cabecalho(doc, r.titulo, r.subtitulo, r.detalhes, r.geradoEm);
 
   seccao(doc, q.resumo);

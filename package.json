@@ -5,7 +5,7 @@
   "description": "Eveni — gestão de eventos para o mercado angolano",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
