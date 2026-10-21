@@ -10,6 +10,7 @@ import T05json from '../data/templates/T05.json' with { type: 'json' };
 import T06json from '../data/templates/T06.json' with { type: 'json' };
 import T04json from '../data/templates/T04.json' with { type: 'json' };
 import T02json from '../data/templates/T02.json' with { type: 'json' };
+import T07json from '../data/templates/T07.json' with { type: 'json' };
 import { limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
 import { cookieDe, criarCliente, PALAVRA_PASSE } from './cliente.js';
 
@@ -73,13 +74,14 @@ describe('templates disponíveis', () => {
       expect.objectContaining({ codigo: 'T06', nome: 'Conferência', tarefas: 70, criticas: 35, diasNecessarios: 120 }),
       expect.objectContaining({ codigo: 'T04', nome: 'Festival / Concerto', tarefas: 86, criticas: 49, diasNecessarios: 240 }),
       expect.objectContaining({ codigo: 'T02', nome: 'Casamento', tarefas: 69, criticas: 28, diasNecessarios: 365 }),
+      expect.objectContaining({ codigo: 'T07', nome: 'Aniversário', tarefas: 47, criticas: 21, diasNecessarios: 120 }),
     ]);
   });
 
   it('um template que não existe não se pode usar', async () => {
     const cookie = cookieDe(await c.registar());
-    expect((await c.post('/api/projectos/previsao', { template: 'T07', dataEvento: emDias(400) }, cookie)).statusCode).toBe(400);
-    expect((await c.post('/api/projectos', { template: 'T07', nome: 'Aniversário', dataEvento: emDias(400) }, await contaConfirmada('bia@exemplo.ao'))).statusCode).toBe(400);
+    expect((await c.post('/api/projectos/previsao', { template: 'T08', dataEvento: emDias(400) }, cookie)).statusCode).toBe(400);
+    expect((await c.post('/api/projectos', { template: 'T08', nome: 'Baptizado', dataEvento: emDias(400) }, await contaConfirmada('bia@exemplo.ao'))).statusCode).toBe(400);
     expect(await contar('projects')).toBe(0);
   });
 });
@@ -127,7 +129,7 @@ describe('previsão antes de criar', () => {
     expect((await prever(cookie, '30/11/2026')).json().campos.dataEvento).toBeDefined();
     expect((await prever(cookie, emDias(5 * 365 + 1))).json().campos.dataEvento).toMatch(/demasiado longe/);
     expect((await prever(cookie, emDias(5 * 365))).statusCode).toBe(200);
-    for (const template of ['T07', 'T99', '../T01', 'taxonomia', '']) {
+    for (const template of ['T08', 'T99', '../T01', 'taxonomia', '']) {
       const r = await prever(cookie, emDias(30), template);
       expect(r.statusCode, template).toBe(400);
       expect(r.json().campos.template).toBeDefined();
@@ -217,6 +219,7 @@ describe('criar projecto', () => {
   it.each([
     ['T05', 'Fórum', 62, 90, T05json as Template],
     ['T06', 'Conferência', 70, 120, T06json as Template],
+    ['T07', 'Aniversário', 47, 120, T07json as Template],
   ] as const)('cria um %s (%s) com as tarefas e as rubricas do template, e avisa quando falta tempo', async (codigo, nome, total, dias, template) => {
     const cookie = await contaConfirmada();
     const curto = await criar(cookie, { template: codigo, dataEvento: emDias(dias - 30) });

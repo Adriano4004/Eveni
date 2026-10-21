@@ -155,6 +155,24 @@ test('criar um casamento: a 60 dias avisa dos convites; com tempo, as 69 tarefas
   await expect(tarefa.locator('.nota')).toContainText('Orçamentar em rubrica separada');
 });
 
+test('criar um aniversário: 47 tarefas, sem noivos, e a nota dos convites reescrita', async ({ page }) => {
+  await contaConfirmada(page, 'Luzia');
+  await page.getByRole('button', { name: 'Novo projecto' }).click();
+  await page.getByRole('radio', { name: /Aniversário/ }).check();
+  await page.getByLabel('Nome do projecto').fill('50 anos da Tia Rosa');
+  await page.getByLabel('Data do evento').fill(emDias(130));
+  await expect(page.getByText('Há tempo para todas as tarefas nos prazos recomendados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar projecto' }).click();
+
+  await expect(page.getByRole('heading', { name: '50 anos da Tia Rosa' })).toBeVisible();
+  await expect(page.getByText('0 de 47 tarefas concluídas')).toBeVisible();
+  await expect(page.getByText('Visitar e reservar espaço da festa')).toBeVisible();
+  await expect(page.getByText(/lobolo|alembamento/i)).toHaveCount(0);
+  const tarefa = page.locator('details', { hasText: 'Enviar convites' });
+  await tarefa.locator('summary').click();
+  await expect(tarefa.locator('.nota')).toContainText('Seis semanas antes');
+});
+
 test('não é possível abrir o projecto de outra pessoa', async ({ browser }) => {
   const dona = await (await browser.newContext()).newPage();
   await contaConfirmada(dona, 'Fatima');

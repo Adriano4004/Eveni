@@ -5,11 +5,12 @@ import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
 import { converter, derivar, encolherOffset, lerOffset, PASTA_DADOS, serializar, versaoDe } from '../scripts/converter-templates.js';
 import { DERIVADOS } from '../scripts/templates-derivados.js';
+import { separarContingencia } from '../src/shared/orcamento.js';
 import type { Taxonomia, Template } from '../src/shared/templates.js';
 
 const ler = <T>(ficheiro: string): T => JSON.parse(readFileSync(join(PASTA_DADOS, ficheiro), 'utf8'));
 const taxonomia = ler<Taxonomia>('taxonomia.json');
-const templates = Object.fromEntries(['T01', 'T02', 'T03', 'T04', 'T05', 'T06'].map((c) => [c, ler<Template>(`${c}.json`)])) as Record<string, Template>;
+const templates = Object.fromEntries(['T01', 'T02', 'T03', 'T04', 'T05', 'T06', 'T07'].map((c) => [c, ler<Template>(`${c}.json`)])) as Record<string, Template>;
 
 describe('conversão do Excel', () => {
   it('os ficheiros de dados estão actualizados com o Excel (correr: npm run templates:converter)', async () => {
@@ -60,6 +61,7 @@ describe('conteúdo dos templates (CLAUDE.md, secção 9)', () => {
     ['T04', 'Festival / Concerto', 86, 49],
     ['T05', 'Fórum', 62, 30],
     ['T06', 'Conferência', 70, 35],
+    ['T07', 'Aniversário', 47, 21],
   ])('%s %s: %i tarefas, %i críticas', (codigo, nome, total, criticas) => {
     const t = templates[codigo]!;
     expect(t.nome).toBe(nome);
@@ -67,7 +69,7 @@ describe('conteúdo dos templates (CLAUDE.md, secção 9)', () => {
     expect(t.tarefas.filter((x) => x.critica)).toHaveLength(criticas);
   });
 
-  it.each(['T01', 'T02', 'T03', 'T04', 'T05', 'T06'])('%s: IDs únicos e no formato certo; offsets coerentes; campos preenchidos', (codigo) => {
+  it.each(['T01', 'T02', 'T03', 'T04', 'T05', 'T06', 'T07'])('%s: IDs únicos e no formato certo; offsets coerentes; campos preenchidos', (codigo) => {
     const t = templates[codigo]!;
     const ids = t.tarefas.map((x) => x.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -80,7 +82,7 @@ describe('conteúdo dos templates (CLAUDE.md, secção 9)', () => {
     }
   });
 
-  it.each(['T01', 'T02', 'T03', 'T04', 'T05', 'T06'])('%s usa apenas categorias, papéis e categorias de orçamento das listas fechadas', (codigo) => {
+  it.each(['T01', 'T02', 'T03', 'T04', 'T05', 'T06', 'T07'])('%s usa apenas categorias, papéis e categorias de orçamento das listas fechadas', (codigo) => {
     const t = templates[codigo]!;
     for (const x of t.tarefas) {
       expect(taxonomia.categoriasTarefa, `${x.id}: categoria`).toContain(x.categoria);
@@ -103,6 +105,7 @@ describe('conteúdo dos templates (CLAUDE.md, secção 9)', () => {
     ['T04', 30, 'Contingência (15%)'],
     ['T05', 13, 'Contingência (10%)'],
     ['T06', 16, 'Contingência (10%)'],
+    ['T07', 17, 'Contingência (10%)'],
   ])('%s: %i rubricas de orçamento pré-carregadas, incluindo %s', (codigo, total, contingencia) => {
     const t = templates[codigo]!;
     expect(t.rubricas).toHaveLength(total);
@@ -209,6 +212,55 @@ describe('Fórum e Conferência, derivados do T03 (decisão 022)', () => {
   it('um derivado com o código de um template do Excel pára a conversão', async () => {
     await expect(converter(undefined, [{ ...DERIVADOS[0]!, codigo: 'T01' }])).rejects.toThrow(/já existe/);
     await expect(converter(undefined, [{ ...DERIVADOS[0]!, origem: 'T09' }])).rejects.toThrow(/T09 em falta/);
+  });
+});
+
+describe('Aniversário, derivado do T02 (decisão 025)', () => {
+  const T02 = templates.T02!;
+  const T07 = templates.T07!;
+  const origemDe = (id: string) => T02.tarefas.find((x) => x.id === `T02-${id.slice(4)}`)!;
+  const saem = ['004', '005', '007', '009', '010', '011', '012', '014', '015', '016', '017', '027', '031', '032', '035', '036', '042', '043', '050', '051', '057', '066'];
+  const notasReescritas = ['008', '021', '029', '060', '068', '069'];
+
+  it('começa a D-120 e tem todas as tarefas do T02 menos as aprovadas para sair', () => {
+    expect(Math.min(...T07.tarefas.map((x) => x.inicio))).toBe(-120);
+    expect(T07.tarefas.map((x) => x.id)).toEqual(T02.tarefas.map((x) => x.id.slice(4)).filter((n) => !saem.includes(n)).map((n) => `T07-${n}`));
+  });
+
+  it('fases, categorias, papéis e críticas iguais às do T02; notas iguais, excepto as seis reescritas', () => {
+    for (const x of T07.tarefas) {
+      const o = origemDe(x.id);
+      expect({ ...x, id: o.id, titulo: o.titulo, inicio: o.inicio, fim: o.fim, nota: o.nota }, x.id).toEqual(o);
+      if (notasReescritas.includes(x.id.slice(4))) expect(x.nota, x.id).not.toBe(o.nota);
+      else expect(x.nota, x.id).toBe(o.nota);
+    }
+  });
+
+  it('o último mês e o pós-evento ficam com os prazos do T02; os convites passam a D-46', () => {
+    for (const x of T07.tarefas) {
+      const o = origemDe(x.id);
+      if (o.inicio >= -30) expect(x.inicio, x.id).toBe(o.inicio);
+      if (o.fim >= -30) expect(x.fim, x.id).toBe(o.fim);
+    }
+    expect(T07.tarefas.find((x) => x.id === 'T07-029')).toMatchObject({ titulo: 'Enviar convites', inicio: -46, critica: true, nota: expect.stringMatching(/^Seis semanas antes/) });
+  });
+
+  it('não fala em noivos, casamento, copo-de-água, alembamento nem lobolo', () => {
+    const { nome, descricao, tarefas, rubricas } = T07;
+    expect(JSON.stringify({ nome, descricao, tarefas, rubricas })).not.toMatch(/noiv|casament|casais|copo-de-água|matrimon|alembam|lobolo|wedding|registo civil/i);
+  });
+
+  it('orçamento: sem as rubricas do casamento, espaço da festa e contingência de 10%', () => {
+    const descricoes = T07.rubricas.map((r) => r.descricao);
+    for (const d of ['Lobolo', 'Alembamento', 'Vestido da noiva', 'Alianças', 'Taxas de registo civil', 'Espaço da cerimónia']) expect(descricoes).not.toContain(d);
+    expect(descricoes).toContain('Espaço da festa');
+    expect(separarContingencia(T07.rubricas).percentagem).toBe(10);
+    expect(separarContingencia(T02.rubricas).percentagem).toBe(15);
+  });
+
+  it('uma nota reescrita para uma tarefa que não existe na origem pára a conversão', () => {
+    const def = DERIVADOS.find((d) => d.codigo === 'T07')!;
+    expect(() => derivar({ ...def, notas: { 'T02-999': 'x' } }, T02)).toThrow(/T02-999 não existe/);
   });
 });
 

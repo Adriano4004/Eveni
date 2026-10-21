@@ -162,10 +162,11 @@ Fonte: `docs/templates/Eveni-Templates-Projecto.xlsx` (o Adriano vai acrescentá
 | T04 | Festival/Concerto | 86 | 49 | 8 meses | Produtor cultural, promotor, agência |
 | T05 | Fórum (derivado do T03) | 62 | 30 | 3 meses | Instituição, associação, empresa |
 | T06 | Conferência (derivada do T03) | 70 | 35 | 4 meses | Instituição, associação, empresa |
+| T07 | Aniversário (derivado do T02) | 47 | 21 | 4 meses | Pessoa singular, organizador de festas |
 
 Cada template traz **rubricas de orçamento pré-carregadas com valor zero** (algumas obrigatórias).
 
-**Ordem de lançamento:** T01 → T03 → T04 → T02 (decidida pelo Adriano a 20/10/2026). Fórum (T05) e Conferência (T06) derivam do T03 e estão lançados (ver `docs/decisoes/022-forum-conferencia.md`); Aniversário é uma versão reduzida do T02.
+**Ordem de lançamento:** T01 → T03 → T04 → T02 (decidida pelo Adriano a 20/10/2026). Fórum (T05) e Conferência (T06) derivam do T03 e estão lançados (ver `docs/decisoes/022-forum-conferencia.md`); Aniversário (T07) é uma versão reduzida do T02, também lançada (ver `docs/decisoes/025-aniversario.md`).
 
 **Regra:** um template só passa a produção depois de ter corrido num evento real, de ponta a ponta, com um organizador que não seja o Adriano. *(T01: cumprida, confirmado a 20/10/2026. T03: cumprida, confirmado a 21/10/2026. T04: cumprida, confirmado a 21/10/2026. T02: cumprida, confirmado a 21/10/2026.)*
 
