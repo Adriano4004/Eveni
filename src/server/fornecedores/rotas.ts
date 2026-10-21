@@ -236,7 +236,12 @@ export function registarRotasFornecedores(app: FastifyInstance, base: BaseDeDado
       const projecto = await projectoParaAvaliar(cliente, projectoId, utilizadorId, true);
       if (!projecto.aberta) throw new ErroHttp(409, m.avaliacaoAntesDoEvento);
       // Só fornecedores escolhidos nalguma rubrica deste projecto (logo, do mesmo espaço; o gatilho garante-o também).
-      const { rows } = await cliente.query('select 1 from budget_items where project_id = $1 and supplier_id = $2 limit 1', [projectoId, fornecedor]);
+      // Bloqueio em partilha do fornecedor: apagá-lo ao mesmo tempo espera, em vez de a gravação falhar a meio.
+      const { rows } = await cliente.query(
+        `select 1 from budget_items b join suppliers s on s.id = b.supplier_id
+          where b.project_id = $1 and b.supplier_id = $2 limit 1 for share of s`,
+        [projectoId, fornecedor],
+      );
       if (rows.length === 0) throw new ErroHttp(400, m.naoTrabalhouNoEvento);
       await cliente.query(
         `insert into supplier_ratings (supplier_id, project_id, stars, comment, rated_by) values ($1, $2, $3, $4, $5)
