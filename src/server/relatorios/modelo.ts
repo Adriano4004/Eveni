@@ -1,6 +1,7 @@
-import type { TotaisConvidados } from '../../shared/convidados.js';
+import { calcularTotais, type Convidado, formatarTelemovel, type Mesa, type TotaisConvidados } from '../../shared/convidados.js';
 import { formatarData, formatarDataEHora } from '../../shared/datas.js';
 import { formatarKz } from '../../shared/dinheiro.js';
+import { type Fornecedor, formatarMedia } from '../../shared/fornecedores.js';
 import { mensagens } from '../../shared/mensagens.js';
 import { type EstadoOrcamento, resumirOrcamento } from '../../shared/orcamento.js';
 import type { Projecto } from '../../shared/projectos.js';
@@ -91,5 +92,94 @@ export function montarRelatorioCliente(projecto: Projecto, convidados: TotaisCon
             ? q.aGastarContingencia(formatarKz(resumo.variacao))
             : null,
     },
+  };
+}
+
+export interface TarefaInterna {
+  titulo: string;
+  prazo: string;
+  responsavel: string;
+  estado: string;
+  critica: boolean;
+  emAtraso: boolean;
+  nota: string | null;
+}
+
+export interface RelatorioInterno extends Omit<RelatorioCliente, 'marcos' | 'orcamento'> {
+  equipa: [string, string][];
+  // Por fase, pela ordem do template.
+  fases: { fase: string; tarefas: TarefaInterna[] }[];
+  orcamento: Omit<RelatorioCliente['orcamento'], 'categorias'> & {
+    categorias: (CategoriaRelatorio & { itens: (LinhaOrcamento & { fornecedor: string })[] })[];
+  };
+  fornecedores: { nome: string; categoria: string; contactos: string; avaliacao: string; notas: string | null }[];
+  convidados: string | null;
+  listaConvidados: { nome: string; telemovel: string; resposta: string; acompanhantes: string; mesa: string }[];
+}
+
+// Relatório interno (decisão 020): tudo o que a equipa precisa no dia, incluindo notas, responsáveis,
+// fornecedores com contactos e a lista de convidados. Só para o dono e os editores.
+export function montarRelatorioInterno(
+  projecto: Projecto,
+  convidados: Convidado[],
+  mesas: Mesa[],
+  fornecedores: Fornecedor[],
+  agora: Date,
+): RelatorioInterno {
+  const cliente = montarRelatorioCliente(projecto, calcularTotais(convidados), agora);
+  const usados = new Set(projecto.orcamento.flatMap((i) => (i.fornecedor ? [i.fornecedor.id] : [])));
+  const nomeMesa = new Map(mesas.map((m) => [m.id, m.nome]));
+  const fases = [...new Set(projecto.tarefasDoProjecto.map((t) => t.fase))];
+  const papeis = mensagens.ecras.projecto.papeisAcesso;
+  return {
+    ...cliente,
+    subtitulo: q.interno.titulo,
+    equipa: projecto.membros.map((m) => [m.nome, papeis[m.papel]]),
+    fases: fases.map((fase) => ({
+      fase,
+      tarefas: projecto.tarefasDoProjecto
+        .filter((t) => t.fase === fase)
+        .map((t) => ({
+          titulo: t.titulo,
+          prazo: t.inicio === t.fim ? formatarData(t.fim) : `${formatarData(t.inicio)} a ${formatarData(t.fim)}`,
+          responsavel: t.responsavel?.nome ?? q.semResponsavel,
+          estado: t.emAtraso ? q.emAtraso : mensagens.ecras.projecto.estadoTarefa[t.estado],
+          critica: t.critica,
+          emAtraso: t.emAtraso,
+          nota: t.nota,
+        })),
+    })),
+    orcamento: {
+      ...cliente.orcamento,
+      categorias: cliente.orcamento.categorias.map((c) => ({
+        ...c,
+        itens: projecto.orcamento
+          .filter((i) => i.categoria === c.categoria)
+          .map((i) => ({
+            descricao: i.descricao,
+            previsto: formatarKz(i.previstoCentimos),
+            real: formatarKz(i.realCentimos),
+            acima: i.realCentimos > i.previstoCentimos,
+            fornecedor: i.fornecedor?.nome ?? '—',
+          })),
+      })),
+    },
+    // Só os fornecedores escolhidos nas rubricas deste projecto.
+    fornecedores: fornecedores
+      .filter((f) => usados.has(f.id))
+      .map((f) => ({
+        nome: f.nome,
+        categoria: f.categoria,
+        contactos: [f.telemovel && formatarTelemovel(f.telemovel), f.email].filter(Boolean).join(' · ') || q.semContacto,
+        avaliacao: f.media === null ? q.semAvaliacoes : q.media(formatarMedia(f.media), f.avaliacoes),
+        notas: f.notas,
+      })),
+    listaConvidados: convidados.map((c) => ({
+      nome: c.nome,
+      telemovel: c.telemovel ? formatarTelemovel(c.telemovel) : '—',
+      resposta: mensagens.ecras.convidados.respostas[c.resposta],
+      acompanhantes: c.resposta === 'yes' ? `${c.acompanhantesConfirmados}/${c.acompanhantes}` : String(c.acompanhantes),
+      mesa: (c.mesaId && nomeMesa.get(c.mesaId)) || '—',
+    })),
   };
 }
