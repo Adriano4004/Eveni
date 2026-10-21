@@ -41,3 +41,8 @@
   - os **fornecedores escolhidos neste projecto**, com contactos, notas e avaliação média (os outros fornecedores do espaço não entram);
   - a **lista de convidados**, com telemóvel, resposta, acompanhantes e mesa. É útil no dia, à entrada e para o *follow-up* telefónico.
 - **Os endereços dos relatórios** são `/api/projectos/<id>/relatorios/cliente.pdf` e `/api/projectos/<id>/relatorios/interno.pdf`. Qualquer outro nome dá "não encontrado".
+- **O cronograma** (terceiro PR) leva as tarefas por data de início, agrupadas por semana (de segunda a domingo).
+  - Para cada tarefa: datas, distância ao dia do evento (`D-12`, `D0`, `D+3`), título (as críticas marcadas), responsável e estado.
+  - A semana do evento vem assinalada, e as tarefas em atraso a vermelho.
+  - **Não leva** notas nem valores: pode ser partilhado com a equipa alargada ou com o cliente.
+  - Endereço: `/api/projectos/<id>/relatorios/cronograma.pdf`. As regras de quem gera são as mesmas (dono e editores).

@@ -12,8 +12,9 @@ import { listarFornecedores } from '../fornecedores/rotas.js';
 import { lerProjecto } from '../projectos/rotas.js';
 import { LIMITES, limitar } from '../seguranca/limites.js';
 import { desenharRelatorioCliente } from './cliente.js';
+import { desenharCronograma } from './cronograma.js';
 import { desenharRelatorioInterno } from './interno.js';
-import { montarRelatorioCliente, montarRelatorioInterno } from './modelo.js';
+import { montarRelatorioCliente, montarRelatorioCronograma, montarRelatorioInterno } from './modelo.js';
 
 // Relatórios em PDF de um projecto (decisão 020). Só o dono e os editores os geram (os leitores não);
 // também com o projecto arquivado (só lêem). Cada relatório gerado fica no registo de actividade do espaço.
@@ -36,12 +37,13 @@ export function registarRotasRelatorios(app: FastifyInstance, base: BaseDeDados,
   const { pool } = base;
 
   // Um endereço por relatório: /api/projectos/<id>/relatorios/<tipo>.pdf.
-  const parametrosRelatorio = z.object({ id: z.uuid(), ficheiro: z.enum(['cliente.pdf', 'interno.pdf']) });
+  const TIPOS = { 'cliente.pdf': 'cliente', 'interno.pdf': 'interno', 'cronograma.pdf': 'cronograma' } as const;
+  const parametrosRelatorio = z.object({ id: z.uuid(), ficheiro: z.enum(['cliente.pdf', 'interno.pdf', 'cronograma.pdf']) });
 
   app.get('/api/projectos/:id/relatorios/:ficheiro', { preHandler: guardas.exigirSessao }, async (pedido, resposta) => {
     const parametros = parametrosRelatorio.safeParse(pedido.params);
     if (!parametros.success) throw new ErroHttp(404, mensagens.projectos.naoEncontrado);
-    const tipo = parametros.data.ficheiro === 'interno.pdf' ? ('interno' as const) : ('cliente' as const);
+    const tipo = TIPOS[parametros.data.ficheiro];
     const { utilizadorId } = pedido.sessao!;
     await limitar(pool, `relatorios:${utilizadorId}`, LIMITES.relatorios);
     const projecto = await lerProjecto(pool, parametros.data.id, utilizadorId);
@@ -51,13 +53,18 @@ export function registarRotasRelatorios(app: FastifyInstance, base: BaseDeDados,
     const agora = new Date();
     const { rows } = await pool.query<{ workspace_id: string }>('select workspace_id from projects where id = $1', [projecto.id]);
     const espacoId = rows[0]!.workspace_id;
-    const convidados = await listarConvidados(pool, projecto.id);
-    const pdf =
-      tipo === 'interno'
-        ? await desenharRelatorioInterno(
-            montarRelatorioInterno(projecto, convidados, await listarMesas(pool, projecto.id), await listarFornecedores(pool, espacoId), agora),
-          )
-        : await desenharRelatorioCliente(montarRelatorioCliente(projecto, calcularTotais(convidados), agora));
+    let pdf: Buffer;
+    if (tipo === 'cronograma') {
+      pdf = await desenharCronograma(montarRelatorioCronograma(projecto, agora));
+    } else {
+      const convidados = await listarConvidados(pool, projecto.id);
+      pdf =
+        tipo === 'interno'
+          ? await desenharRelatorioInterno(
+              montarRelatorioInterno(projecto, convidados, await listarMesas(pool, projecto.id), await listarFornecedores(pool, espacoId), agora),
+            )
+          : await desenharRelatorioCliente(montarRelatorioCliente(projecto, calcularTotais(convidados), agora));
+    }
     await auditar(pool, 'projecto.relatorio', { utilizadorId, ip: pedido.ip, espacoId, detalhes: { projectoId: projecto.id, tipo } });
     return resposta
       .header('content-type', 'application/pdf')

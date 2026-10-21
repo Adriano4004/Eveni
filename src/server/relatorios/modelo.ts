@@ -1,10 +1,11 @@
 import { calcularTotais, type Convidado, formatarTelemovel, type Mesa, type TotaisConvidados } from '../../shared/convidados.js';
-import { formatarData, formatarDataEHora } from '../../shared/datas.js';
+import { diasEntre, formatarData, formatarDataEHora, somarDias } from '../../shared/datas.js';
 import { formatarKz } from '../../shared/dinheiro.js';
 import { type Fornecedor, formatarMedia } from '../../shared/fornecedores.js';
 import { mensagens } from '../../shared/mensagens.js';
 import { type EstadoOrcamento, resumirOrcamento } from '../../shared/orcamento.js';
 import type { Projecto } from '../../shared/projectos.js';
+import { diaDaSemana } from '../../shared/vistas.js';
 
 // O que vai em cada relatório (decisão 020), separado do desenho do PDF: assim testa-se o conteúdo sem ler PDF.
 // Os textos já vêm formatados para mostrar (datas dd/mm/aaaa, valores em Kz).
@@ -181,5 +182,52 @@ export function montarRelatorioInterno(
       acompanhantes: c.resposta === 'yes' ? `${c.acompanhantesConfirmados}/${c.acompanhantes}` : String(c.acompanhantes),
       mesa: (c.mesaId && nomeMesa.get(c.mesaId)) || '—',
     })),
+  };
+}
+
+export interface SemanaCronograma {
+  // "Semana de 12/10/2026 a 18/10/2026" (segunda a domingo).
+  titulo: string;
+  // A semana do dia do evento.
+  doEvento: boolean;
+  tarefas: { datas: string; relativo: string; titulo: string; responsavel: string; estado: string; critica: boolean; emAtraso: boolean }[];
+}
+
+export interface RelatorioCronograma extends Pick<RelatorioCliente, 'titulo' | 'subtitulo' | 'detalhes' | 'geradoEm' | 'progresso'> {
+  semanas: SemanaCronograma[];
+}
+
+// Cronograma (decisão 020): as tarefas pela data de início, agrupadas por semana (segunda a domingo), com a
+// distância ao dia do evento (D-12, D0, D+3), o responsável e o estado. Sem notas nem valores.
+export function montarRelatorioCronograma(projecto: Projecto, agora: Date): RelatorioCronograma {
+  const cliente = montarRelatorioCliente(projecto, { convidados: 0, vao: 0, naoVao: 0, semResposta: 0, pessoas: 0 }, agora);
+  const ordenadas = [...projecto.tarefasDoProjecto].sort((a, b) => a.inicio.localeCompare(b.inicio) || a.fim.localeCompare(b.fim));
+  const semanas = new Map<string, SemanaCronograma>();
+  const segundaDoEvento = somarDias(projecto.dataEvento, -diaDaSemana(projecto.dataEvento));
+  for (const t of ordenadas) {
+    const segunda = somarDias(t.inicio, -diaDaSemana(t.inicio));
+    let semana = semanas.get(segunda);
+    if (!semana) {
+      semana = { titulo: q.semana(formatarData(segunda), formatarData(somarDias(segunda, 6))), doEvento: segunda === segundaDoEvento, tarefas: [] };
+      semanas.set(segunda, semana);
+    }
+    const d = diasEntre(projecto.dataEvento, t.inicio);
+    semana.tarefas.push({
+      datas: t.inicio === t.fim ? formatarData(t.inicio) : `${formatarData(t.inicio)} a ${formatarData(t.fim)}`,
+      relativo: d === 0 ? 'D0' : d < 0 ? `D${d}` : `D+${d}`,
+      titulo: t.titulo,
+      responsavel: t.responsavel?.nome ?? q.semResponsavel,
+      estado: t.emAtraso ? q.emAtraso : mensagens.ecras.projecto.estadoTarefa[t.estado],
+      critica: t.critica,
+      emAtraso: t.emAtraso,
+    });
+  }
+  return {
+    titulo: cliente.titulo,
+    subtitulo: q.cronograma.titulo,
+    detalhes: cliente.detalhes,
+    geradoEm: cliente.geradoEm,
+    progresso: cliente.progresso,
+    semanas: [...semanas.values()],
   };
 }

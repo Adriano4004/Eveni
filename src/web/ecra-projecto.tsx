@@ -193,6 +193,10 @@ export function EcraProjecto({ id, utilizadorId }: { id: string; utilizadorId: s
             {p.relatorioCliente}
           </a>
           <p className="campo__ajuda">{p.relatorioClienteTexto}</p>
+          <a className="botao botao--secundario botao--ligacao" href={`/api/projectos/${encodeURIComponent(id)}/relatorios/cronograma.pdf`} download>
+            {p.relatorioCronograma}
+          </a>
+          <p className="campo__ajuda">{p.relatorioCronogramaTexto}</p>
           <a className="botao botao--secundario botao--ligacao" href={`/api/projectos/${encodeURIComponent(id)}/relatorios/interno.pdf`} download>
             {p.relatorioInterno}
           </a>
