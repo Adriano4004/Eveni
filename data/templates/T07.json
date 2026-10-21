@@ -622,8 +622,8 @@
       "categoria": "Outros",
       "descricao": "Contingência (10%)",
       "obrigatoria": true,
-      "nota": "Quinze por cento. Doze meses de prazo geram surpresas."
+      "nota": null
     }
   ],
-  "versao": "b52ef58dee27"
+  "versao": "25cfc37e90b1"
 }

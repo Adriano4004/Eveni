@@ -27,6 +27,8 @@ export interface DefinicaoDerivado {
   titulos: Record<string, string>;
   notas?: Record<string, string>;
   rubricas: Record<string, string>;
+  // Notas de rubricas da origem (pela descrição na origem) a substituir; null apaga a nota.
+  notasRubricas?: Record<string, string | null>;
 }
 
 // A partir de quantos dias antes do evento os prazos ficam iguais aos da origem.
@@ -143,5 +145,7 @@ export const DERIVADOS: DefinicaoDerivado[] = [
       // Regra geral do CLAUDE.md: 10%; os 15% são do casamento.
       'Contingência (15%)': 'Contingência (10%)',
     },
+    // A nota da origem fala em quinze por cento e doze meses.
+    notasRubricas: { 'Contingência (15%)': null },
   },
 ];

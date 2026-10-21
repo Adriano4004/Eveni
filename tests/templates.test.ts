@@ -256,11 +256,15 @@ describe('Aniversário, derivado do T02 (decisão 025)', () => {
     expect(descricoes).toContain('Espaço da festa');
     expect(separarContingencia(T07.rubricas).percentagem).toBe(10);
     expect(separarContingencia(T02.rubricas).percentagem).toBe(15);
+    // A nota da contingência do casamento (quinze por cento, doze meses) não passa para o aniversário.
+    expect(T07.rubricas.find((r) => r.descricao === 'Contingência (10%)')!.nota).toBeNull();
+    expect(JSON.stringify(T07.rubricas)).not.toMatch(/quinze|doze meses/i);
   });
 
   it('uma nota reescrita para uma tarefa que não existe na origem pára a conversão', () => {
     const def = DERIVADOS.find((d) => d.codigo === 'T07')!;
     expect(() => derivar({ ...def, notas: { 'T02-999': 'x' } }, T02)).toThrow(/T02-999 não existe/);
+    expect(() => derivar({ ...def, notasRubricas: { 'Fogo de artifício': null } }, T02)).toThrow(/rubrica "Fogo de artifício"/);
   });
 });
 

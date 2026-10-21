@@ -185,7 +185,8 @@ export function derivar(def: DefinicaoDerivado, origem: Omit<Template, 'versao'>
   }
   for (const id of def.mantemPrazos) if (def.saem.includes(id)) throw erro(`a tarefa ${id} sai e mantém prazos ao mesmo tempo`);
   const descricoes = new Set(origem.rubricas.map((r) => r.descricao));
-  for (const d of [...def.rubricasQueSaem, ...Object.keys(def.rubricas)]) {
+  const notasRubricas = def.notasRubricas ?? {};
+  for (const d of [...def.rubricasQueSaem, ...Object.keys(def.rubricas), ...Object.keys(notasRubricas)]) {
     if (!descricoes.has(d)) throw erro(`a rubrica "${d}" não existe na origem`);
   }
   const horizonteOrigem = Math.max(...origem.tarefas.map((t) => -t.inicio));
@@ -202,7 +203,11 @@ export function derivar(def: DefinicaoDerivado, origem: Omit<Template, 'versao'>
     });
   const rubricas = origem.rubricas
     .filter((r) => !def.rubricasQueSaem.includes(r.descricao))
-    .map((r) => ({ ...r, descricao: def.rubricas[r.descricao] ?? r.descricao }));
+    .map((r) => ({
+      ...r,
+      descricao: def.rubricas[r.descricao] ?? r.descricao,
+      nota: r.descricao in notasRubricas ? notasRubricas[r.descricao]! : r.nota,
+    }));
   return { codigo: def.codigo, nome: def.nome, descricao: def.descricao, tarefas, rubricas };
 }
 
