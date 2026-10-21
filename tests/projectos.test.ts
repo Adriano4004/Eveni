@@ -6,6 +6,8 @@ import { separarContingencia } from '../src/shared/orcamento.js';
 import type { Template } from '../src/shared/templates.js';
 import T01json from '../data/templates/T01.json' with { type: 'json' };
 import T03json from '../data/templates/T03.json' with { type: 'json' };
+import T05json from '../data/templates/T05.json' with { type: 'json' };
+import T06json from '../data/templates/T06.json' with { type: 'json' };
 import { limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
 import { cookieDe, criarCliente, PALAVRA_PASSE } from './cliente.js';
 
@@ -56,13 +58,15 @@ describe('templates disponíveis', () => {
     expect((await c.get('/api/templates')).statusCode).toBe(401);
   });
 
-  it('o T01 e o T03 estão disponíveis, com os números do template', async () => {
+  it('o T01, o T03 e os derivados do T03 estão disponíveis, com os números do template', async () => {
     const cookie = cookieDe(await c.registar());
     const r = await c.get('/api/templates', cookie);
     expect(r.statusCode).toBe(200);
     expect(r.json()).toEqual([
       expect.objectContaining({ codigo: 'T01', nome: 'Conferência de Imprensa', tarefas: 47, criticas: 20, diasNecessarios: 21 }),
       expect.objectContaining({ codigo: 'T03', nome: 'Congresso', tarefas: 74, criticas: 35, diasNecessarios: 180 }),
+      expect.objectContaining({ codigo: 'T05', nome: 'Fórum', tarefas: 62, criticas: 30, diasNecessarios: 90 }),
+      expect.objectContaining({ codigo: 'T06', nome: 'Conferência', tarefas: 70, criticas: 35, diasNecessarios: 120 }),
     ]);
   });
 
@@ -203,6 +207,27 @@ describe('criar projecto', () => {
     const rubricas = separarContingencia(T03.rubricas).rubricas;
     expect(projecto.orcamento.map((i: { descricao: string }) => i.descricao)).toEqual(rubricas.map((x) => x.descricao));
     expect(projecto.orcamento.every((i: { previstoCentimos: number; realCentimos: number }) => i.previstoCentimos === 0 && i.realCentimos === 0)).toBe(true);
+  });
+
+  it.each([
+    ['T05', 'Fórum', 62, 90, T05json as Template],
+    ['T06', 'Conferência', 70, 120, T06json as Template],
+  ] as const)('cria um %s (%s) com as tarefas e as rubricas do template, e avisa quando falta tempo', async (codigo, nome, total, dias, template) => {
+    const cookie = await contaConfirmada();
+    const curto = await criar(cookie, { template: codigo, dataEvento: emDias(dias - 30) });
+    expect(curto.statusCode).toBe(409);
+    expect(curto.json().avisos).toEqual(materializar(template.tarefas, emDias(dias - 30), hojeEmLuanda()).avisos);
+
+    const r = await criar(cookie, { template: codigo, dataEvento: emDias(dias) });
+    expect(r.statusCode).toBe(201);
+    expect(r.json().avisos).toEqual([]);
+    const projecto = (await c.get(`/api/projectos/${r.json().id}`, cookie)).json();
+    expect(projecto).toMatchObject({ template: codigo, nomeTemplate: nome, versaoTemplate: template.versao, tarefas: total, contingencia: 10 });
+    const esperado = materializar(template.tarefas, emDias(dias), hojeEmLuanda());
+    expect(projecto.tarefasDoProjecto.map((t: { idTemplate: string; inicio: string; fim: string }) => [t.idTemplate, t.inicio, t.fim])).toEqual(
+      template.tarefas.map((t, i) => [t.id, esperado.tarefas[i]!.inicio, esperado.tarefas[i]!.fim]),
+    );
+    expect(projecto.orcamento.map((i: { descricao: string }) => i.descricao)).toEqual(separarContingencia(template.rubricas).rubricas.map((x) => x.descricao));
   });
 
   it('um congresso a 60 dias avisa das tarefas críticas que não cabem', async () => {

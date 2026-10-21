@@ -178,6 +178,7 @@ export function EcraNovoProjecto() {
                 <input type="radio" name="template" value={t.codigo} checked={template === t.codigo} onChange={() => setTemplate(t.codigo)} />
                 <span>
                   <strong>{t.nome}</strong>
+                  <span className="campo__ajuda">{t.descricao}</span>
                   <span className="campo__ajuda">{n.resumoTipo(t.tarefas, t.criticas, t.diasNecessarios)}</span>
                 </span>
               </label>
