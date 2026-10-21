@@ -9,6 +9,7 @@ import T03json from '../data/templates/T03.json' with { type: 'json' };
 import T05json from '../data/templates/T05.json' with { type: 'json' };
 import T06json from '../data/templates/T06.json' with { type: 'json' };
 import T04json from '../data/templates/T04.json' with { type: 'json' };
+import T02json from '../data/templates/T02.json' with { type: 'json' };
 import { limparBaseDeDados, URL_BD_TESTE } from './ajuda.js';
 import { cookieDe, criarCliente, PALAVRA_PASSE } from './cliente.js';
 
@@ -17,6 +18,7 @@ const T01 = T01json as Template;
 const RUBRICAS_T01 = separarContingencia(T01.rubricas).rubricas;
 const T03 = T03json as Template;
 const T04 = T04json as Template;
+const T02 = T02json as Template;
 const base = criarBaseDeDados(URL_BD_TESTE);
 let c: Awaited<ReturnType<typeof criarCliente>>;
 
@@ -60,7 +62,7 @@ describe('templates disponíveis', () => {
     expect((await c.get('/api/templates')).statusCode).toBe(401);
   });
 
-  it('o T01, o T03, os derivados do T03 e o T04 estão disponíveis, com os números do template', async () => {
+  it('todos os templates lançados estão disponíveis, com os números do template', async () => {
     const cookie = cookieDe(await c.registar());
     const r = await c.get('/api/templates', cookie);
     expect(r.statusCode).toBe(200);
@@ -70,13 +72,14 @@ describe('templates disponíveis', () => {
       expect.objectContaining({ codigo: 'T05', nome: 'Fórum', tarefas: 62, criticas: 30, diasNecessarios: 90 }),
       expect.objectContaining({ codigo: 'T06', nome: 'Conferência', tarefas: 70, criticas: 35, diasNecessarios: 120 }),
       expect.objectContaining({ codigo: 'T04', nome: 'Festival / Concerto', tarefas: 86, criticas: 49, diasNecessarios: 240 }),
+      expect.objectContaining({ codigo: 'T02', nome: 'Casamento', tarefas: 69, criticas: 28, diasNecessarios: 365 }),
     ]);
   });
 
-  it('o T02 ainda não se pode usar', async () => {
+  it('um template que não existe não se pode usar', async () => {
     const cookie = cookieDe(await c.registar());
-    expect((await c.post('/api/projectos/previsao', { template: 'T02', dataEvento: emDias(400) }, cookie)).statusCode).toBe(400);
-    expect((await c.post('/api/projectos', { template: 'T02', nome: 'Casamento', dataEvento: emDias(400) }, await contaConfirmada('bia@exemplo.ao'))).statusCode).toBe(400);
+    expect((await c.post('/api/projectos/previsao', { template: 'T07', dataEvento: emDias(400) }, cookie)).statusCode).toBe(400);
+    expect((await c.post('/api/projectos', { template: 'T07', nome: 'Aniversário', dataEvento: emDias(400) }, await contaConfirmada('bia@exemplo.ao'))).statusCode).toBe(400);
     expect(await contar('projects')).toBe(0);
   });
 });
@@ -124,8 +127,7 @@ describe('previsão antes de criar', () => {
     expect((await prever(cookie, '30/11/2026')).json().campos.dataEvento).toBeDefined();
     expect((await prever(cookie, emDias(5 * 365 + 1))).json().campos.dataEvento).toMatch(/demasiado longe/);
     expect((await prever(cookie, emDias(5 * 365))).statusCode).toBe(200);
-    // T02 já existe nos dados, mas ainda não está disponível.
-    for (const template of ['T02', 'T99', '../T01', '']) {
+    for (const template of ['T07', 'T99', '../T01', 'taxonomia', '']) {
       const r = await prever(cookie, emDias(30), template);
       expect(r.statusCode, template).toBe(400);
       expect(r.json().campos.template).toBeDefined();
@@ -265,6 +267,29 @@ describe('criar projecto', () => {
     expect(projecto.orcamento.every((i: { previstoCentimos: number; realCentimos: number }) => i.previstoCentimos === 0 && i.realCentimos === 0)).toBe(true);
   });
 
+  it('cria um casamento (T02) com as 69 tarefas, o lobolo e o alembamento no orçamento e contingência de 15%', async () => {
+    const cookie = await contaConfirmada();
+    // Casamento a 60 dias: os convites a D-90 já não cabem (o exemplo do CLAUDE.md).
+    const curto = await criar(cookie, { template: 'T02', nome: 'Casamento da Joana e do Paulo', dataEvento: emDias(60) });
+    expect(curto.statusCode).toBe(409);
+    expect(curto.json().avisos).toEqual(materializar(T02.tarefas, emDias(60), hojeEmLuanda()).avisos);
+    expect(curto.json().avisos.map((a: { id: string }) => a.id)).toContain('T02-029');
+
+    const r = await criar(cookie, { template: 'T02', nome: 'Casamento da Joana e do Paulo', dataEvento: emDias(400) });
+    expect(r.statusCode).toBe(201);
+    expect(r.json().avisos).toEqual([]);
+    const projecto = (await c.get(`/api/projectos/${r.json().id}`, cookie)).json();
+    expect(projecto).toMatchObject({ template: 'T02', nomeTemplate: 'Casamento', versaoTemplate: T02.versao, tarefas: 69, contingencia: 15 });
+    const esperado = materializar(T02.tarefas, emDias(400), hojeEmLuanda());
+    expect(projecto.tarefasDoProjecto.map((t: { idTemplate: string; inicio: string; fim: string; nota: string | null }) => [t.idTemplate, t.inicio, t.fim, t.nota])).toEqual(
+      T02.tarefas.map((t, i) => [t.id, esperado.tarefas[i]!.inicio, esperado.tarefas[i]!.fim, t.nota]),
+    );
+    expect(projecto.tarefasDoProjecto.filter((t: { critica: boolean }) => t.critica)).toHaveLength(28);
+    const descricoes = projecto.orcamento.map((i: { descricao: string }) => i.descricao);
+    expect(descricoes).toEqual(separarContingencia(T02.rubricas).rubricas.map((x) => x.descricao));
+    expect(descricoes).toEqual(expect.arrayContaining(['Lobolo', 'Alembamento', 'Taxas de registo civil']));
+  });
+
   it('as datas guardadas não mudam de dia com o fuso horário do servidor', async () => {
     const cookie = await contaConfirmada();
     const data = emDias(200);
@@ -310,7 +335,7 @@ describe('criar projecto', () => {
     expect((await criar(cookie, { nome: 'Linha\nnova' })).json().campos.nome).toBeDefined();
     expect((await criar(cookie, { local: 'x'.repeat(201) })).json().campos.local).toBeDefined();
     expect((await criar(cookie, { dataEvento: emDias(-1) })).json().campos.dataEvento).toBeDefined();
-    expect((await criar(cookie, { template: 'T02' })).json().campos.template).toBeDefined();
+    expect((await criar(cookie, { template: 'T99' })).json().campos.template).toBeDefined();
     expect(await contar('projects')).toBe(0);
   });
 
