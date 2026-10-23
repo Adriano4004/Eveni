@@ -15,6 +15,7 @@ test('sem sessão, o endereço principal mostra a página pública e leva ao reg
   await expect(page.getByText('12 meses, 69 tarefas')).toBeVisible();
   await expect(page.getByText(/Em Luanda, o e-mail não garante presença/)).toBeVisible();
   await expect(page.getByText('370 000,00 Kz por mês')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'comercial@eveni.ao' }).first()).toHaveAttribute('href', 'mailto:comercial@eveni.ao');
   await expect(page).toHaveURL(/\/$/);
 
   await page.getByRole('link', { name: 'Criar conta grátis' }).first().click();

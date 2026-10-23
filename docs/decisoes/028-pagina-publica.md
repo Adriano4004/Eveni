@@ -44,6 +44,6 @@ A primeira versão foi recusada pelo Adriano ("básica, com cara de IA"). A segu
 
 Um teste confirma que os números dos templates na página (horizonte e tarefas) batem certo com os templates, que as notas citadas são exactamente as do Excel e que os preços são os da decisão 003. Se um template mudar, o teste avisa.
 
-## Em aberto
+## Contacto comercial
 
-"Para mudar de plano, fale connosco": falta um contacto comercial (WhatsApp ou e-mail) para pôr na página.
+Por e-mail, em `comercial@eveni.ao` (escolhido pelo Adriano a 23/10/2026). Aparece junto aos planos e no rodapé. O Adriano tem de criar esta caixa de correio, ou um reencaminhamento para o seu e-mail.

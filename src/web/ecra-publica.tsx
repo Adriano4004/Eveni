@@ -194,7 +194,9 @@ export function EcraPublica() {
               </li>
             ))}
           </ul>
-          <p className="pub-seccao__nota">{q.planos.nota}</p>
+          <p className="pub-seccao__nota">
+            {q.planos.nota} <a href={`mailto:${q.planos.contacto}`}>{q.planos.contacto}</a>
+          </p>
         </section>
 
         <section className="fecho">
@@ -216,6 +218,7 @@ export function EcraPublica() {
       <footer className="publica__rodape">
         <img className="publica__logo publica__logo--rodape" src="/eveni-logo.png" alt={mensagens.app.nome} width={120} height={46} />
         <nav>
+          <a href={`mailto:${q.planos.contacto}`}>{q.planos.contacto}</a>
           <Ligacao para="/termos">{l.termos.ligacao}</Ligacao>
           <Ligacao para="/privacidade">{l.privacidade.ligacao}</Ligacao>
         </nav>

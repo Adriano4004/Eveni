@@ -967,7 +967,9 @@ export const mensagens = {
         { nome: 'Empresarial', preco: '370 000,00 Kz por mês', detalhe: 'Projectos ilimitados e até 10 pessoas na equipa. Relatórios com a sua marca.' },
         { nome: 'Grandes', preco: '640 000,00 Kz por mês', detalhe: 'Projectos ilimitados e equipa sem limite. Relatórios com a sua marca.' },
       ],
-      nota: 'Todos começam no Singular. Para mudar de plano, fale connosco depois de criar a conta.',
+      nota: 'Todos começam no Singular. Para mudar de plano, escreva-nos depois de criar a conta:',
+      // Contacto comercial (escolhido pelo Adriano a 23/10/2026: e-mail).
+      contacto: 'comercial@eveni.ao',
     },
     fim: {
       titulo: 'Marque a data. O plano vem a seguir.',
