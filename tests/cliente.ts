@@ -38,7 +38,8 @@ export async function criarCliente(base: BaseDeDados, extra: Partial<Config> = {
     post,
     get,
     eu: (cookie?: string) => get('/api/auth/eu', cookie),
-    registar: (email = 'ana@exemplo.ao', nome = 'Ana Domingos') => post('/api/auth/registo', { nome, email, palavraPasse: PALAVRA_PASSE }),
+    registar: (email = 'ana@exemplo.ao', nome = 'Ana Domingos') =>
+      post('/api/auth/registo', { nome, email, palavraPasse: PALAVRA_PASSE, aceitarTermos: true }),
     // Extrai o token da ligação (de confirmação, por omissão) do último e-mail enviado.
     tokenDoUltimoEmail(caminho = 'confirmar-email'): string {
       const texto = emails.at(-1)?.texto ?? '';

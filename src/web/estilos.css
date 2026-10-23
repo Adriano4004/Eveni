@@ -1482,3 +1482,27 @@ h1 {
   border-radius: var(--raio);
   background: var(--cor-superficie);
 }
+
+/* Termos de utilização e política de privacidade (decisão 026). */
+.legal section {
+  margin-top: 20px;
+}
+
+.legal h2 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.legal section p {
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+
+/* A frase com as ligações é texto corrido, não uma grelha como as outras escolhas. */
+.escolha > .frase-aceitacao {
+  display: block;
+}
+
+.legal__ligacoes {
+  font-size: 0.9rem;
+}

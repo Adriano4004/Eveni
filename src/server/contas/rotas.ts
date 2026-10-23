@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { type Eu, entrar, registo } from '../../shared/esquemas.js';
+import { aceitarTermos, type Eu, entrar, registo } from '../../shared/esquemas.js';
+import { VERSAO_TERMOS } from '../../shared/legal.js';
 import { mensagens } from '../../shared/mensagens.js';
 import type { Config } from '../config.js';
 import type { BaseDeDados } from '../db/index.js';
@@ -27,7 +28,7 @@ export function registarRotasContas(
   guardas: ReturnType<typeof criarGuardas>,
 ) {
   const { pool } = base;
-  const { exigirSessao } = guardas;
+  const { exigirSessaoSemTermos } = guardas;
   registarRotasDoisFactores(app, config, base, enviarEmail, guardas, obterEu);
 
   app.post('/api/auth/registo', async (pedido, resposta) => {
@@ -41,8 +42,9 @@ export function registarRotasContas(
     try {
       await cliente.query('begin');
       const { rows } = await cliente.query<{ id: string }>(
-        'insert into users (email, name, password_hash) values ($1, $2, $3) returning id',
-        [dados.email, dados.nome, hash],
+        // Aceitou os termos e a política de privacidade nesta versão (a caixa é obrigatória, ver esquemas.ts).
+        'insert into users (email, name, password_hash, terms_version, terms_accepted_at) values ($1, $2, $3, $4, now()) returning id',
+        [dados.email, dados.nome, hash, VERSAO_TERMOS],
       );
       utilizadorId = rows[0]!.id;
       // Cada conta nasce com um espaço de trabalho pessoal, no plano Singular.
@@ -54,7 +56,7 @@ export function registarRotasContas(
         utilizadorId,
       ]);
       tokenConfirmacao = await criarTokenConfirmacao(cliente, utilizadorId);
-      await auditar(cliente, 'conta.registo', { utilizadorId, ip: pedido.ip });
+      await auditar(cliente, 'conta.registo', { utilizadorId, ip: pedido.ip, detalhes: { versaoTermos: VERSAO_TERMOS } });
       await criarSessao(cliente, config, resposta, utilizadorId, pedido);
       await cliente.query('commit');
     } catch (erro) {
@@ -132,7 +134,7 @@ export function registarRotasContas(
     return resposta.code(204).send();
   });
 
-  app.post('/api/auth/sair-de-todos', { preHandler: exigirSessao }, async (pedido, resposta) => {
+  app.post('/api/auth/sair-de-todos', { preHandler: exigirSessaoSemTermos }, async (pedido, resposta) => {
     const utilizadorId = pedido.sessao!.utilizadorId;
     const terminadas = await terminarTodasAsSessoes(pool, utilizadorId);
     await auditar(pool, 'sessao.sair_todos', { utilizadorId, ip: pedido.ip, detalhes: { sessoes: terminadas } });
@@ -140,7 +142,19 @@ export function registarRotasContas(
     return resposta.code(204).send();
   });
 
-  app.get('/api/auth/eu', { preHandler: exigirSessao }, async (pedido) => obterEu(pedido.sessao!.utilizadorId));
+  app.get('/api/auth/eu', { preHandler: exigirSessaoSemTermos }, async (pedido) => obterEu(pedido.sessao!.utilizadorId));
+
+  // Aceitar uma nova versão dos termos (decisão 026). Repetir não muda a data da primeira aceitação.
+  app.post('/api/conta/aceitar-termos', { preHandler: exigirSessaoSemTermos }, async (pedido) => {
+    validar(aceitarTermos, pedido.body);
+    const utilizadorId = pedido.sessao!.utilizadorId;
+    const { rowCount } = await pool.query(
+      'update users set terms_version = $2, terms_accepted_at = now(), updated_at = now() where id = $1 and terms_version is distinct from $2',
+      [utilizadorId, VERSAO_TERMOS],
+    );
+    if (rowCount) await auditar(pool, 'conta.termos_aceites', { utilizadorId, ip: pedido.ip, detalhes: { versao: VERSAO_TERMOS } });
+    return obterEu(utilizadorId);
+  });
 
   // Lista explícita de campos: nunca devolver hashes, tokens ou segredos.
   async function obterEu(utilizadorId: string): Promise<Eu> {
@@ -153,15 +167,17 @@ export function registarRotasContas(
       workspace_name: string;
       plan_code: Eu['espaco']['plano'];
       dois_factores: boolean;
+      termos_aceites: boolean;
     }>(
-      `select u.id, u.name, u.email, u.email_verified_at, u.totp_enabled_at is not null as dois_factores, w.id as workspace_id, w.name as workspace_name, w.plan_code
+      `select u.id, u.name, u.email, u.email_verified_at, u.totp_enabled_at is not null as dois_factores,
+              u.terms_version is not distinct from $2 as termos_aceites, w.id as workspace_id, w.name as workspace_name, w.plan_code
          from users u
          join workspace_members wm on wm.user_id = u.id
          join workspaces w on w.id = wm.workspace_id
         where u.id = $1
         order by (wm.role = 'owner') desc, wm.created_at
         limit 1`,
-      [utilizadorId],
+      [utilizadorId, VERSAO_TERMOS],
     );
     const l = rows[0];
     if (!l) throw new ErroHttp(401, m.sessaoNecessaria);
@@ -171,6 +187,7 @@ export function registarRotasContas(
       email: l.email,
       emailConfirmado: l.email_verified_at !== null,
       doisFactores: l.dois_factores,
+      termosPorAceitar: !l.termos_aceites,
       espaco: { id: l.workspace_id, nome: l.workspace_name, plano: l.plan_code },
     };
   }

@@ -2,6 +2,7 @@ import type pg from 'pg';
 
 export type AccaoAuditada =
   | 'conta.registo'
+  | 'conta.termos_aceites'
   | 'conta.exportada'
   | 'conta.eliminada'
   | 'conta.dados_confirmacao_falhada'

@@ -4,6 +4,7 @@ import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
 import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
+import { EcraLegal, EcraNovosTermos } from './ecras-legal.js';
 import { EcraFornecedores } from './ecra-fornecedores.js';
 import { EcraMarca } from './ecra-marca.js';
 import { EcraMesas } from './ecra-mesas.js';
@@ -56,7 +57,7 @@ function conviteGuardado(): string {
 
 // Ecrãs só para quem não tem sessão, e ecrãs acessíveis com ou sem sessão.
 const SO_ANONIMO = new Set(['/entrar', '/registo', '/recuperar']);
-const QUALQUER = new Set(['/confirmar-email', '/redefinir-palavra-passe', '/convite', '/rsvp']);
+const QUALQUER = new Set(['/confirmar-email', '/redefinir-palavra-passe', '/convite', '/rsvp', '/privacidade', '/termos']);
 
 type Estado = { tipo: 'a-carregar' } | { tipo: 'anonimo' } | { tipo: 'com-sessao'; eu: Eu };
 
@@ -89,6 +90,9 @@ export function App() {
 
   // A página de RSVP é do convidado: não depende de ter (ou não) conta no Eveni.
   if (caminho === '/rsvp') return <EcraRsvp token={tokenRsvp} />;
+  // Os termos e a política de privacidade lêem-se sem sessão (antes de criar conta, ou a partir do RSVP).
+  if (caminho === '/privacidade') return <EcraLegal tipo="privacidade" />;
+  if (caminho === '/termos') return <EcraLegal tipo="termos" />;
   if (estado.tipo === 'a-carregar') {
     return <p className="a-carregar">{mensagens.ecras.carregar}</p>;
   }
@@ -119,6 +123,18 @@ export function App() {
           esquecerToken('/confirmar-email');
           navegar('/');
           carregarEu();
+        }}
+      />
+    );
+  }
+  if (estado.tipo === 'com-sessao' && estado.eu.termosPorAceitar && caminho !== '/conta/dados') {
+    // Termos novos por aceitar (decisão 026): só se pode aceitar, sair, ou ir aos dados para os levar ou apagar.
+    return (
+      <EcraNovosTermos
+        aoAceitar={entrou}
+        aoSair={() => {
+          esquecerToken('/convite');
+          setEstado({ tipo: 'anonimo' });
         }}
       />
     );

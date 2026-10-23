@@ -3,6 +3,7 @@ import type { InfoRsvp } from '../shared/convidados.js';
 import { formatarData } from '../shared/datas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api, mensagemDeErro } from './api.js';
+import { LigacoesLegais } from './ecras-legal.js';
 
 const q = mensagens.ecras.rsvp;
 
@@ -85,6 +86,7 @@ export function EcraRsvp({ token }: { token: string }) {
           </button>
         </>
       )}
+      <LigacoesLegais />
     </main>
   );
 }

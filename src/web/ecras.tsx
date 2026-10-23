@@ -4,6 +4,7 @@ import { mensagens } from '../shared/mensagens.js';
 import { api, ErroApi, mensagemDeErro } from './api.js';
 import { ListaProjectos } from './ecras-projectos.js';
 import { Campo } from './Campo.js';
+import { CaixaAceitarTermos, LigacoesLegais } from './ecras-legal.js';
 import { Formulario } from './Formulario.js';
 import { navegar } from './navegacao.js';
 
@@ -58,6 +59,7 @@ export function EcraEntrar({ aoEntrar, aviso }: { aoEntrar: (eu: Eu) => void; av
       <p className="cartao__rodape cartao__rodape--junto">
         {e.entrar.semConta} <Ligacao para="/registo">{e.entrar.ligacaoRegisto}</Ligacao>
       </p>
+      <LigacoesLegais />
     </main>
   );
 }
@@ -85,12 +87,14 @@ export function EcraRegisto({ aoEntrar }: { aoEntrar: (eu: Eu) => void }) {
               erro={erros.palavraPasse}
               ajuda={e.registo.ajudaPalavraPasse}
             />
+            <CaixaAceitarTermos erro={erros.aceitarTermos} />
           </>
         )}
       </Formulario>
       <p className="cartao__rodape">
         {e.registo.jaTemConta} <Ligacao para="/entrar">{e.registo.ligacaoEntrar}</Ligacao>
       </p>
+      <LigacoesLegais />
     </main>
   );
 }
@@ -163,6 +167,7 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
       <button className="botao botao--secundario" type="button" onClick={() => sair(true)} disabled={aSair}>
         {e.inicio.sairDeTodos}
       </button>
+      <LigacoesLegais />
     </main>
   );
 }

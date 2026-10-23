@@ -20,6 +20,9 @@ export const mensagens = {
   },
   validacao: {
     nomeObrigatorio: 'Indique o seu nome.',
+    termosObrigatorios: 'Para criar conta, aceite os termos de utilização e a política de privacidade.',
+    termosNovosObrigatorios: 'Marque a caixa para aceitar a nova versão dos termos e da política de privacidade.',
+    versaoTermosInvalida: 'Os termos mudaram entretanto. Recarregue a página e leia a versão actual.',
     nomeLongo: 'O nome é demasiado longo.',
     nomeInvalido: 'O nome tem caracteres inválidos.',
     codigoInvalido: 'Indique o código de 6 dígitos da aplicação.',
@@ -216,6 +219,7 @@ export const mensagens = {
       'Tem um espaço de trabalho com outros membros. Transfira-o para outra pessoa antes de eliminar a conta, para não apagar o trabalho delas.',
     ligacaoDeOutraConta: 'Esta ligação pertence a outra conta. Termine a sessão e entre com a conta que recebeu o e-mail.',
     nomeEspacoPessoal: (nome: string) => `Espaço de ${nome}`,
+    termosPorAceitar: 'Os termos de utilização mudaram. Aceite a nova versão para continuar.',
   },
   ecras: {
     entrar: {
@@ -239,6 +243,8 @@ export const mensagens = {
       aEnviar: 'A criar conta…',
       jaTemConta: 'Já tem conta?',
       ligacaoEntrar: 'Entrar',
+      // A frase da caixa de aceitação, com as duas ligações no meio.
+      aceito: ['Tenho 18 anos ou mais e aceito os ', ' e a ', '.'],
     },
     inicio: {
       ola: (nome: string) => `Olá, ${nome}`,
@@ -852,6 +858,204 @@ export const mensagens = {
         'A palavra-passe da sua conta do Eveni acabou de ser alterada a partir de uma sessão aberta. As sessões noutros dispositivos foram terminadas.',
       botao: 'Não fui eu: recuperar a conta',
       naoFoiVoce: 'Se foi você, não precisa de fazer nada. Se não foi, defina já uma nova palavra-passe com o botão acima.',
+    },
+  },
+  legal: {
+    responsavel: 'BLUE BERN Comércio Geral e Prestação de Serviços, Lda., NIF 5000143723, com sede na Rua Marechal Brós Tito, n.º 35, Edifício Skyone, 4.º andar, Kinaxixi, Luanda, Angola',
+    contacto: 'privacidade@eveni.ao',
+    versao: (data: string) => `Versão de ${data}`,
+    privacidade: {
+      titulo: 'Política de privacidade',
+      ligacao: 'Política de privacidade',
+      seccoes: [
+        {
+          titulo: 'Quem trata os seus dados',
+          paragrafos: [
+            'O Eveni é explorado pela BLUE BERN Comércio Geral e Prestação de Serviços, Lda., NIF 5000143723, com sede na Rua Marechal Brós Tito, n.º 35, Edifício Skyone, 4.º andar, Kinaxixi, Luanda, Angola, responsável pelo tratamento dos dados pessoais descritos nesta política, nos termos da Lei n.º 22/11, de 17 de Junho (Lei da Protecção de Dados Pessoais).',
+            'Para qualquer questão sobre os seus dados, escreva para privacidade@eveni.ao.',
+          ],
+        },
+        {
+          titulo: 'Que dados recolhemos',
+          paragrafos: [
+            'Conta: nome, e-mail e palavra-passe. A palavra-passe nunca é guardada como texto: guardamos apenas uma impressão cifrada que não permite recuperá-la. Se activar a verificação em dois passos, guardamos o segredo dessa verificação cifrado.',
+            'Segurança: as sessões abertas (data, endereço IP e browser) e um registo das acções sensíveis (entradas, mudanças de palavra-passe, alterações à equipa, exportações e eliminações).',
+            'O que cria no Eveni: projectos, tarefas, orçamentos, fornecedores e as suas avaliações, membros da equipa e a marca do seu espaço (logótipo, cor e rodapé).',
+            'Convidados: nome, telemóvel, e-mail, resposta ao convite, número de acompanhantes e mesa, introduzidos por quem organiza o evento.',
+          ],
+        },
+        {
+          titulo: 'Para que usamos os dados',
+          paragrafos: [
+            'Para prestar o serviço que pediu: guardar e mostrar os seus projectos a quem lhes tem acesso, enviar os e-mails necessários (confirmação da conta, recuperação da palavra-passe, convites para a equipa) e gerar os relatórios em PDF.',
+            'Para proteger a sua conta e o serviço: limitar tentativas de entrada, detectar acessos indevidos e guardar o registo das acções sensíveis.',
+            'Para cumprir obrigações legais.',
+            'Não vendemos os seus dados, não os usamos para publicidade e não os partilhamos com terceiros para fins comerciais.',
+          ],
+        },
+        {
+          titulo: 'Fundamento do tratamento',
+          paragrafos: [
+            'Tratamos os dados da conta e o conteúdo que cria porque são necessários para executar o contrato que aceita ao criar conta (os termos de utilização) e com o seu consentimento, dado nesse momento.',
+            'Os registos de segurança são tratados no interesse legítimo de proteger as contas e o serviço.',
+          ],
+        },
+        {
+          titulo: 'Dados de convidados',
+          paragrafos: [
+            'Os dados dos convidados são introduzidos por quem organiza o evento, que decide recolhê-los e garante que tem autorização dos convidados para o fazer. O Eveni trata esses dados apenas por conta do organizador, para gerir o evento.',
+            'Cada convidado recebe uma ligação própria para responder ao convite. Essa página mostra apenas o nome do convidado, o evento e a resposta dele.',
+            'Recolha só o que precisa: o Eveni não pede nem guarda mais do que o necessário para o convite e a organização das mesas.',
+            'Um convidado pode pedir a quem organiza o evento, ou a nós, que corrija ou apague os seus dados.',
+          ],
+        },
+        {
+          titulo: 'Com quem partilhamos',
+          paragrafos: [
+            'Com as pessoas a quem dá acesso: os membros da sua equipa vêem os projectos a que têm acesso, com o papel que lhes atribuir.',
+            'Com os prestadores que tornam o serviço possível, que tratam os dados apenas por nossa conta: a Railway, que aloja a aplicação e a base de dados, e a Resend, que envia os e-mails.',
+            'Com as autoridades, quando a lei o exigir.',
+          ],
+        },
+        {
+          titulo: 'Onde ficam os dados',
+          paragrafos: [
+            'A aplicação e a base de dados estão alojadas em servidores fora de Angola, nos prestadores indicados acima. A transferência é feita com as garantias exigidas pela Lei n.º 22/11.',
+            'As ligações ao Eveni são sempre cifradas (HTTPS).',
+          ],
+        },
+        {
+          titulo: 'Durante quanto tempo',
+          paragrafos: [
+            'Enquanto a conta existir. Quando a elimina, apagamos de imediato a conta, os espaços de trabalho de que é o único dono e tudo o que eles contêm (projectos, tarefas, convidados, fornecedores, orçamentos), as sessões e o histórico de acessos. Fica apenas um registo de que uma conta foi eliminada, sem nada que o identifique.',
+            'As contas cujo e-mail não é confirmado em 7 dias são eliminadas da mesma forma.',
+            'As sessões terminam ao fim de 30 dias sem uso.',
+          ],
+        },
+        {
+          titulo: 'Os seus direitos',
+          paragrafos: [
+            'Pode, a qualquer momento, descarregar uma cópia completa dos seus dados e eliminar a conta, na aplicação, em "Os meus dados".',
+            'Para corrigir o nome ou o e-mail da conta, opor-se a um tratamento ou pedir informação sobre ele, escreva para privacidade@eveni.ao. Respondemos no prazo legal.',
+            'Se entender que os seus direitos não foram respeitados, pode apresentar queixa à Agência de Protecção de Dados (APD).',
+          ],
+        },
+        {
+          titulo: 'Segurança',
+          paragrafos: [
+            'Palavras-passe guardadas apenas como impressão cifrada, verificação em dois passos opcional, sessões que pode terminar em todos os dispositivos, limites às tentativas de entrada e registo das acções sensíveis.',
+          ],
+        },
+        {
+          titulo: 'Cookies',
+          paragrafos: [
+            'O Eveni usa um único cookie, essencial, para manter a sua sessão iniciada. Não usamos cookies de publicidade nem de análise.',
+            'Durante a utilização, o browser guarda temporariamente as ligações recebidas por e-mail (por exemplo, a de confirmação), apenas no separador aberto.',
+          ],
+        },
+        {
+          titulo: 'Idade mínima',
+          paragrafos: ['Para criar conta no Eveni é preciso ter pelo menos 18 anos.'],
+        },
+        {
+          titulo: 'Alterações a esta política',
+          paragrafos: [
+            'Quando esta política mudar, a data da versão no topo muda também, e pedimos-lhe que leia e aceite a nova versão na entrada seguinte.',
+          ],
+        },
+      ],
+    },
+    termos: {
+      titulo: 'Termos de utilização',
+      ligacao: 'Termos de utilização',
+      seccoes: [
+        {
+          titulo: 'O serviço',
+          paragrafos: [
+            'O Eveni é uma aplicação de gestão de eventos, explorada pela BLUE BERN Comércio Geral e Prestação de Serviços, Lda., NIF 5000143723, com sede na Rua Marechal Brós Tito, n.º 35, Edifício Skyone, 4.º andar, Kinaxixi, Luanda, Angola. Estes termos regulam a utilização do Eveni. Ao criar conta, aceita-os, bem como a política de privacidade.',
+          ],
+        },
+        {
+          titulo: 'A sua conta',
+          paragrafos: [
+            'Para criar conta é preciso ter pelo menos 18 anos e indicar dados verdadeiros.',
+            'É responsável por guardar a sua palavra-passe e por tudo o que for feito com a sua conta. Se suspeitar de um acesso indevido, mude a palavra-passe e termine a sessão em todos os dispositivos.',
+            'Até confirmar o e-mail, pode entrar e ver a aplicação, mas não pode criar projectos nem ligações públicas.',
+          ],
+        },
+        {
+          titulo: 'Planos e preços',
+          paragrafos: [
+            'Singular: grátis, com 1 projecto, sem colaboração. O limite é para sempre: um projecto arquivado continua a contar.',
+            'Empresarial: 60 000,00 Kz por mês, com projectos ilimitados e até 10 membros na equipa.',
+            'Grandes: 150 000,00 Kz por mês, com projectos ilimitados e membros ilimitados.',
+            'Enquanto o pagamento não estiver disponível na aplicação, a mudança de plano é combinada directamente connosco. Qualquer alteração de preços é anunciada com antecedência.',
+            'Os projectos não se eliminam: arquivam-se e restauram-se.',
+          ],
+        },
+        {
+          titulo: 'O seu conteúdo',
+          paragrafos: [
+            'O que cria no Eveni (projectos, tarefas, orçamentos, fornecedores, convidados) é seu. Autoriza-nos apenas a guardá-lo, a mostrá-lo a quem lhe der acesso e a fazer as cópias de segurança necessárias.',
+            'É responsável pelos dados de terceiros que introduz, em especial os dos convidados e dos fornecedores: garante que tem autorização para os usar e que só recolhe o necessário.',
+          ],
+        },
+        {
+          titulo: 'Utilização aceitável',
+          paragrafos: [
+            'Não pode usar o Eveni para fins ilegais, para enviar mensagens não solicitadas, para tentar aceder a contas ou dados de outras pessoas, nem para sobrecarregar ou perturbar o serviço.',
+          ],
+        },
+        {
+          titulo: 'Templates, prazos e notas',
+          paragrafos: [
+            'Os templates, os prazos e as notas das tarefas resultam da experiência na organização de eventos em Angola. São orientações para ajudar a planear e não substituem o aconselhamento profissional (jurídico, financeiro ou de segurança) nem a confirmação junto das entidades competentes, como a conservatória do registo civil.',
+          ],
+        },
+        {
+          titulo: 'Disponibilidade',
+          paragrafos: [
+            'Fazemos o possível para que o Eveni esteja sempre disponível e para proteger os seus dados, mas não podemos garantir um funcionamento sem interrupções. Recomendamos que descarregue os relatórios e a cópia dos seus dados sempre que precisar deles fora da aplicação.',
+          ],
+        },
+        {
+          titulo: 'Responsabilidade',
+          paragrafos: [
+            'Na medida permitida por lei, não respondemos por prejuízos indirectos resultantes da utilização do Eveni, nem por decisões tomadas com base nas orientações dos templates.',
+          ],
+        },
+        {
+          titulo: 'Fim da utilização',
+          paragrafos: [
+            'Pode eliminar a sua conta a qualquer momento, em "Os meus dados". Podemos suspender ou encerrar uma conta que viole estes termos, avisando o titular sempre que possível.',
+          ],
+        },
+        {
+          titulo: 'Alterações a estes termos',
+          paragrafos: [
+            'Quando estes termos mudarem, a data da versão no topo muda também, e pedimos-lhe que leia e aceite a nova versão na entrada seguinte.',
+          ],
+        },
+        {
+          titulo: 'Lei aplicável',
+          paragrafos: [
+            'Estes termos regem-se pela lei angolana. Para qualquer litígio, é competente o tribunal da comarca de Luanda.',
+            'Contacto: privacidade@eveni.ao.',
+          ],
+        },
+      ],
+    },
+    rodape: 'Termos e privacidade',
+    voltar: 'Voltar',
+    novos: {
+      titulo: 'Termos actualizados',
+      texto: 'Os termos de utilização e a política de privacidade do Eveni mudaram. Para continuar a usar a aplicação, leia-os e aceite a nova versão.',
+      aceito: ['Li e aceito os ', ' e a ', '.'],
+      botao: 'Aceitar e continuar',
+      aEnviar: 'A guardar…',
+      sair: 'Sair',
+      outrasOpcoes: 'Se não quiser aceitar, pode descarregar uma cópia dos seus dados ou eliminar a conta em',
+      osMeusDados: 'Os meus dados',
     },
   },
   planos: {
