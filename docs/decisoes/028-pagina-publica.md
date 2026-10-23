@@ -33,7 +33,11 @@ A primeira versão foi recusada pelo Adriano ("básica, com cara de IA"). A segu
   - Licença aberta OFL; a licença está em `public/fontes/`.
   - Um ficheiro de 41 KB, servido pela própria aplicação, sem serviços externos.
   - O texto corrido continua com a letra do sistema.
-- **Fotografias** em `public/fotos/`. Enquanto não existem, cada lugar mostra um fundo de cor da marca. A lista está em `FOTOS`, em `src/web/ecra-publica.tsx`.
+- **Fotografias** em `public/fotos/`. A lista está em `FOTOS`, em `src/web/ecra-publica.tsx`.
+  - Fornecidas pelo Adriano a 23/10/2026 e geradas por IA.
+  - Convertidas para WebP, com 60–80 KB cada.
+  - Na foto do palco foi apagado um logótipo ("d.") que parecia a marca de uma empresa real.
+  - A conferência de imprensa, o fórum e o festival ainda não têm foto: ficam com um fundo de cor da marca até haver fotos.
 - **Movimento:** o bilhete aparece uma vez e a faixa desliza devagar. Tudo pára para quem pede menos movimento no telemóvel.
 
 ## Salvaguardas

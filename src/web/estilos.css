@@ -1580,6 +1580,33 @@ h1 {
   background-image: radial-gradient(circle at 60% 40%, #a99dff 0, transparent 50%), radial-gradient(circle at 10% 10%, #6553f3 0, transparent 40%);
 }
 
+/* Enquadramento de cada fotografia (o que fica à vista quando o lugar a corta). */
+.abertura__foto {
+  object-position: 62% 40%;
+}
+
+.mosaico__peca--T02 .foto {
+  object-position: 60% 30%;
+}
+
+.mosaico__peca--T03 .foto {
+  object-position: 70% 25%;
+}
+
+.mosaico__peca--T06 .foto {
+  object-position: 50% 75%;
+}
+
+.mosaico__peca--T07 .foto,
+.fecho__foto--0 {
+  object-position: 50% 25%;
+}
+
+.fecho__foto--1,
+.fecho__foto--2 {
+  object-position: 60% 20%;
+}
+
 /* Topo: fotografia a toda a largura, véu escuro, título grande em branco e o bilhete por cima. */
 .abertura {
   position: relative;
@@ -2216,8 +2243,8 @@ h1 {
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(3, 240px);
     grid-template-areas:
-      't01 t05 t06 t07'
-      't02 t02 t04 t04'
+      't01 t05 t04 t07'
+      't02 t02 t06 t06'
       't02 t02 t03 t03';
     gap: 14px;
   }

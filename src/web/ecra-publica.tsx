@@ -5,12 +5,20 @@ import { navegar } from './navegacao.js';
 const q = mensagens.publica;
 const l = mensagens.legal;
 
-// Fotografias da página pública (decisão 028), em public/fotos/. Enquanto uma foto não existe (null), o lugar
-// fica com um fundo de cor da marca. As fotos têm de ter autorização de uso.
+// Fotografias da página pública (decisão 028), em public/fotos/: geradas por IA, fornecidas pelo Adriano a
+// 23/10/2026. Enquanto um lugar não tem foto (null), fica com um fundo de cor da marca.
 const FOTOS: { topo: string | null; tipos: Record<string, string | null>; fim: (string | null)[] } = {
-  topo: null,
-  tipos: { T01: null, T02: null, T03: null, T04: null, T05: null, T06: null, T07: null },
-  fim: [null, null, null],
+  topo: '/fotos/topo-conferencia.webp',
+  tipos: {
+    T01: null,
+    T02: '/fotos/casamento-planner.webp',
+    T03: '/fotos/congresso-credenciacao.webp',
+    T04: null,
+    T05: null,
+    T06: '/fotos/conferencia-palco.webp',
+    T07: '/fotos/festa-mesa.webp',
+  },
+  fim: ['/fotos/festa-mesa.webp', '/fotos/congresso-credenciacao.webp', '/fotos/casamento-planner.webp'],
 };
 
 // Botão que é uma ligação: abre o ecrã sem recarregar a página.
@@ -30,8 +38,8 @@ function Ligacao({ para, classe, children }: { para: string; classe?: string; ch
 }
 
 // Uma fotografia, ou o fundo de cor que a substitui enquanto não existe.
-function Foto({ src, classe, tom = 0 }: { src: string | null; classe: string; tom?: number }) {
-  if (src) return <img className={`${classe} foto`} src={src} alt="" loading="lazy" decoding="async" />;
+function Foto({ src, classe, tom = 0, logo = false }: { src: string | null; classe: string; tom?: number; logo?: boolean }) {
+  if (src) return <img className={`${classe} foto`} src={src} alt="" loading={logo ? 'eager' : 'lazy'} decoding="async" />;
   return <div className={`${classe} foto foto--vazia foto--tom${tom % 4}`} aria-hidden="true" />;
 }
 
@@ -76,7 +84,7 @@ export function EcraPublica() {
   return (
     <div className="publica">
       <section className="abertura">
-        <Foto src={FOTOS.topo} classe="abertura__foto" tom={1} />
+        <Foto src={FOTOS.topo} classe="abertura__foto" tom={1} logo />
         <div className="abertura__veu" aria-hidden="true" />
         <header className="publica__topo">
           <img className="publica__logo" src="/eveni-logo.png" alt={mensagens.app.nome} width={140} height={54} />
