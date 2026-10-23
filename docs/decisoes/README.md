@@ -32,3 +32,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 025 | [Aniversário, derivado do T02](025-aniversario.md) | Em vigor |
 | 026 | [Política de privacidade e termos de utilização](026-privacidade-termos.md) | Em vigor |
 | 027 | [Administração dos planos](027-administracao-planos.md) | Em vigor |
+| 028 | [Página pública](028-pagina-publica.md) | Em vigor |

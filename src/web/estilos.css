@@ -1506,3 +1506,450 @@ h1 {
 .legal__ligacoes {
   font-size: 0.9rem;
 }
+
+/* Página pública (decisão 028). A peça forte é a contagem decrescente até ao dia D; o resto fica calmo. */
+.publica {
+  --pub-violeta: #6553f3;
+  --pub-tinta: #1b1540;
+  --pub-girassol: #ffc93c;
+  --pub-lilas: #eeebff;
+  --pub-papel: #fbfaff;
+  --pub-suave: #55516b;
+  background: var(--pub-papel);
+  color: var(--pub-tinta);
+  min-height: 100vh;
+}
+
+.publica a:focus-visible {
+  outline: 3px solid var(--pub-girassol);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.publica__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.publica__logo {
+  width: 120px;
+  height: auto;
+}
+
+.publica__entrar {
+  color: var(--pub-tinta);
+  text-decoration: none;
+  padding: 10px 16px;
+  border: 2px solid var(--pub-tinta);
+  border-radius: 999px;
+}
+
+.publica h1,
+.publica h2 {
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.abertura {
+  display: grid;
+  gap: 32px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 56px;
+}
+
+.abertura h1 {
+  font-size: clamp(2.3rem, 9vw, 4.4rem);
+  line-height: 1.02;
+  max-width: 13ch;
+}
+
+.abertura__sub {
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--pub-suave);
+  max-width: 34rem;
+  margin: 20px 0 28px;
+}
+
+.abertura__accoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.publica__botao {
+  display: inline-block;
+  background: var(--pub-violeta);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.05rem;
+  padding: 15px 26px;
+  border-radius: 999px;
+  box-shadow: 0 6px 0 var(--pub-tinta);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.publica__botao:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--pub-tinta);
+}
+
+.publica__botao--claro {
+  background: var(--pub-girassol);
+  color: var(--pub-tinta);
+}
+
+.publica__secundario {
+  color: var(--pub-tinta);
+}
+
+/* A contagem: um carril vertical de D-90 a D0. */
+.contagem {
+  margin: 0;
+  background: var(--pub-tinta);
+  color: #fff;
+  border-radius: 24px;
+  padding: 24px 20px 28px;
+}
+
+.contagem figcaption {
+  color: #c9c3ff;
+  font-size: 0.95rem;
+  margin-bottom: 18px;
+}
+
+.contagem ol {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+  position: relative;
+}
+
+.contagem ol::before {
+  content: '';
+  position: absolute;
+  left: 33px;
+  top: 10px;
+  bottom: 22px;
+  width: 3px;
+  background: var(--pub-violeta);
+  border-radius: 2px;
+}
+
+.contagem__dia {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 0;
+  animation: entrar-paragem 0.45s ease-out both;
+}
+
+.contagem__marca {
+  justify-self: center;
+  background: var(--pub-violeta);
+  color: #fff;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 0.95rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  min-width: 56px;
+  text-align: center;
+}
+
+.contagem__tarefa {
+  font-size: 1.02rem;
+  line-height: 1.35;
+}
+
+.contagem__dia--d0 .contagem__marca {
+  background: var(--pub-girassol);
+  color: var(--pub-tinta);
+  font-size: 1.25rem;
+  padding: 8px 12px;
+}
+
+.contagem__dia--d0 .contagem__tarefa {
+  font-size: 1.35rem;
+  font-weight: 900;
+  font-style: italic;
+  color: var(--pub-girassol);
+}
+
+@keyframes entrar-paragem {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contagem__dia {
+    animation: none;
+  }
+  .publica__botao {
+    transition: none;
+  }
+}
+
+.publica__seccao {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 48px 16px;
+}
+
+.publica__seccao h2 {
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  line-height: 1.08;
+  max-width: 22ch;
+}
+
+.publica__texto {
+  color: var(--pub-suave);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  max-width: 38rem;
+  margin: 14px 0 0;
+}
+
+.publica__texto--nota {
+  margin-top: 20px;
+  font-size: 0.98rem;
+}
+
+/* Tipos de evento: a barra mostra quanto tempo antes começa cada plano. */
+.tipos {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+}
+
+.tipo {
+  display: grid;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 1px solid #dcd8f5;
+}
+
+.tipo__cabeca strong {
+  font-size: 1.15rem;
+}
+
+.tipo__para {
+  display: block;
+  color: var(--pub-suave);
+  font-size: 0.95rem;
+  margin-top: 2px;
+}
+
+.tipo__horizonte {
+  height: 10px;
+  background: var(--pub-lilas);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tipo__horizonte span {
+  display: block;
+  height: 100%;
+  background: var(--pub-violeta);
+  border-radius: 999px;
+}
+
+.tipo__numeros {
+  font-size: 0.92rem;
+  color: var(--pub-suave);
+}
+
+/* Notas: o mesmo destaque que têm dentro da aplicação. */
+.notas-publicas ul {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.notas-publicas__tarefa {
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.notas-publicas__dia {
+  display: inline-block;
+  background: var(--pub-tinta);
+  color: #fff;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 0.85rem;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-right: 6px;
+}
+
+.notas-publicas blockquote {
+  margin: 0;
+  background: #fff;
+  border-left: 6px solid var(--pub-girassol);
+  border-radius: 4px 14px 14px 4px;
+  padding: 16px 18px;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.resto {
+  margin: 28px 0 0;
+  display: grid;
+  gap: 22px;
+}
+
+.resto dt {
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.resto dd {
+  margin: 6px 0 0;
+  color: var(--pub-suave);
+  line-height: 1.55;
+}
+
+.planos-publicos {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.planos-publicos li {
+  background: #fff;
+  border: 2px solid var(--pub-tinta);
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.planos-publicos h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.planos-publicos__preco {
+  font-weight: 900;
+  font-style: italic;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  margin: 6px 0 8px;
+  color: var(--pub-violeta);
+}
+
+.planos-publicos li p:last-child {
+  margin: 0;
+  color: var(--pub-suave);
+  line-height: 1.5;
+}
+
+.fim {
+  background: var(--pub-violeta);
+  color: #fff;
+  padding: 56px 16px 64px;
+  text-align: center;
+}
+
+.fim h2 {
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  line-height: 1.05;
+  max-width: 18ch;
+  margin: 0 auto;
+}
+
+.fim p {
+  margin: 14px 0 28px;
+  font-size: 1.1rem;
+}
+
+.publica__rodape {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 16px 40px;
+  color: var(--pub-suave);
+  font-size: 0.9rem;
+}
+
+.publica__rodape nav {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 10px;
+}
+
+.publica__rodape a {
+  color: var(--pub-tinta);
+}
+
+@media (min-width: 860px) {
+  .publica__topo {
+    padding: 24px 32px;
+  }
+  .publica__logo {
+    width: 150px;
+  }
+  .abertura {
+    grid-template-columns: 1.15fr 1fr;
+    align-items: center;
+    padding: 48px 32px 88px;
+    gap: 56px;
+  }
+  .contagem {
+    padding: 36px 32px 40px;
+  }
+  .contagem__dia {
+    grid-template-columns: 76px 1fr;
+    padding: 12px 0;
+  }
+  .contagem ol::before {
+    left: 39px;
+  }
+  .contagem__marca {
+    font-size: 1.05rem;
+  }
+  .contagem__tarefa {
+    font-size: 1.15rem;
+  }
+  .contagem__dia--d0 .contagem__tarefa {
+    font-size: 1.6rem;
+  }
+  .publica__seccao {
+    padding: 64px 32px;
+  }
+  .tipo {
+    grid-template-columns: 1.2fr 1.5fr 9rem;
+    align-items: center;
+    gap: 24px;
+  }
+  .tipo__numeros {
+    text-align: right;
+  }
+  .notas-publicas ul,
+  .planos-publicos {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .resto {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 48px;
+  }
+}

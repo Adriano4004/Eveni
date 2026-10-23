@@ -18,9 +18,9 @@ test.beforeEach(({ page }) => {
 test('criar conta, terminar sessão e voltar a entrar, no telemóvel', async ({ page }) => {
   const email = `ana.${Date.now()}@exemplo.ao`;
 
+  // Sem sessão, o endereço principal mostra a página pública (decisão 028).
   await page.goto('/');
-  await expect(page).toHaveURL(/\/entrar$/);
-  await page.getByRole('link', { name: 'Criar conta' }).click();
+  await page.getByRole('link', { name: 'Criar conta grátis' }).first().click();
 
   await page.getByLabel('Nome').fill('Ana Domingos');
   await page.getByLabel('E-mail').fill(email);
@@ -83,8 +83,9 @@ test('terminar sessão em todos os dispositivos fecha também as outras sessões
   await computador.getByRole('button', { name: 'Terminar sessão em todos os dispositivos' }).click();
   await expect(computador.getByRole('heading', { name: 'Entrar no Eveni' })).toBeVisible();
 
+  // A outra sessão também terminou: ao recarregar, já não entra na aplicação (vê a página pública).
   await telemovel.reload();
-  await expect(telemovel.getByRole('heading', { name: 'Entrar no Eveni' })).toBeVisible();
+  await expect(telemovel.getByRole('heading', { name: /Cada evento tem um dia D/ })).toBeVisible();
 });
 
 test('se terminar sessão falhar, avisa e não finge que saiu', async ({ page }) => {
