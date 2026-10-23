@@ -24,6 +24,6 @@ describe('página pública', () => {
   });
 
   it('os preços são os da decisão 003', () => {
-    expect(mensagens.publica.planos.lista.map((p) => p.preco)).toEqual(['Grátis', '60 000,00 Kz por mês', '150 000,00 Kz por mês']);
+    expect(mensagens.publica.planos.lista.map((p) => p.preco)).toEqual(['Grátis', '370 000,00 Kz por mês', '640 000,00 Kz por mês']);
   });
 });

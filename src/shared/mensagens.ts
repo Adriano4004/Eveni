@@ -964,8 +964,8 @@ export const mensagens = {
       titulo: 'Planos',
       lista: [
         { nome: 'Singular', preco: 'Grátis', detalhe: '1 projecto, só para si.' },
-        { nome: 'Empresarial', preco: '60 000,00 Kz por mês', detalhe: 'Projectos ilimitados e até 10 pessoas na equipa. Relatórios com a sua marca.' },
-        { nome: 'Grandes', preco: '150 000,00 Kz por mês', detalhe: 'Projectos ilimitados e equipa sem limite. Relatórios com a sua marca.' },
+        { nome: 'Empresarial', preco: '370 000,00 Kz por mês', detalhe: 'Projectos ilimitados e até 10 pessoas na equipa. Relatórios com a sua marca.' },
+        { nome: 'Grandes', preco: '640 000,00 Kz por mês', detalhe: 'Projectos ilimitados e equipa sem limite. Relatórios com a sua marca.' },
       ],
       nota: 'Todos começam no Singular. Para mudar de plano, fale connosco depois de criar a conta.',
     },
@@ -1103,8 +1103,8 @@ export const mensagens = {
           titulo: 'Planos e preços',
           paragrafos: [
             'Singular: grátis, com 1 projecto, sem colaboração. O limite é para sempre: um projecto arquivado continua a contar.',
-            'Empresarial: 60 000,00 Kz por mês, com projectos ilimitados e até 10 membros na equipa.',
-            'Grandes: 150 000,00 Kz por mês, com projectos ilimitados e membros ilimitados.',
+            'Empresarial: 370 000,00 Kz por mês, com projectos ilimitados e até 10 membros na equipa.',
+            'Grandes: 640 000,00 Kz por mês, com projectos ilimitados e membros ilimitados.',
             'Enquanto o pagamento não estiver disponível na aplicação, a mudança de plano é combinada directamente connosco. Qualquer alteração de preços é anunciada com antecedência.',
             'Os projectos não se eliminam: arquivam-se e restauram-se.',
           ],
