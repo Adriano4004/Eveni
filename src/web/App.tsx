@@ -3,6 +3,7 @@ import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
 import { EcraAdmin } from './ecra-admin.js';
+import { EcraPublica } from './ecra-publica.js';
 import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
 import { EcraLegal, EcraNovosTermos } from './ecras-legal.js';
@@ -79,7 +80,8 @@ export function App() {
 
   useEffect(() => {
     if (QUALQUER.has(caminho)) return;
-    if (estado.tipo === 'anonimo' && !SO_ANONIMO.has(caminho)) navegar('/entrar');
+    // Sem sessão, o endereço principal mostra a página pública (decisão 028); os outros levam à entrada.
+    if (estado.tipo === 'anonimo' && !SO_ANONIMO.has(caminho) && caminho !== '/') navegar('/entrar');
     if (estado.tipo === 'com-sessao' && SO_ANONIMO.has(caminho)) navegar(conviteGuardado() ? '/convite' : '/');
   }, [estado, caminho]);
 
@@ -117,6 +119,8 @@ export function App() {
         aoSair={() => {
           esquecerToken('/convite');
           setEstado({ tipo: 'anonimo' });
+          // Quem acabou de sair volta à entrada, não à página pública.
+          navegar('/entrar');
         }}
       />
     );
@@ -175,10 +179,13 @@ export function App() {
           // Num telemóvel partilhado, quem entrar a seguir não deve ser levado para o convite de outra pessoa.
           esquecerToken('/convite');
           setEstado({ tipo: 'anonimo' });
+          // Quem acabou de sair volta à entrada, não à página pública.
+          navegar('/entrar');
         }}
       />
     );
   }
+  if (caminho === '/') return <EcraPublica />;
   if (caminho === '/registo') return <EcraRegisto aoEntrar={entrou} />;
   if (caminho === '/recuperar') return <EcraRecuperar />;
   return <EcraEntrar aoEntrar={entrou} aviso={avisoEntrada} />;

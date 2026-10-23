@@ -5,10 +5,14 @@
 | Plano | Preço | Projectos | Membros |
 |---|---|---|---|
 | Singular | Grátis | 1 | Só o titular (sem colaboração) |
-| Empresarial | 60 000,00 Kz/mês | Ilimitados | Até 10 |
-| Grandes | 150 000,00 Kz/mês | Ilimitados | Ilimitados |
+| Empresarial | 370 000,00 Kz/mês | Ilimitados | Até 10 |
+| Grandes | 640 000,00 Kz/mês | Ilimitados | Ilimitados |
 
 Regras que se mantêm (CLAUDE.md, secção 8): projectos arquivados contam para o limite; não há eliminação de projectos, só arquivo e restauro.
+
+## Preços actualizados
+
+A 23/10/2026, o Adriano mudou os preços: Empresarial de 60 000,00 para **370 000,00 Kz/mês**; Grandes de 150 000,00 para **640 000,00 Kz/mês**. A tabela acima já tem os valores novos, que também estão nos termos de utilização e na página pública.
 
 ## Limite do Singular
 

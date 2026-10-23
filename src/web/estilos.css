@@ -1506,3 +1506,810 @@ h1 {
 .legal__ligacoes {
   font-size: 0.9rem;
 }
+
+/* Página pública (decisão 028). Inspirada no weddings.ao, pedido do Adriano: topo escuro com fotografia,
+   mosaico de fotos, faixa em movimento, secções claras e escuras alternadas. Cores do Eveni. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  /* Licença aberta (OFL): public/fontes/bricolage-grotesque-OFL.txt */
+  src: url('/fontes/bricolage-grotesque.woff2') format('woff2-variations');
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+.publica {
+  --pub-violeta: #6553f3;
+  --pub-violeta-claro: #a99dff;
+  --pub-noite: #140f33;
+  --pub-noite-2: #221a52;
+  --pub-girassol: #ffc93c;
+  --pub-papel: #f7f5ff;
+  --pub-suave: #5a5670;
+  --pub-titulo: 'Bricolage Grotesque', var(--fonte);
+  background: var(--pub-papel);
+  color: var(--pub-noite);
+  overflow-x: clip;
+}
+
+.publica h1,
+.publica h2,
+.publica h3 {
+  font-family: var(--pub-titulo);
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+.publica a:focus-visible {
+  outline: 3px solid var(--pub-violeta);
+  outline-offset: 3px;
+}
+
+.abertura a:focus-visible,
+.conversa a:focus-visible,
+.fecho a:focus-visible {
+  outline-color: var(--pub-girassol);
+}
+
+/* Fotografias e os fundos que as substituem enquanto não existem. */
+.foto {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.foto--vazia {
+  background-color: var(--pub-noite-2);
+}
+
+.foto--tom0 {
+  background-image: radial-gradient(circle at 20% 15%, #8b7bff 0, transparent 55%), radial-gradient(circle at 85% 90%, #ffc93c66 0, transparent 50%);
+}
+
+.foto--tom1 {
+  background-image: radial-gradient(circle at 75% 20%, #6553f3 0, transparent 55%), radial-gradient(circle at 15% 85%, #ff7a59aa 0, transparent 45%);
+}
+
+.foto--tom2 {
+  background-image: radial-gradient(circle at 30% 80%, #6553f3 0, transparent 50%), radial-gradient(circle at 80% 15%, #ffc93c88 0, transparent 45%);
+}
+
+.foto--tom3 {
+  background-image: radial-gradient(circle at 60% 40%, #a99dff 0, transparent 50%), radial-gradient(circle at 10% 10%, #6553f3 0, transparent 40%);
+}
+
+/* Enquadramento de cada fotografia (o que fica à vista quando o lugar a corta). */
+.abertura__foto {
+  object-position: 62% 40%;
+}
+
+.mosaico__peca--T02 .foto {
+  object-position: 60% 30%;
+}
+
+.mosaico__peca--T03 .foto {
+  object-position: 70% 25%;
+}
+
+.mosaico__peca--T06 .foto {
+  object-position: 50% 75%;
+}
+
+.mosaico__peca--T05 .foto {
+  object-position: 50% 30%;
+}
+
+.mosaico__peca--T01 .foto {
+  object-position: 50% 80%;
+}
+
+.mosaico__peca--T04 .foto {
+  object-position: 50% 35%;
+}
+
+.mosaico__peca--T07 .foto,
+.fecho__foto--0 {
+  object-position: 50% 25%;
+}
+
+.fecho__foto--1,
+.fecho__foto--2 {
+  object-position: 60% 20%;
+}
+
+/* Topo: fotografia a toda a largura, véu escuro, título grande em branco e o bilhete por cima. */
+.abertura {
+  position: relative;
+  color: #fff;
+  background: var(--pub-noite);
+  isolation: isolate;
+}
+
+.abertura__foto {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.abertura__veu {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(20 15 51 / 0.55) 0%, rgb(20 15 51 / 0.35) 40%, rgb(20 15 51 / 0.92) 100%),
+    linear-gradient(90deg, rgb(20 15 51 / 0.75) 0%, rgb(20 15 51 / 0) 70%);
+}
+
+.publica__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 16px;
+}
+
+.publica__logo {
+  width: 112px;
+  height: auto;
+  /* O logótipo é escuro; sobre a fotografia passa a branco. */
+  filter: brightness(0) invert(1);
+}
+
+.publica__entrar {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 9px 18px;
+  border: 1.5px solid rgb(255 255 255 / 0.6);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.abertura__conteudo {
+  display: grid;
+  gap: 36px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 16px 56px;
+}
+
+.abertura h1 {
+  font-size: clamp(2.6rem, 10.5vw, 5.4rem);
+  line-height: 0.98;
+  max-width: 12ch;
+  text-wrap: balance;
+}
+
+.abertura__titulo-b {
+  display: block;
+  margin-top: 0.12em;
+  color: #d9d3ff;
+  font-weight: 500;
+  font-size: 0.62em;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  max-width: 16ch;
+}
+
+.abertura__sub {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.82);
+  max-width: 34rem;
+  margin: 22px 0 30px;
+}
+
+.abertura__accoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pub-botao {
+  display: inline-block;
+  background: var(--pub-girassol);
+  color: var(--pub-noite);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.02rem;
+  padding: 15px 26px;
+  border-radius: 999px;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.pub-botao:hover {
+  transform: translateY(-2px);
+}
+
+.pub-botao--fantasma {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgb(255 255 255 / 0.55);
+}
+
+/* O bilhete: corpo com as tarefas e talão com o dia D, separados por picotado. */
+.bilhete {
+  --corte: calc(100% - 118px);
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 118px;
+  color: var(--pub-noite);
+  max-width: 440px;
+  width: 100%;
+  justify-self: start;
+  filter: drop-shadow(0 24px 40px rgb(0 0 0 / 0.35));
+  -webkit-mask: radial-gradient(circle 11px at var(--corte) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle 11px at var(--corte) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  mask: radial-gradient(circle 11px at var(--corte) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle 11px at var(--corte) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  transform: rotate(-2deg);
+}
+
+.bilhete__corpo {
+  background: #fff;
+  border-radius: 18px 0 0 18px;
+  padding: 20px 18px 20px 20px;
+  border-right: 2px dashed #c9c3ee;
+}
+
+.bilhete figcaption {
+  font-size: 0.82rem;
+  color: var(--pub-suave);
+  margin-bottom: 12px;
+  line-height: 1.35;
+}
+
+.bilhete ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.bilhete li {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  animation: pub-entrar 0.5s ease-out both;
+}
+
+.bilhete__dia {
+  font-family: var(--pub-titulo);
+  font-weight: 800;
+  color: var(--pub-violeta);
+}
+
+.bilhete__talao {
+  background: var(--pub-girassol);
+  border-radius: 0 18px 18px 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 16px 10px;
+  animation: pub-entrar 0.5s ease-out both;
+}
+
+.bilhete__d0 {
+  font-family: var(--pub-titulo);
+  font-weight: 800;
+  font-size: 3.2rem;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.bilhete__grande {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-top: 6px;
+}
+
+@keyframes pub-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Faixa escura a deslizar com os tipos de evento. */
+.faixa {
+  background: var(--pub-noite);
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+  color: #fff;
+  overflow: hidden;
+  padding: 18px 0;
+}
+
+.faixa__fita {
+  display: flex;
+  width: max-content;
+  animation: pub-deslizar 38s linear infinite;
+}
+
+.faixa ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.faixa li {
+  font-family: var(--pub-titulo);
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 56px;
+}
+
+.faixa li::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--pub-girassol);
+  transform: rotate(45deg);
+  margin-right: -28px;
+}
+
+@keyframes pub-deslizar {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Secções claras. */
+.pub-seccao {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 64px 16px;
+}
+
+.pub-seccao__cabeca h2 {
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  line-height: 1.02;
+  max-width: 16ch;
+}
+
+.pub-seccao__cabeca p {
+  color: var(--pub-suave);
+  font-size: 1.08rem;
+  line-height: 1.6;
+  max-width: 36rem;
+  margin: 16px 0 0;
+}
+
+.pub-seccao__nota {
+  color: var(--pub-suave);
+  margin: 22px 0 0;
+  line-height: 1.55;
+}
+
+/* Mosaico dos tipos de evento: fotografias com o nome por cima. */
+.mosaico {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mosaico__peca {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  min-height: 210px;
+  color: #fff;
+  isolation: isolate;
+}
+
+.mosaico__peca--T02 {
+  grid-column: 1 / -1;
+  min-height: 300px;
+}
+
+.mosaico__foto {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  transition: transform 0.6s ease;
+}
+
+.mosaico__peca:hover .mosaico__foto {
+  transform: scale(1.04);
+}
+
+.mosaico__legenda {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: 3px;
+  padding: 60px 14px 14px;
+  background: linear-gradient(180deg, transparent, rgb(20 15 51 / 0.88));
+  z-index: -1;
+}
+
+.mosaico__legenda strong {
+  font-family: var(--pub-titulo);
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.mosaico__legenda span {
+  font-size: 0.84rem;
+  color: rgb(255 255 255 / 0.8);
+  line-height: 1.3;
+}
+
+.mosaico__numeros {
+  color: var(--pub-girassol) !important;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.mosaico__horizonte {
+  display: block;
+  height: 4px;
+  margin-top: 8px;
+  background: rgb(255 255 255 / 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mosaico__horizonte span {
+  display: block;
+  height: 100%;
+  background: var(--pub-girassol);
+}
+
+/* As notas, como conversas: o conhecimento circula assim em Angola. */
+.conversa {
+  background: var(--pub-noite);
+  color: #fff;
+  padding: 64px 16px;
+  display: grid;
+  gap: 32px;
+}
+
+.conversa__texto h2 {
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  line-height: 1.02;
+  max-width: 15ch;
+}
+
+.conversa__texto p {
+  color: rgb(255 255 255 / 0.75);
+  font-size: 1.08rem;
+  line-height: 1.6;
+  max-width: 30rem;
+  margin: 16px 0 0;
+}
+
+.conversa__ecra {
+  background: var(--pub-noite-2);
+  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 14px 14px;
+  border-radius: 26px;
+  padding: 22px 16px;
+  display: grid;
+  gap: 18px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.conversa__mensagem {
+  max-width: 92%;
+}
+
+.conversa__mensagem:nth-child(even) {
+  justify-self: end;
+}
+
+.conversa__tarefa {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.conversa__tarefa span {
+  font-family: var(--pub-titulo);
+  font-weight: 800;
+  color: var(--pub-girassol);
+  margin-right: 4px;
+}
+
+.conversa blockquote {
+  margin: 0;
+  background: #fff;
+  color: var(--pub-noite);
+  border-radius: 4px 18px 18px 18px;
+  padding: 14px 16px;
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+.conversa__mensagem:nth-child(even) blockquote {
+  background: #e3defe;
+  border-radius: 18px 4px 18px 18px;
+}
+
+/* O resto da aplicação. */
+.recursos {
+  margin: 32px 0 0;
+  display: grid;
+  gap: 14px;
+}
+
+.recursos__item {
+  background: #fff;
+  border-radius: 20px;
+  padding: 22px;
+  border: 1px solid #e6e2fb;
+}
+
+.recursos__icone {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--pub-violeta);
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+.recursos dt {
+  font-family: var(--pub-titulo);
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.recursos dd {
+  margin: 6px 0 0;
+  color: var(--pub-suave);
+  line-height: 1.55;
+}
+
+/* Planos: o do meio em destaque escuro. */
+.pub-seccao--planos {
+  padding-top: 24px;
+}
+
+.precos {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.precos__plano {
+  background: #fff;
+  border: 1px solid #e6e2fb;
+  border-radius: 22px;
+  padding: 26px 24px;
+}
+
+.precos__plano h3 {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.precos__valor {
+  font-family: var(--pub-titulo);
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+  margin: 10px 0 12px;
+  line-height: 1.05;
+}
+
+.precos__plano p:last-child {
+  margin: 0;
+  color: var(--pub-suave);
+  line-height: 1.55;
+}
+
+.precos__plano--destaque {
+  background: var(--pub-violeta);
+  border-color: var(--pub-violeta);
+  color: #fff;
+}
+
+.precos__plano--destaque p:last-child {
+  color: rgb(255 255 255 / 0.85);
+}
+
+/* Fecho: bloco escuro arredondado com colagem de fotografias. */
+.fecho {
+  margin: 0 12px 12px;
+  background: var(--pub-noite);
+  color: #fff;
+  border-radius: 32px;
+  padding: 48px 22px 22px;
+  display: grid;
+  gap: 32px;
+  overflow: hidden;
+}
+
+.fecho h2 {
+  font-size: clamp(2.2rem, 8vw, 3.6rem);
+  line-height: 1;
+  max-width: 12ch;
+}
+
+.fecho p {
+  color: rgb(255 255 255 / 0.75);
+  font-size: 1.1rem;
+  margin: 16px 0 26px;
+}
+
+.fecho__colagem {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  grid-template-rows: 150px 150px;
+  gap: 10px;
+}
+
+.fecho__foto {
+  border-radius: 18px;
+}
+
+.fecho__foto--0 {
+  grid-row: 1 / 3;
+}
+
+.publica__rodape {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 36px 16px 44px;
+  color: var(--pub-suave);
+  font-size: 0.9rem;
+  display: grid;
+  gap: 14px;
+}
+
+.publica__logo--rodape {
+  filter: none;
+  width: 104px;
+}
+
+.publica__rodape nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+}
+
+.publica__rodape a {
+  color: var(--pub-noite);
+}
+
+.publica__rodape p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bilhete li,
+  .bilhete__talao {
+    animation: none;
+  }
+  .faixa__fita {
+    animation: none;
+  }
+  .pub-botao,
+  .mosaico__foto {
+    transition: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .publica__topo {
+    padding: 26px 32px;
+  }
+  .publica__logo {
+    width: 140px;
+  }
+  .abertura {
+    min-height: min(860px, 100vh);
+    display: flex;
+    flex-direction: column;
+  }
+  .publica__topo {
+    width: 100%;
+  }
+  .abertura__conteudo {
+    flex: 1;
+    grid-template-columns: 1.25fr 1fr;
+    align-items: end;
+    gap: 64px;
+    padding: 56px 32px 88px;
+    width: 100%;
+  }
+  .bilhete {
+    justify-self: end;
+    margin-bottom: 12px;
+  }
+  .pub-seccao {
+    padding: 96px 32px;
+  }
+  .pub-seccao__cabeca {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+    gap: 48px;
+  }
+  .mosaico {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 240px);
+    grid-template-areas:
+      't01 t05 t04 t07'
+      't02 t02 t06 t06'
+      't02 t02 t03 t03';
+    gap: 14px;
+  }
+  .mosaico__peca {
+    min-height: 0;
+  }
+  .mosaico__peca--T01 { grid-area: t01; }
+  .mosaico__peca--T05 { grid-area: t05; }
+  .mosaico__peca--T06 { grid-area: t06; }
+  .mosaico__peca--T07 { grid-area: t07; }
+  .mosaico__peca--T03 { grid-area: t03; }
+  .mosaico__peca--T04 { grid-area: t04; }
+  .mosaico__peca--T02 {
+    grid-area: t02;
+    min-height: 0;
+  }
+  .mosaico__peca--T02 .mosaico__legenda strong {
+    font-size: 2.2rem;
+  }
+  .conversa {
+    grid-template-columns: 1fr 1.1fr;
+    align-items: center;
+    gap: 72px;
+    padding: 110px max(32px, calc((100% - 1200px) / 2 + 32px));
+  }
+  .conversa__ecra {
+    padding: 32px 28px;
+  }
+  .recursos {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .precos {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+  .precos__plano--destaque {
+    transform: translateY(-14px);
+  }
+  .fecho {
+    max-width: 1200px;
+    margin: 0 auto 24px;
+    grid-template-columns: 1fr 1.1fr;
+    align-items: center;
+    padding: 56px;
+  }
+  .fecho__colagem {
+    grid-template-rows: 190px 190px;
+  }
+  .publica__rodape {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 32px;
+    padding: 40px 32px 48px;
+  }
+}

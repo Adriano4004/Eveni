@@ -18,7 +18,7 @@ test('as páginas de privacidade e termos abrem-se sem sessão e ligam-se entre 
   await page.getByRole('link', { name: 'Termos de utilização' }).click();
   await expect(page).toHaveURL(/\/termos$/);
   await expect(page.getByRole('heading', { name: 'Termos de utilização', level: 1 })).toBeVisible();
-  await expect(page.getByText(/60 000,00 Kz por mês/)).toBeVisible();
+  await expect(page.getByText(/370 000,00 Kz por mês/)).toBeVisible();
 
   // Recarregar o endereço abre a mesma página (não manda para a entrada).
   await page.reload();

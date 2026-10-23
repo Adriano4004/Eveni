@@ -894,6 +894,89 @@ export const mensagens = {
     activarDoisFactores: 'Activar a verificação em dois passos',
     espacoInexistente: 'Este espaço de trabalho já não existe.',
   },
+  publica: {
+    // Página pública (decisão 028): o que se vê em eveni.ao sem sessão iniciada.
+    titulo: 'Cada evento tem um dia D. O Eveni trata do caminho até lá.',
+    subtitulo:
+      'Escolha o tipo de evento e a data. O Eveni monta o plano de tarefas com os prazos certos e as notas de quem já organizou eventos em Angola: do gerador de emergência ao telefonema que enche a sala.',
+    criarConta: 'Criar conta grátis',
+    entrar: 'Entrar',
+    jaTenhoConta: 'Já tenho conta',
+    // A contagem decrescente do topo: tarefas reais do template de casamento.
+    contagem: {
+      titulo: 'Exemplo: um casamento marcado para daqui a 3 meses',
+      paragens: [
+        { dia: 'D-90', tarefa: 'Enviar convites' },
+        { dia: 'D-45', tarefa: 'Ligar a cada convidado para confirmar' },
+        { dia: 'D-30', tarefa: 'Confirmar o gerador e o combustível' },
+        { dia: 'D-15', tarefa: 'Fechar o número final para o catering' },
+        { dia: 'D0', tarefa: 'O grande dia' },
+      ],
+    },
+    tipos: {
+      titulo: 'Um plano para cada tipo de evento',
+      texto: 'Cada plano já traz as tarefas, quem as faz e quando, e as rubricas do orçamento. Indique a data do evento e as datas das tarefas aparecem sozinhas.',
+      // Os números vêm dos templates (um teste confirma que batem certo).
+      lista: [
+        { codigo: 'T01', nome: 'Conferência de imprensa', para: 'Instituições e agências', dias: 21, tarefas: 47 },
+        { codigo: 'T05', nome: 'Fórum', para: 'Instituições, associações e empresas', dias: 90, tarefas: 62 },
+        { codigo: 'T06', nome: 'Conferência', para: 'Instituições, associações e empresas', dias: 120, tarefas: 70 },
+        { codigo: 'T07', nome: 'Aniversário', para: 'Famílias e organizadores de festas', dias: 120, tarefas: 47 },
+        { codigo: 'T03', nome: 'Congresso', para: 'Instituições, associações e universidades', dias: 180, tarefas: 74 },
+        { codigo: 'T04', nome: 'Festival e concerto', para: 'Produtores culturais e promotores', dias: 240, tarefas: 86 },
+        { codigo: 'T02', nome: 'Casamento', para: 'Noivos e wedding planners', dias: 365, tarefas: 69 },
+      ],
+      prazo: (dias: number) => (dias < 60 ? `${dias} dias` : `${Math.round(dias / 30)} meses`),
+      tarefas: (n: number) => `${n} tarefas`,
+      comPouco: 'Com menos tempo? O plano encolhe e avisa logo das tarefas que já não cabem.',
+    },
+    notas: {
+      titulo: 'O que só se aprende a organizar eventos em Angola',
+      texto: 'Cada tarefa traz uma nota. É o que separa um evento cheio de uma sala vazia.',
+      lista: [
+        {
+          dia: 'D-3',
+          tarefa: 'Follow-up telefónico da convocatória',
+          nota: 'Esta tarefa é a diferença entre sala cheia e sala vazia. Em Luanda, o e-mail não garante presença — a chamada garante. Não delegar.',
+        },
+        {
+          dia: 'D-30',
+          tarefa: 'Confirmar gerador de emergência e combustível',
+          nota: 'Luanda. Não é pessimismo, é planeamento. Confirmar autonomia em horas, não a existência do gerador.',
+        },
+        {
+          dia: 'D-240',
+          tarefa: 'Definir data e verificar época das chuvas',
+          nota: 'Luanda: época das chuvas de Novembro a Abril. Evento ao ar livre nesse período exige cobertura contratada ou plano B a sério — não boa vontade.',
+        },
+      ],
+    },
+    resto: {
+      titulo: 'E tudo o resto, no mesmo sítio',
+      lista: [
+        { titulo: 'Convidados e RSVP por WhatsApp', texto: 'Cada convidado recebe a sua ligação e responde no telemóvel. Mesas e lugares incluídos.' },
+        { titulo: 'Orçamento em Kwanza', texto: 'Previsto e real, por categoria, com contingência e aviso quando se passa do previsto. O lobolo tem a sua rubrica.' },
+        { titulo: 'Equipa', texto: 'Convide quem trabalha consigo e escolha quem edita e quem só consulta cada projecto.' },
+        { titulo: 'Relatórios para o cliente', texto: 'PDF com o orçamento e o cronograma, com o logótipo e as cores da sua agência.' },
+      ],
+    },
+    planos: {
+      titulo: 'Planos',
+      lista: [
+        { nome: 'Singular', preco: 'Grátis', detalhe: '1 projecto, só para si.' },
+        { nome: 'Empresarial', preco: '370 000,00 Kz por mês', detalhe: 'Projectos ilimitados e até 10 pessoas na equipa. Relatórios com a sua marca.' },
+        { nome: 'Grandes', preco: '640 000,00 Kz por mês', detalhe: 'Projectos ilimitados e equipa sem limite. Relatórios com a sua marca.' },
+      ],
+      nota: 'Todos começam no Singular. Para mudar de plano, escreva-nos depois de criar a conta:',
+      // Contacto comercial (escolhido pelo Adriano a 23/10/2026: e-mail).
+      contacto: 'comercial@eveni.ao',
+    },
+    fim: {
+      titulo: 'Marque a data. O plano vem a seguir.',
+      texto: 'Criar conta é grátis e leva um minuto.',
+    },
+    rodape: (ano: number) => `© ${ano} BLUE BERN Comércio Geral e Prestação de Serviços, Lda., Luanda, Angola`,
+  },
   legal: {
     responsavel: 'BLUE BERN Comércio Geral e Prestação de Serviços, Lda., NIF 5000143723, com sede na Rua Marechal Brós Tito, n.º 35, Edifício Skyone, 4.º andar, Kinaxixi, Luanda, Angola',
     contacto: 'privacidade@eveni.ao',
@@ -1022,8 +1105,8 @@ export const mensagens = {
           titulo: 'Planos e preços',
           paragrafos: [
             'Singular: grátis, com 1 projecto, sem colaboração. O limite é para sempre: um projecto arquivado continua a contar.',
-            'Empresarial: 60 000,00 Kz por mês, com projectos ilimitados e até 10 membros na equipa.',
-            'Grandes: 150 000,00 Kz por mês, com projectos ilimitados e membros ilimitados.',
+            'Empresarial: 370 000,00 Kz por mês, com projectos ilimitados e até 10 membros na equipa.',
+            'Grandes: 640 000,00 Kz por mês, com projectos ilimitados e membros ilimitados.',
             'Enquanto o pagamento não estiver disponível na aplicação, a mudança de plano é combinada directamente connosco. Qualquer alteração de preços é anunciada com antecedência.',
             'Os projectos não se eliminam: arquivam-se e restauram-se.',
           ],
