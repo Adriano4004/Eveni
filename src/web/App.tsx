@@ -108,6 +108,18 @@ export function App() {
       />
     );
   }
+  if (estado.tipo === 'com-sessao' && estado.eu.termosPorAceitar && caminho !== '/conta/dados') {
+    // Termos novos por aceitar (decisão 026): só se pode aceitar, sair, ou ir aos dados para os levar ou apagar.
+    return (
+      <EcraNovosTermos
+        aoAceitar={entrou}
+        aoSair={() => {
+          esquecerToken('/convite');
+          setEstado({ tipo: 'anonimo' });
+        }}
+      />
+    );
+  }
   if (caminho === '/convite') {
     return (
       <EcraConvite token={conviteGuardado() || tokenConvite} comSessao={estado.tipo === 'com-sessao'} aoTerminar={() => esquecerToken('/convite')} />
@@ -123,18 +135,6 @@ export function App() {
           esquecerToken('/confirmar-email');
           navegar('/');
           carregarEu();
-        }}
-      />
-    );
-  }
-  if (estado.tipo === 'com-sessao' && estado.eu.termosPorAceitar && caminho !== '/conta/dados') {
-    // Termos novos por aceitar (decisão 026): só se pode aceitar, sair, ou ir aos dados para os levar ou apagar.
-    return (
-      <EcraNovosTermos
-        aoAceitar={entrou}
-        aoSair={() => {
-          esquecerToken('/convite');
-          setEstado({ tipo: 'anonimo' });
         }}
       />
     );

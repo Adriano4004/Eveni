@@ -904,7 +904,7 @@ export const mensagens = {
           titulo: 'Dados de convidados',
           paragrafos: [
             'Os dados dos convidados são introduzidos por quem organiza o evento, que decide recolhê-los e garante que tem autorização dos convidados para o fazer. O Eveni trata esses dados apenas por conta do organizador, para gerir o evento.',
-            'Cada convidado recebe uma ligação própria para responder ao convite. Essa página mostra apenas o nome do convidado, o evento e a resposta dele.',
+            'Cada convidado recebe uma ligação própria para responder ao convite. Essa página mostra apenas o nome desse convidado, o evento (nome, data e local), a resposta dele e os acompanhantes; nunca os outros convidados.',
             'Recolha só o que precisa: o Eveni não pede nem guarda mais do que o necessário para o convite e a organização das mesas.',
             'Um convidado pode pedir a quem organiza o evento, ou a nós, que corrija ou apague os seus dados.',
           ],
@@ -927,7 +927,8 @@ export const mensagens = {
         {
           titulo: 'Durante quanto tempo',
           paragrafos: [
-            'Enquanto a conta existir. Quando a elimina, apagamos de imediato a conta, os espaços de trabalho de que é o único dono e tudo o que eles contêm (projectos, tarefas, convidados, fornecedores, orçamentos), as sessões e o histórico de acessos. Fica apenas um registo de que uma conta foi eliminada, sem nada que o identifique.',
+            'Enquanto a conta existir. Quando a elimina, apagamos de imediato a conta, o seu espaço de trabalho e tudo o que ele contém (projectos, tarefas, convidados, fornecedores, orçamentos), as sessões e o histórico de acessos. Fica apenas um registo de que uma conta foi eliminada, sem nada que o identifique.',
+            'Se o seu espaço de trabalho tiver outros membros, a eliminação só é possível depois de o transferir para outra pessoa, para não apagar o trabalho delas.',
             'As contas cujo e-mail não é confirmado em 7 dias são eliminadas da mesma forma.',
             'As sessões terminam ao fim de 30 dias sem uso.',
           ],
