@@ -14,7 +14,7 @@ const FOTOS: { topo: string | null; tipos: Record<string, string | null>; fim: (
     T02: '/fotos/casamento-planner.webp',
     T03: '/fotos/congresso-credenciacao.webp',
     T04: '/fotos/festival-publico.webp',
-    T05: null,
+    T05: '/fotos/forum-painel.webp',
     T06: '/fotos/conferencia-palco.webp',
     T07: '/fotos/festa-mesa.webp',
   },

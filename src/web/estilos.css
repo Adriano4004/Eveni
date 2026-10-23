@@ -1597,6 +1597,10 @@ h1 {
   object-position: 50% 75%;
 }
 
+.mosaico__peca--T05 .foto {
+  object-position: 50% 30%;
+}
+
 .mosaico__peca--T01 .foto {
   object-position: 50% 80%;
 }
