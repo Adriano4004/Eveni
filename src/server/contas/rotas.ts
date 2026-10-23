@@ -188,6 +188,7 @@ export function registarRotasContas(
       emailConfirmado: l.email_verified_at !== null,
       doisFactores: l.dois_factores,
       termosPorAceitar: !l.termos_aceites,
+      administrador: config.ADMINS.includes(l.email),
       espaco: { id: l.workspace_id, nome: l.workspace_name, plano: l.plan_code },
     };
   }

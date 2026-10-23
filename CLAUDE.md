@@ -116,7 +116,7 @@ Usar nomes consistentes em inglês no código (`suppliers`, não misturar com `v
 ### Planos e quotas
 - Planos conhecidos: **Singular**, **Empresarial** (colaboração até 10 membros), **Grandes** (membros ilimitados). Preços e limites exactos de projectos: **perguntar ao Adriano**.
 - Colaboração só em Empresarial e Grandes.
-- A contagem de projectos é **cumulativa desde o início do período do plano**.
+- A contagem de projectos é **cumulativa**: no Singular, o limite de 1 projecto é para sempre e conta todos os projectos do espaço, mesmo depois de mudar de plano (decisões 026 e 027).
 - Não existe eliminação de projectos pelo utilizador: só **arquivar** e **restaurar**. Arquivados **continuam a contar** para o limite.
 - "Eventos extra" avulsos dependem de pagamentos — fase posterior.
 

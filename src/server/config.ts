@@ -25,6 +25,13 @@ const esquema = z
     SESSION_SECRET: z
       .string({ error: 'SESSION_SECRET em falta.' })
       .min(32, 'SESSION_SECRET tem de ter pelo menos 32 caracteres.'),
+    // Administradores (decisão 027): e-mails separados por vírgulas, ex.: adrianosousa.as@gmail.com.
+    // Opcional: sem esta variável, ninguém vê a administração.
+    ADMINS: z
+      .string()
+      .transform((v) => v.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean))
+      .pipe(z.array(z.email({ error: 'ADMINS tem de ser uma lista de e-mails separados por vírgulas.' })))
+      .default([]),
     RESEND_API_KEY: z.string().min(1).optional(),
     EMAIL_FROM: z.string().min(3).optional(),
   })

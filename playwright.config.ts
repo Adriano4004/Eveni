@@ -17,6 +17,7 @@ export default defineConfig({
     command: 'npm run build && npm start',
     url: 'http://localhost:3100/health',
     timeout: 120_000,
-    env: { ...envValido, NODE_ENV: 'production', PORT: '3100', APP_URL: 'http://localhost:3100' },
+    // ADMINS: a conta de administração dos testes (e2e/admin.spec.ts).
+    env: { ...envValido, NODE_ENV: 'production', PORT: '3100', APP_URL: 'http://localhost:3100', ADMINS: 'admin.e2e@exemplo.ao' },
   },
 });

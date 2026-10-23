@@ -2,8 +2,8 @@
 import type { CodigoPlano } from './esquemas.js';
 import type { AvisoPrazo } from './materializacao.js';
 
-// Projectos por plano, contados desde o início do período do plano, incluindo os arquivados.
-// null = ilimitados (docs/decisoes/003-planos.md).
+// Projectos por plano, contando todos os do espaço, de sempre, incluindo os arquivados: o limite do Singular
+// é para sempre e mudar de plano não o renova (decisões 026 e 027). null = ilimitados (decisão 003).
 export const LIMITE_PROJECTOS: Record<CodigoPlano, number | null> = {
   singular: 1,
   empresarial: null,

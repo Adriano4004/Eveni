@@ -71,8 +71,8 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
     const resultado = await emTransaccao(pool, async (cliente) => {
       // Cria-se sempre no espaço de que a pessoa é dona (nunca num espaço de que é só membro).
       // Bloqueia o espaço até ao fim da transacção: dois pedidos em simultâneo não passam ambos o limite.
-      const { rows: espacos } = await cliente.query<{ id: string; plan_code: CodigoPlano; plan_started_at: Date }>(
-        `select w.id, w.plan_code, w.plan_started_at
+      const { rows: espacos } = await cliente.query<{ id: string; plan_code: CodigoPlano }>(
+        `select w.id, w.plan_code
            from workspace_members wm join workspaces w on w.id = wm.workspace_id
           where wm.user_id = $1 and wm.role = 'owner'
           order by wm.created_at
@@ -85,10 +85,9 @@ export function registarRotasProjectos(app: FastifyInstance, base: BaseDeDados, 
 
       const limite = LIMITE_PROJECTOS[espaco.plan_code];
       if (limite !== null) {
-        const { rows } = await cliente.query<{ n: number }>(
-          'select count(*)::int as n from projects where workspace_id = $1 and created_at >= $2',
-          [espaco.id, espaco.plan_started_at],
-        );
+        // Todos os projectos do espaço, de sempre, arquivados incluídos: o limite do Singular é para sempre
+        // (decisão 026), e mudar de plano não o renova (decisão 027).
+        const { rows } = await cliente.query<{ n: number }>('select count(*)::int as n from projects where workspace_id = $1', [espaco.id]);
         if (rows[0]!.n >= limite) throw new ErroHttp(403, m.limitePlano(mensagens.planos[espaco.plan_code], limite));
       }
       if (previsao.avisos.length > 0 && !dados.aceitarAvisos) return { avisosPorAceitar: true as const };
