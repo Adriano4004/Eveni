@@ -1521,9 +1521,13 @@ h1 {
 }
 
 .publica a:focus-visible {
-  outline: 3px solid var(--pub-girassol);
+  outline: 3px solid var(--pub-tinta);
   outline-offset: 3px;
-  border-radius: 6px;
+}
+
+/* Sobre o roxo, o anel escuro não se vê: amarelo. */
+.fim a:focus-visible {
+  outline-color: var(--pub-girassol);
 }
 
 .publica__topo {

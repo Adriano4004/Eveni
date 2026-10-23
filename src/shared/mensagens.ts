@@ -915,7 +915,7 @@ export const mensagens = {
     },
     tipos: {
       titulo: 'Um plano para cada tipo de evento',
-      texto: 'Cada plano já traz as tarefas, quem as faz e quando, e as rubricas do orçamento. Marca a data e as datas das tarefas aparecem sozinhas.',
+      texto: 'Cada plano já traz as tarefas, quem as faz e quando, e as rubricas do orçamento. Indique a data do evento e as datas das tarefas aparecem sozinhas.',
       // Os números vêm dos templates (um teste confirma que batem certo).
       lista: [
         { codigo: 'T01', nome: 'Conferência de imprensa', para: 'Instituições e agências', dias: 21, tarefas: 47 },
