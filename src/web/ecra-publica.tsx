@@ -1,11 +1,20 @@
+import type { ReactNode } from 'react';
 import { mensagens } from '../shared/mensagens.js';
 import { navegar } from './navegacao.js';
 
 const q = mensagens.publica;
 const l = mensagens.legal;
 
+// Fotografias da página pública (decisão 028), em public/fotos/. Enquanto uma foto não existe (null), o lugar
+// fica com um fundo de cor da marca. As fotos têm de ter autorização de uso.
+const FOTOS: { topo: string | null; tipos: Record<string, string | null>; fim: (string | null)[] } = {
+  topo: null,
+  tipos: { T01: null, T02: null, T03: null, T04: null, T05: null, T06: null, T07: null },
+  fim: [null, null, null],
+};
+
 // Botão que é uma ligação: abre o ecrã sem recarregar a página.
-function BotaoLigacao({ para, classe, children }: { para: string; classe: string; children: string }) {
+function Ligacao({ para, classe, children }: { para: string; classe?: string; children: ReactNode }) {
   return (
     <a
       className={classe}
@@ -20,88 +29,143 @@ function BotaoLigacao({ para, classe, children }: { para: string; classe: string
   );
 }
 
-// Página pública (decisão 028): o que se vê sem sessão iniciada. A peça central é a contagem decrescente
-// até ao dia do evento, que é a forma como o Eveni pensa cada plano (D-90, D-30, D0).
+// Uma fotografia, ou o fundo de cor que a substitui enquanto não existe.
+function Foto({ src, classe, tom = 0 }: { src: string | null; classe: string; tom?: number }) {
+  if (src) return <img className={`${classe} foto`} src={src} alt="" loading="lazy" decoding="async" />;
+  return <div className={`${classe} foto foto--vazia foto--tom${tom % 4}`} aria-hidden="true" />;
+}
+
+// O título do topo partido em duas linhas, como num cartaz.
+function TituloAbertura() {
+  const [antes, depois] = q.titulo.split('. ');
+  return (
+    <h1>
+      <span>{antes}.</span> <span className="abertura__titulo-b">{depois}</span>
+    </h1>
+  );
+}
+
+// A contagem até ao dia D, como um bilhete de evento: tarefas reais do template de casamento.
+function Bilhete() {
+  const paragens = q.contagem.paragens.filter((p) => p.dia !== 'D0');
+  const dia = q.contagem.paragens.find((p) => p.dia === 'D0')!;
+  return (
+    <figure className="bilhete">
+      <div className="bilhete__corpo">
+        <figcaption>{q.contagem.titulo}</figcaption>
+        <ol>
+          {paragens.map((p, i) => (
+            <li key={p.dia} style={{ animationDelay: `${300 + i * 140}ms` }}>
+              <span className="bilhete__dia">{p.dia}</span>
+              <span>{p.tarefa}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="bilhete__talao" style={{ animationDelay: `${300 + paragens.length * 140}ms` }}>
+        <span className="bilhete__d0">{dia.dia}</span>
+        <span className="bilhete__grande">{dia.tarefa}</span>
+      </div>
+    </figure>
+  );
+}
+
+// Página pública (decisão 028): o que se vê sem sessão iniciada.
 export function EcraPublica() {
+  const tipos = q.tipos.lista;
   return (
     <div className="publica">
-      <header className="publica__topo">
-        <img className="publica__logo" src="/eveni-logo.png" alt={mensagens.app.nome} width={160} height={62} />
-        <BotaoLigacao para="/entrar" classe="publica__entrar">
-          {q.entrar}
-        </BotaoLigacao>
-      </header>
-
-      <main>
-        <section className="abertura">
+      <section className="abertura">
+        <Foto src={FOTOS.topo} classe="abertura__foto" tom={1} />
+        <div className="abertura__veu" aria-hidden="true" />
+        <header className="publica__topo">
+          <img className="publica__logo" src="/eveni-logo.png" alt={mensagens.app.nome} width={140} height={54} />
+          <Ligacao para="/entrar" classe="publica__entrar">
+            {q.entrar}
+          </Ligacao>
+        </header>
+        <div className="abertura__conteudo">
           <div className="abertura__texto">
-            <h1>{q.titulo}</h1>
+            <TituloAbertura />
             <p className="abertura__sub">{q.subtitulo}</p>
             <div className="abertura__accoes">
-              <BotaoLigacao para="/registo" classe="publica__botao">
+              <Ligacao para="/registo" classe="pub-botao">
                 {q.criarConta}
-              </BotaoLigacao>
-              <BotaoLigacao para="/entrar" classe="publica__secundario">
+              </Ligacao>
+              <Ligacao para="/entrar" classe="pub-botao pub-botao--fantasma">
                 {q.jaTenhoConta}
-              </BotaoLigacao>
+              </Ligacao>
             </div>
           </div>
-          <figure className="contagem">
-            <figcaption>{q.contagem.titulo}</figcaption>
-            <ol>
-              {q.contagem.paragens.map((p, i) => (
-                <li key={p.dia} className={p.dia === 'D0' ? 'contagem__dia contagem__dia--d0' : 'contagem__dia'} style={{ animationDelay: `${i * 120}ms` }}>
-                  <span className="contagem__marca">{p.dia}</span>
-                  <span className="contagem__tarefa">{p.tarefa}</span>
-                </li>
-              ))}
-            </ol>
-          </figure>
-        </section>
+          <Bilhete />
+        </div>
+      </section>
 
-        <section className="publica__seccao">
-          <h2>{q.tipos.titulo}</h2>
-          <p className="publica__texto">{q.tipos.texto}</p>
-          <ul className="tipos">
-            {q.tipos.lista.map((t) => (
-              <li key={t.codigo} className="tipo">
-                <div className="tipo__cabeca">
+      {/* Faixa a deslizar com os tipos de evento; a segunda cópia só serve para a volta não ter emenda. */}
+      <div className="faixa">
+        <div className="faixa__fita">
+          {[0, 1].map((copia) => (
+            <ul key={copia} aria-hidden={copia === 1 ? true : undefined}>
+              {tipos.map((t) => (
+                <li key={t.codigo}>{t.nome}</li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
+
+      <main>
+        <section className="pub-seccao">
+          <div className="pub-seccao__cabeca">
+            <h2>{q.tipos.titulo}</h2>
+            <p>{q.tipos.texto}</p>
+          </div>
+          <ul className="mosaico">
+            {tipos.map((t, i) => (
+              <li key={t.codigo} className={`mosaico__peca mosaico__peca--${t.codigo}`}>
+                <Foto src={FOTOS.tipos[t.codigo] ?? null} classe="mosaico__foto" tom={i} />
+                <div className="mosaico__legenda">
                   <strong>{t.nome}</strong>
-                  <span className="tipo__para">{t.para}</span>
+                  <span>{t.para}</span>
+                  <span className="mosaico__numeros">
+                    {q.tipos.prazo(t.dias)}, {q.tipos.tarefas(t.tarefas)}
+                  </span>
+                  {/* O horizonte do plano: de 3 semanas (conferência de imprensa) a 1 ano (casamento). */}
+                  <span className="mosaico__horizonte" aria-hidden="true">
+                    <span style={{ width: `${Math.max(6, Math.round((t.dias / 365) * 100))}%` }} />
+                  </span>
                 </div>
-                {/* A barra mostra o horizonte do plano: de 3 semanas (conferência de imprensa) a 1 ano (casamento). */}
-                <div className="tipo__horizonte" aria-hidden="true">
-                  <span style={{ width: `${Math.max(6, Math.round((t.dias / 365) * 100))}%` }} />
-                </div>
-                <span className="tipo__numeros">
-                  {q.tipos.prazo(t.dias)}, {q.tipos.tarefas(t.tarefas)}
-                </span>
               </li>
             ))}
           </ul>
-          <p className="publica__texto publica__texto--nota">{q.tipos.comPouco}</p>
+          <p className="pub-seccao__nota">{q.tipos.comPouco}</p>
         </section>
 
-        <section className="publica__seccao notas-publicas">
-          <h2>{q.notas.titulo}</h2>
-          <p className="publica__texto">{q.notas.texto}</p>
-          <ul>
+        <section className="conversa">
+          <div className="conversa__texto">
+            <h2>{q.notas.titulo}</h2>
+            <p>{q.notas.texto}</p>
+          </div>
+          <div className="conversa__ecra">
             {q.notas.lista.map((n) => (
-              <li key={n.tarefa}>
-                <p className="notas-publicas__tarefa">
-                  <span className="notas-publicas__dia">{n.dia}</span> {n.tarefa}
+              <div key={n.tarefa} className="conversa__mensagem">
+                <p className="conversa__tarefa">
+                  <span>{n.dia}</span> {n.tarefa}
                 </p>
                 <blockquote>{n.nota}</blockquote>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
-        <section className="publica__seccao">
-          <h2>{q.resto.titulo}</h2>
-          <dl className="resto">
-            {q.resto.lista.map((r) => (
-              <div key={r.titulo}>
+        <section className="pub-seccao">
+          <div className="pub-seccao__cabeca">
+            <h2>{q.resto.titulo}</h2>
+          </div>
+          <dl className="recursos">
+            {q.resto.lista.map((r, i) => (
+              <div key={r.titulo} className="recursos__item">
+                <Icone indice={i} />
                 <dt>{r.titulo}</dt>
                 <dd>{r.texto}</dd>
               </div>
@@ -109,40 +173,71 @@ export function EcraPublica() {
           </dl>
         </section>
 
-        <section className="publica__seccao">
-          <h2>{q.planos.titulo}</h2>
-          <ul className="planos-publicos">
-            {q.planos.lista.map((p) => (
-              <li key={p.nome}>
+        <section className="pub-seccao pub-seccao--planos">
+          <div className="pub-seccao__cabeca">
+            <h2>{q.planos.titulo}</h2>
+          </div>
+          <ul className="precos">
+            {q.planos.lista.map((p, i) => (
+              <li key={p.nome} className={i === 1 ? 'precos__plano precos__plano--destaque' : 'precos__plano'}>
                 <h3>{p.nome}</h3>
-                <p className="planos-publicos__preco">{p.preco}</p>
+                <p className="precos__valor">{p.preco}</p>
                 <p>{p.detalhe}</p>
               </li>
             ))}
           </ul>
-          <p className="publica__texto publica__texto--nota">{q.planos.nota}</p>
+          <p className="pub-seccao__nota">{q.planos.nota}</p>
         </section>
 
-        <section className="fim">
-          <h2>{q.fim.titulo}</h2>
-          <p>{q.fim.texto}</p>
-          <BotaoLigacao para="/registo" classe="publica__botao publica__botao--claro">
-            {q.criarConta}
-          </BotaoLigacao>
+        <section className="fecho">
+          <div className="fecho__texto">
+            <h2>{q.fim.titulo}</h2>
+            <p>{q.fim.texto}</p>
+            <Ligacao para="/registo" classe="pub-botao">
+              {q.criarConta}
+            </Ligacao>
+          </div>
+          <div className="fecho__colagem">
+            {FOTOS.fim.map((src, i) => (
+              <Foto key={i} src={src} classe={`fecho__foto fecho__foto--${i}`} tom={i + 1} />
+            ))}
+          </div>
         </section>
       </main>
 
       <footer className="publica__rodape">
+        <img className="publica__logo publica__logo--rodape" src="/eveni-logo.png" alt={mensagens.app.nome} width={120} height={46} />
         <nav>
-          <BotaoLigacao para="/termos" classe="">
-            {l.termos.ligacao}
-          </BotaoLigacao>
-          <BotaoLigacao para="/privacidade" classe="">
-            {l.privacidade.ligacao}
-          </BotaoLigacao>
+          <Ligacao para="/termos">{l.termos.ligacao}</Ligacao>
+          <Ligacao para="/privacidade">{l.privacidade.ligacao}</Ligacao>
         </nav>
         <p>{q.rodape(new Date().getFullYear())}</p>
       </footer>
     </div>
+  );
+}
+
+// Ícones simples, desenhados aqui (sem bibliotecas): conversa, moeda, equipa, documento.
+function Icone({ indice }: { indice: number }) {
+  const tracos = [
+    <path key="c" d="M5 6h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H11l-4 3v-3H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />,
+    <g key="m">
+      <circle cx="12" cy="12" r="8" />
+      <path d="M9 9v6M9 12l4-3M9 12l4 3" />
+    </g>,
+    <g key="e">
+      <circle cx="9" cy="9" r="3" />
+      <circle cx="17" cy="10" r="2.5" />
+      <path d="M3 19c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4" />
+    </g>,
+    <g key="d">
+      <path d="M7 3h7l5 5v13H7z" />
+      <path d="M14 3v5h5M10 13h6M10 17h6" />
+    </g>,
+  ];
+  return (
+    <svg className="recursos__icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {tracos[indice % tracos.length]}
+    </svg>
   );
 }

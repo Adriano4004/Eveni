@@ -18,15 +18,23 @@
 5. **Planos:** os preços da decisão 003.
 6. **Fecho:** "Marque a data. O plano vem a seguir.", com o botão de criar conta, e o rodapé com os termos, a privacidade e a BLUE BERN.
 
-## Escolhas de desenho
+## Escolhas de desenho (segunda versão, 23/10/2026)
 
-- **Cores:**
-  - o roxo da marca (#6553F3);
-  - um roxo-tinta muito escuro (#1B1540) para texto e para a contagem;
-  - amarelo-girassol (#FFC93C) para o dia D e para o botão final.
-- **Letra:** a do sistema (rápida em redes lentas e telemóveis de gama média, como o resto da aplicação). Os títulos são muito grossos e inclinados, como o logótipo.
-- **Telemóvel primeiro:** tudo numa coluna; no computador, a abertura e as notas passam a colunas.
-- **Sem ligações externas:** sem fontes nem imagens de fora, por isso as regras de segurança da página ficam iguais.
+A primeira versão foi recusada pelo Adriano ("básica, com cara de IA"). A segunda inspira-se no weddings.ao, por pedido dele:
+
+- **Topo escuro**, com uma fotografia a toda a largura e um véu roxo-noite. O título fica em branco e muito grande.
+- **A contagem até ao dia D como um bilhete de evento**, com picotado e o talão amarelo do D0.
+- **Faixa escura a deslizar** com os tipos de evento.
+- **Mosaico de fotografias** dos tipos de evento, com o casamento em destaque. Cada peça tem o nome, o público, o prazo e uma barra do horizonte.
+- **As notas como conversa** numa secção escura, porque é assim que este conhecimento circula.
+- **Planos**, com o Empresarial em destaque, e um **fecho** escuro e arredondado com uma colagem de fotografias.
+- **Cores do Eveni:** roxo, roxo-noite e amarelo-girassol. O rosa do weddings.ao ficou de fora, para o Eveni não se parecer com ele.
+- **Letra dos títulos:** *Bricolage Grotesque*, aprovada pelo Adriano.
+  - Licença aberta OFL; a licença está em `public/fontes/`.
+  - Um ficheiro de 41 KB, servido pela própria aplicação, sem serviços externos.
+  - O texto corrido continua com a letra do sistema.
+- **Fotografias** em `public/fotos/`. Enquanto não existem, cada lugar mostra um fundo de cor da marca. A lista está em `FOTOS`, em `src/web/ecra-publica.tsx`.
+- **Movimento:** o bilhete aparece uma vez e a faixa desliza devagar. Tudo pára para quem pede menos movimento no telemóvel.
 
 ## Salvaguardas
 
