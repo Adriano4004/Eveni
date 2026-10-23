@@ -220,14 +220,14 @@ describe('Aniversário, derivado do T02 (decisão 025)', () => {
   const T07 = templates.T07!;
   const origemDe = (id: string) => T02.tarefas.find((x) => x.id === `T02-${id.slice(4)}`)!;
   const saem = ['004', '005', '007', '009', '010', '011', '012', '014', '015', '016', '017', '027', '031', '032', '035', '036', '042', '043', '050', '051', '057', '066'];
-  const notasReescritas = ['008', '021', '029', '060', '068', '069'];
+  const notasReescritas = ['008', '021', '029', '037', '060', '068', '069'];
 
   it('começa a D-120 e tem todas as tarefas do T02 menos as aprovadas para sair', () => {
     expect(Math.min(...T07.tarefas.map((x) => x.inicio))).toBe(-120);
     expect(T07.tarefas.map((x) => x.id)).toEqual(T02.tarefas.map((x) => x.id.slice(4)).filter((n) => !saem.includes(n)).map((n) => `T07-${n}`));
   });
 
-  it('fases, categorias, papéis e críticas iguais às do T02; notas iguais, excepto as seis reescritas', () => {
+  it('fases, categorias, papéis e críticas iguais às do T02; notas iguais, excepto as sete reescritas', () => {
     for (const x of T07.tarefas) {
       const o = origemDe(x.id);
       expect({ ...x, id: o.id, titulo: o.titulo, inicio: o.inicio, fim: o.fim, nota: o.nota }, x.id).toEqual(o);
@@ -245,9 +245,9 @@ describe('Aniversário, derivado do T02 (decisão 025)', () => {
     expect(T07.tarefas.find((x) => x.id === 'T07-029')).toMatchObject({ titulo: 'Enviar convites', inicio: -46, critica: true, nota: expect.stringMatching(/^Seis semanas antes/) });
   });
 
-  it('não fala em noivos, casamento, copo-de-água, alembamento nem lobolo', () => {
+  it('não fala em noivos, casamento, copo-de-água, véu, alembamento nem lobolo', () => {
     const { nome, descricao, tarefas, rubricas } = T07;
-    expect(JSON.stringify({ nome, descricao, tarefas, rubricas })).not.toMatch(/noiv|casament|casais|copo-de-água|matrimon|alembam|lobolo|wedding|registo civil/i);
+    expect(JSON.stringify({ nome, descricao, tarefas, rubricas })).not.toMatch(/noiv|casament|casais|copo-de-água|matrimon|alembam|lobolo|wedding|registo civil|véu/i);
   });
 
   it('orçamento: sem as rubricas do casamento, espaço da festa e contingência de 10%', () => {

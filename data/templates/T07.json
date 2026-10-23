@@ -232,7 +232,7 @@
       "inicio": -34,
       "fim": -34,
       "critica": false,
-      "nota": "Com o véu e os acessórios reais. A prova sem eles não prova nada."
+      "nota": "Com os acessórios e o traje reais. A prova sem eles não prova nada."
     },
     {
       "id": "T07-038",
@@ -625,5 +625,5 @@
       "nota": null
     }
   ],
-  "versao": "25cfc37e90b1"
+  "versao": "175ef8f5c7e1"
 }

@@ -135,6 +135,7 @@ export const DERIVADOS: DefinicaoDerivado[] = [
     notas: {
       'T02-008': 'Alguém tem de decidir no dia. Se for o aniversariante ou quem paga a festa, não há coordenação.',
       'T02-021': 'Contratar por portefólio completo de uma festa, não por selecção das melhores fotos de várias.',
+      'T02-037': 'Com os acessórios e o traje reais. A prova sem eles não prova nada.',
       'T02-029': 'Seis semanas antes. Quem vem de fora da cidade precisa de tempo para se organizar.',
       'T02-060': 'Uma pessoa, com telefone, que não é o aniversariante nem quem recebe os convidados.',
       'T02-068': 'Alimenta a base de fornecedores da plataforma. É o que torna a próxima festa mais fácil.',

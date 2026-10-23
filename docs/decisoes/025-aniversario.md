@@ -26,7 +26,8 @@ Feito como o Fórum e a Conferência (decisão 022): `scripts/templates-derivado
 - **Contingência:** 10% (a regra geral do `CLAUDE.md`). Os 15% são só do casamento.
 - **Prazos:** a regra é a mesma do Fórum. O último mês e o pós-evento ficam iguais aos do Casamento, e o resto encolhe para começar a D-120. Os convites e o link de RSVP passam de D-90 para D-46.
 - **Títulos:** "copo-de-água" passa a "festa" em quatro tarefas e numa rubrica. "Contratar wedding planner…" passa a "Contratar organizador ou definir coordenador".
-- **Notas reescritas (6):** coordenador, fotógrafo, convites ("Seis semanas antes…"), imprevistos, avaliação dos fornecedores e material fotográfico. Estas seis deixam de acompanhar o Excel. As outras continuam a vir do Casamento.
+- **Notas reescritas (7):** coordenador, fotógrafo, convites ("Seis semanas antes…"), prova de cabelo e maquilhagem (sem o véu), imprevistos, avaliação dos fornecedores e material fotográfico. Estas sete deixam de acompanhar o Excel.
+- **Nota da contingência:** a do casamento ("Quinze por cento. Doze meses…") não passa para o aniversário. As outras continuam a vir do Casamento.
 
 ## Lançamento
 
