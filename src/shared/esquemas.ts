@@ -126,7 +126,32 @@ export interface Eu {
   doisFactores: boolean;
   // A versão actual dos termos ainda não foi aceite: a aplicação pede-a antes de tudo (decisão 026).
   termosPorAceitar: boolean;
+  // O e-mail está na lista de administradores (ADMINS): mostra o botão da administração (decisão 027).
+  administrador: boolean;
   espaco: { id: string; nome: string; plano: CodigoPlano };
+}
+
+// Administração (decisão 027).
+export const PLANOS: readonly CodigoPlano[] = ['singular', 'empresarial', 'grandes'];
+
+export const pesquisaAdmin = z.object({
+  pesquisa: z.string().trim().max(254, m.pesquisaLongaAdmin).optional(),
+});
+
+export const mudarPlano = z.object({
+  plano: z.enum(['singular', 'empresarial', 'grandes'], { error: m.planoInvalido }),
+});
+
+export interface EspacoAdmin {
+  id: string;
+  nome: string;
+  dono: { nome: string; email: string } | null;
+  plano: CodigoPlano;
+  planoDesde: string;
+  projectos: number;
+  membros: number;
+  // Passa do limite do plano actual (projectos ou membros): mantém tudo, mas não cria mais.
+  acimaDoLimite: boolean;
 }
 
 // Projectos. A data do evento ser hoje ou futura (no calendário de Luanda) verifica-se no servidor.

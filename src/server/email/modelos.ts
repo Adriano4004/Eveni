@@ -92,3 +92,16 @@ export function emailConvite(para: string, url: string, quem: string, espaco: st
     html: moldeHtml([escaparHtml(c.corpo(quem, espaco))], { texto: c.botao, url }, [escaparHtml(c.validade), escaparHtml(c.naoConhece)]),
   };
 }
+
+// Mudança de plano feita na administração (decisão 027). O nome do espaço foi escolhido pelo dono, que é
+// quem recebe o e-mail: escapado no HTML.
+export function emailPlanoAlterado(para: string, url: string, espaco: string, plano: string, acimaDoLimite: boolean): MensagemEmail {
+  const p = e.planoAlterado;
+  const paragrafos = [p.corpo(espaco, plano), ...(acimaDoLimite ? [p.acima] : [])];
+  return {
+    para,
+    assunto: p.assunto(plano),
+    texto: [e.confirmar.ola, '', ...paragrafos, '', `${p.botao}: ${url}`, '', p.duvidas, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(e.confirmar.ola), ...paragrafos.map(escaparHtml)], { texto: p.botao, url }, [escaparHtml(p.duvidas)]),
+  };
+}

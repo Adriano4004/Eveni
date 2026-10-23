@@ -33,7 +33,8 @@ export type AccaoAuditada =
   | 'equipa.convite_aceite'
   | 'equipa.membro_removido'
   | 'projecto.acesso_dado'
-  | 'projecto.acesso_retirado';
+  | 'projecto.acesso_retirado'
+  | 'admin.plano_alterado';
 
 export async function auditar(
   pool: pg.Pool | pg.PoolClient,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Eu } from '../shared/esquemas.js';
 import { mensagens } from '../shared/mensagens.js';
 import { api } from './api.js';
+import { EcraAdmin } from './ecra-admin.js';
 import { EcraConvidados } from './ecra-convidados.js';
 import { EcraDados } from './ecras-dados.js';
 import { EcraLegal, EcraNovosTermos } from './ecras-legal.js';
@@ -152,6 +153,7 @@ export function App() {
     if (caminho === '/equipa') return <EcraEquipa />;
     if (caminho === '/fornecedores') return <EcraFornecedores />;
     if (caminho === '/marca') return <EcraMarca />;
+    if (caminho === '/admin' && estado.eu.administrador) return <EcraAdmin />;
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;
     if (caminho === '/conta/dados') {

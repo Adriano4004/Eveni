@@ -31,3 +31,4 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 024 | [Lançamento do T02 Casamento e fim do Laço Perfeito](024-lancamento-t02.md) | Em vigor |
 | 025 | [Aniversário, derivado do T02](025-aniversario.md) | Em vigor |
 | 026 | [Política de privacidade e termos de utilização](026-privacidade-termos.md) | Em vigor |
+| 027 | [Administração dos planos](027-administracao-planos.md) | Em vigor |

@@ -14,4 +14,6 @@ Regras que se mantêm (CLAUDE.md, secção 8): projectos arquivados contam para 
 
 O limite de 1 projecto é **para sempre**: depois de arquivar o primeiro, não se pode criar outro sem mudar de plano. Decidido pelo Adriano a 23/10/2026 (ver decisão 026).
 
-Os pagamentos ficam para uma fase posterior; até lá, a mudança de plano é feita manualmente.
+O limite conta todos os projectos do espaço, de sempre (decisão 027).
+
+Os pagamentos ficam para uma fase posterior; até lá, a mudança de plano faz-se no ecrã de administração (decisão 027).

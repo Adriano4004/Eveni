@@ -394,14 +394,13 @@ describe('limite de projectos do plano', () => {
     expect((await criar(cookie)).statusCode).toBe(201);
   });
 
-  it('só contam os projectos desde o início do período do plano', async () => {
+  it('no Singular, contam todos os projectos de sempre, mesmo de antes do início do plano (decisão 027)', async () => {
     const cookie = await contaConfirmada();
     await criar(cookie);
-    // Novo período do plano (ex.: renovação): o projecto anterior deixa de contar.
+    // Um novo período do plano (ex.: depois de mudar de plano) não renova o limite.
     await base.pool.query("update projects set created_at = now() - interval '2 days'");
     await base.pool.query("update workspaces set plan_started_at = now() - interval '1 day'");
-    expect((await criar(cookie, { nome: 'Do novo período' })).statusCode).toBe(201);
-    expect((await criar(cookie, { nome: 'Terceiro' })).statusCode).toBe(403);
+    expect((await criar(cookie, { nome: 'Do novo período' })).statusCode).toBe(403);
   });
 
   it('Empresarial: sem limite de projectos', async () => {
