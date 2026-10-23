@@ -179,12 +179,14 @@ export function encolherOffset(offset: number, horizonteOrigem: number, horizont
 export function derivar(def: DefinicaoDerivado, origem: Omit<Template, 'versao'>): Omit<Template, 'versao'> {
   const erro = (texto: string) => new Error(`${def.codigo} (derivado do ${origem.codigo}): ${texto}`);
   const ids = new Set(origem.tarefas.map((t) => t.id));
-  for (const id of [...def.saem, ...def.mantemPrazos, ...Object.keys(def.titulos)]) {
+  const notas = def.notas ?? {};
+  for (const id of [...def.saem, ...def.mantemPrazos, ...Object.keys(def.titulos), ...Object.keys(notas)]) {
     if (!ids.has(id)) throw erro(`a tarefa ${id} não existe na origem`);
   }
   for (const id of def.mantemPrazos) if (def.saem.includes(id)) throw erro(`a tarefa ${id} sai e mantém prazos ao mesmo tempo`);
   const descricoes = new Set(origem.rubricas.map((r) => r.descricao));
-  for (const d of [...def.rubricasQueSaem, ...Object.keys(def.rubricas)]) {
+  const notasRubricas = def.notasRubricas ?? {};
+  for (const d of [...def.rubricasQueSaem, ...Object.keys(def.rubricas), ...Object.keys(notasRubricas)]) {
     if (!descricoes.has(d)) throw erro(`a rubrica "${d}" não existe na origem`);
   }
   const horizonteOrigem = Math.max(...origem.tarefas.map((t) => -t.inicio));
@@ -196,11 +198,16 @@ export function derivar(def: DefinicaoDerivado, origem: Omit<Template, 'versao'>
       const mantem = def.mantemPrazos.includes(t.id);
       const [inicio, fim] = mantem ? [t.inicio, t.fim] : [t.inicio, t.fim].map((o) => encolherOffset(o, horizonteOrigem, def.horizonte));
       if (inicio! < -def.horizonte) throw erro(`a tarefa ${t.id} começa antes do horizonte`);
-      return { ...t, id: t.id.replace(origem.codigo, def.codigo), titulo: def.titulos[t.id] ?? t.titulo, inicio: inicio!, fim: fim! };
+      const nota = notas[t.id] ?? t.nota;
+      return { ...t, id: t.id.replace(origem.codigo, def.codigo), titulo: def.titulos[t.id] ?? t.titulo, inicio: inicio!, fim: fim!, nota };
     });
   const rubricas = origem.rubricas
     .filter((r) => !def.rubricasQueSaem.includes(r.descricao))
-    .map((r) => ({ ...r, descricao: def.rubricas[r.descricao] ?? r.descricao }));
+    .map((r) => ({
+      ...r,
+      descricao: def.rubricas[r.descricao] ?? r.descricao,
+      nota: r.descricao in notasRubricas ? notasRubricas[r.descricao]! : r.nota,
+    }));
   return { codigo: def.codigo, nome: def.nome, descricao: def.descricao, tarefas, rubricas };
 }
 
