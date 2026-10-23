@@ -15,6 +15,7 @@ test('sem e-mail confirmado, não aparece o botão de criar projecto', async ({ 
   await page.getByLabel('Nome').fill('Dora');
   await page.getByLabel('E-mail').fill(`dora.${Date.now()}@exemplo.ao`);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByText('Para criar projectos, confirme primeiro o seu e-mail.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Novo projecto' })).toHaveCount(0);
@@ -409,6 +410,7 @@ test('convidar uma pessoa para a equipa: ligação, criar conta, aceitar e retir
   await convidado.getByLabel('Nome').fill('Paulo');
   await convidado.getByLabel('E-mail').fill(emailConvidado);
   await convidado.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await convidado.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await convidado.getByRole('button', { name: 'Criar conta' }).click();
   await expect(convidado.getByRole('button', { name: 'Aceitar convite' })).toBeVisible();
 

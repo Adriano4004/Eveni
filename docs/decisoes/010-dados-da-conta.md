@@ -16,5 +16,5 @@ Cumpre a Lei n.º 22/11 (Protecção de Dados Pessoais) e o `CLAUDE.md`, secçã
 
 ## Fora do código (para o Adriano tratar com um advogado)
 
-- **Política de privacidade e termos de utilização:** o `CLAUDE.md` exige que estejam acessíveis na aplicação. O texto tem de ser escrito ou revisto por um advogado; quando existir, o Claude Code coloca-o na aplicação.
+- **Política de privacidade e termos de utilização:** já estão na aplicação, com um rascunho do texto que tem de ser revisto por um advogado (ver decisão 026).
 - **Alojamento fora de Angola (Railway)** exige fundamento legal, e há a **notificação prévia à APD**.

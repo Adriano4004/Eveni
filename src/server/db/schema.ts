@@ -22,10 +22,18 @@ export const users = pgTable(
     totpEnabledAt: timestamp('totp_enabled_at', { withTimezone: true }),
     // Último passo de 30 s já usado: o mesmo código não serve duas vezes.
     totpLastStep: bigint('totp_last_step', { mode: 'number' }),
+    // Versão dos termos e da política de privacidade aceite, e quando (decisão 026). Vazio nas contas
+    // criadas antes: aceitam na entrada seguinte.
+    termsVersion: text('terms_version'),
+    termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true }),
     createdAt: criadoEm(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex('users_email_unico').on(t.email), check('users_email_minusculas', sql`${t.email} = lower(${t.email})`)],
+  (t) => [
+    uniqueIndex('users_email_unico').on(t.email),
+    check('users_email_minusculas', sql`${t.email} = lower(${t.email})`),
+    check('users_termos_coerentes', sql`(${t.termsVersion} is null) = (${t.termsAcceptedAt} is null)`),
+  ],
 );
 
 // O espaço de trabalho tem o plano, os membros e (mais tarde) os projectos.

@@ -25,6 +25,7 @@ test('criar conta, terminar sessão e voltar a entrar, no telemóvel', async ({ 
   await page.getByLabel('Nome').fill('Ana Domingos');
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
 
   await expect(page.getByRole('heading', { name: 'Olá, Ana Domingos' })).toBeVisible();
@@ -53,6 +54,7 @@ test('o registo mostra os erros junto ao campo, em português', async ({ page })
   await page.getByLabel('Nome').fill('Bruno');
   await page.getByLabel('E-mail').fill(`bruno.${Date.now()}@exemplo.ao`);
   await page.getByLabel('Palavra-passe').fill('curta');
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByText('A palavra-passe tem de ter pelo menos 10 caracteres.')).toBeVisible();
   await expect(page.getByLabel('Palavra-passe')).toHaveAttribute('aria-invalid', 'true');
@@ -67,6 +69,7 @@ test('terminar sessão em todos os dispositivos fecha também as outras sessões
   await telemovel.getByLabel('Nome').fill('Carla');
   await telemovel.getByLabel('E-mail').fill(email);
   await telemovel.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await telemovel.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await telemovel.getByRole('button', { name: 'Criar conta' }).click();
   await expect(telemovel.getByRole('heading', { name: 'Olá, Carla' })).toBeVisible();
 
@@ -89,6 +92,7 @@ test('se terminar sessão falhar, avisa e não finge que saiu', async ({ page })
   await page.getByLabel('Nome').fill('Dino');
   await page.getByLabel('E-mail').fill(`dino.${Date.now()}@exemplo.ao`);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByRole('heading', { name: 'Olá, Dino' })).toBeVisible();
 
@@ -105,6 +109,7 @@ test('confirmar o e-mail a partir da ligação faz desaparecer o aviso', async (
   await page.getByLabel('Nome').fill('Eva');
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByRole('heading', { name: 'Confirme o seu e-mail' })).toBeVisible();
 
@@ -133,6 +138,7 @@ test('se a internet falhar ao confirmar, permite tentar de novo sem voltar ao e-
   await page.getByLabel('Nome').fill('Fábio');
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByRole('heading', { name: 'Olá, Fábio' })).toBeVisible();
 
@@ -152,6 +158,7 @@ test('abrir a ligação sem sessão pede para entrar primeiro, e confirma a segu
   await page.getByLabel('Nome').fill('Gil');
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByRole('heading', { name: 'Olá, Gil' })).toBeVisible();
   await page.getByRole('button', { name: 'Terminar sessão', exact: true }).click();
@@ -173,6 +180,7 @@ test('recuperar a palavra-passe a partir do ecrã de entrada', async ({ page }) 
   await page.getByLabel('Nome').fill('Helena');
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByRole('heading', { name: 'Olá, Helena' })).toBeVisible();
   await page.getByRole('button', { name: 'Terminar sessão', exact: true }).click();
@@ -203,6 +211,7 @@ test('mudar a palavra-passe a partir da página inicial', async ({ page }) => {
   await page.getByLabel('Nome').fill('Ivo');
   await page.getByLabel('E-mail').fill(`ivo.${Date.now()}@exemplo.ao`);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await page.getByRole('button', { name: 'Mudar palavra-passe' }).click();
 
@@ -227,6 +236,7 @@ test('activar a verificação em dois passos e entrar com o código', async ({ p
   await page.getByLabel('Nome').fill('Joana');
   await page.getByLabel('E-mail', { exact: true }).fill(email);
   await page.getByLabel('Palavra-passe', { exact: true }).fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByRole('heading', { name: 'Olá, Joana' })).toBeVisible();
   // O 2FA só se activa com o e-mail confirmado.
@@ -282,6 +292,7 @@ test('descarregar os meus dados e eliminar a conta', async ({ page }) => {
   await page.getByLabel('Nome').fill('Luís');
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await page.getByRole('button', { name: 'Os meus dados' }).click();
 

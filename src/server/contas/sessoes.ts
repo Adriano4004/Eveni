@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type pg from 'pg';
+import { VERSAO_TERMOS } from '../../shared/legal.js';
 import type { Config } from '../config.js';
 import { apagarContasPorConfirmar } from './eliminacao.js';
 
@@ -54,6 +55,8 @@ export interface SessaoValida {
   tokenHash: string;
   utilizadorId: string;
   emailConfirmado: boolean;
+  // Aceitou a versão actual dos termos (decisão 026).
+  termosAceites: boolean;
 }
 
 // Lê o cookie e devolve a sessão se existir e não tiver expirado.
@@ -67,11 +70,12 @@ export async function lerSessao(
   const token = pedido.cookies[nomeCookie(config)];
   if (!token || token.length > 100) return null;
   const tokenHash = hashToken(token);
-  const { rows } = await pool.query<{ user_id: string; last_seen_at: Date; email_confirmado: boolean }>(
-    `select s.user_id, s.last_seen_at, u.email_verified_at is not null as email_confirmado
+  const { rows } = await pool.query<{ user_id: string; last_seen_at: Date; email_confirmado: boolean; termos_aceites: boolean }>(
+    `select s.user_id, s.last_seen_at, u.email_verified_at is not null as email_confirmado,
+            u.terms_version is not distinct from $2 as termos_aceites
        from sessions s join users u on u.id = s.user_id
       where s.token_hash = $1 and s.expires_at > now()`,
-    [tokenHash],
+    [tokenHash, VERSAO_TERMOS],
   );
   const linha = rows[0];
   if (!linha) return null;
@@ -81,7 +85,7 @@ export async function lerSessao(
     // Sem isto, o browser apagava o cookie 30 dias depois da entrada, mesmo com uso diário.
     definirCookie(config, resposta, token, expira);
   }
-  return { tokenHash, utilizadorId: linha.user_id, emailConfirmado: linha.email_confirmado };
+  return { tokenHash, utilizadorId: linha.user_id, emailConfirmado: linha.email_confirmado, termosAceites: linha.termos_aceites };
 }
 
 export async function terminarSessao(pool: pg.Pool, tokenHash: string): Promise<void> {

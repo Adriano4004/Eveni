@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { MAX_ACOMPANHANTES, MAX_LINHAS_IMPORTACAO, MAX_LUGARES_POR_MESA, normalizarTelemovel, RESPOSTAS } from './convidados.js';
 import { dataValida } from './datas.js';
+import { VERSAO_TERMOS } from './legal.js';
 import { MAX_RODAPE } from './marca.js';
 import { CATEGORIAS_ORCAMENTO, lerKz, MAX_CENTIMOS, MAX_CONTINGENCIA } from './orcamento.js';
 import { mensagens } from './mensagens.js';
@@ -38,10 +39,20 @@ const textoDeUmaLinha = (max: number, erros: { obrigatorio: string; longo: strin
     .max(max, erros.longo)
     .refine((v) => !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(v), erros.invalido);
 
+// Caixa de aceitação: o formulário envia "on" quando está marcada (ver Formulario.tsx).
+const caixaMarcada = (erro: string) => z.preprocess((v) => v === true || v === 'on', z.literal(true, { error: erro }));
+
 export const registo = z.object({
   nome: textoDeUmaLinha(120, { obrigatorio: m.nomeObrigatorio, longo: m.nomeLongo, invalido: m.nomeInvalido }),
   email,
   palavraPasse: palavraPasseNova,
+  aceitarTermos: caixaMarcada(m.termosObrigatorios),
+});
+
+// Aceitar uma nova versão dos termos: a versão que a pessoa leu tem de ser a actual.
+export const aceitarTermos = z.object({
+  versao: z.literal(VERSAO_TERMOS, { error: m.versaoTermosInvalida }),
+  aceitarTermos: caixaMarcada(m.termosNovosObrigatorios),
 });
 export type Registo = z.infer<typeof registo>;
 
@@ -113,6 +124,8 @@ export interface Eu {
   email: string;
   emailConfirmado: boolean;
   doisFactores: boolean;
+  // A versão actual dos termos ainda não foi aceite: a aplicação pede-a antes de tudo (decisão 026).
+  termosPorAceitar: boolean;
   espaco: { id: string; nome: string; plano: CodigoPlano };
 }
 

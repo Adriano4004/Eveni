@@ -59,6 +59,8 @@ export interface Exportacao {
     criadaEm: string;
     verificacaoDoisPassosActivadaEm: string | null;
     codigosRecuperacaoPorUsar: number;
+    // Versão dos termos e da política de privacidade aceite, e quando (decisão 026).
+    termosAceites: { versao: string; em: string } | null;
   };
   espacosDeTrabalho: { id: string; nome: string; plano: string; papel: string; planoDesde: string; criadoEm: string }[];
   sessoes: { criadaEm: string; ultimaUtilizacao: string; expiraEm: string; ip: string | null; navegador: string | null }[];
@@ -86,7 +88,7 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
   const iso = (d: Date | null) => (d ? d.toISOString() : null);
   // Listas explícitas de colunas: nunca hashes, segredos do 2FA nem tokens.
   const { rows: contas } = await pool.query(
-    `select u.id, u.name, u.email, u.email_verified_at, u.created_at, u.totp_enabled_at,
+    `select u.id, u.name, u.email, u.email_verified_at, u.created_at, u.totp_enabled_at, u.terms_version, u.terms_accepted_at,
             (select count(*)::int from recovery_codes r where r.user_id = u.id and r.used_at is null) as codigos
        from users u where u.id = $1`,
     [utilizadorId],
@@ -164,6 +166,7 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       criadaEm: u.created_at.toISOString(),
       verificacaoDoisPassosActivadaEm: iso(u.totp_enabled_at),
       codigosRecuperacaoPorUsar: u.codigos,
+      termosAceites: u.terms_version ? { versao: u.terms_version, em: u.terms_accepted_at.toISOString() } : null,
     },
     espacosDeTrabalho: espacos.map((w) => ({
       id: w.id,
@@ -252,7 +255,7 @@ export function registarRotasDados(
 
   // POST (não GET): pede a palavra-passe (e o código do 2FA, se activo), para que uma sessão esquecida
   // aberta não baste para levar os dados.
-  app.post('/api/conta/exportar', { preHandler: guardas.exigirSessao }, async (pedido, resposta) => {
+  app.post('/api/conta/exportar', { preHandler: guardas.exigirSessaoSemTermos }, async (pedido, resposta) => {
     const { utilizadorId } = pedido.sessao!;
     await limitar(pool, `dados-conta:${utilizadorId}`, LIMITES.dadosConta);
     const { palavraPasse, codigo } = validar(esquemaExportar, pedido.body);
@@ -272,7 +275,7 @@ export function registarRotasDados(
       .send(dados);
   });
 
-  app.post('/api/conta/eliminar', { preHandler: guardas.exigirSessao }, async (pedido, resposta) => {
+  app.post('/api/conta/eliminar', { preHandler: guardas.exigirSessaoSemTermos }, async (pedido, resposta) => {
     const { utilizadorId } = pedido.sessao!;
     await limitar(pool, `dados-conta:${utilizadorId}`, LIMITES.dadosConta);
     const dados = validar(esquemaEliminar, pedido.body);

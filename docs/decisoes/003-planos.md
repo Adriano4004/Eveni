@@ -1,6 +1,6 @@
 # 003 — Planos e preços
 
-**Data:** 19/10/2026 · **Estado:** Aprovada pelo Adriano (um ponto em aberto)
+**Data:** 19/10/2026 · **Estado:** Aprovada pelo Adriano
 
 | Plano | Preço | Projectos | Membros |
 |---|---|---|---|
@@ -10,8 +10,8 @@
 
 Regras que se mantêm (CLAUDE.md, secção 8): projectos arquivados contam para o limite; não há eliminação de projectos, só arquivo e restauro.
 
-## Ponto em aberto
+## Limite do Singular
 
-No Singular, o limite de 1 projecto é **para sempre** (depois de arquivar o primeiro, não pode criar outro sem mudar de plano) ou **renova-se** de tempos a tempos (por exemplo, 1 por ano)? Até haver resposta, o código assume "1 para sempre".
+O limite de 1 projecto é **para sempre**: depois de arquivar o primeiro, não se pode criar outro sem mudar de plano. Decidido pelo Adriano a 23/10/2026 (ver decisão 026).
 
 Os pagamentos ficam para uma fase posterior; até lá, a mudança de plano é feita manualmente.
