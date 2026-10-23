@@ -10,10 +10,10 @@ const l = mensagens.legal;
 const FOTOS: { topo: string | null; tipos: Record<string, string | null>; fim: (string | null)[] } = {
   topo: '/fotos/topo-conferencia.webp',
   tipos: {
-    T01: null,
+    T01: '/fotos/conferencia-imprensa.webp',
     T02: '/fotos/casamento-planner.webp',
     T03: '/fotos/congresso-credenciacao.webp',
-    T04: null,
+    T04: '/fotos/festival-publico.webp',
     T05: null,
     T06: '/fotos/conferencia-palco.webp',
     T07: '/fotos/festa-mesa.webp',

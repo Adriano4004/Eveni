@@ -37,7 +37,8 @@ A primeira versão foi recusada pelo Adriano ("básica, com cara de IA"). A segu
   - Fornecidas pelo Adriano a 23/10/2026 e geradas por IA.
   - Convertidas para WebP, com 60–80 KB cada.
   - Na foto do palco foi apagado um logótipo ("d.") que parecia a marca de uma empresa real.
-  - A conferência de imprensa, o fórum e o festival ainda não têm foto: ficam com um fundo de cor da marca até haver fotos.
+  - A conferência de imprensa e o festival receberam fotos a 23/10/2026.
+  - O fórum continua sem foto. As duas propostas mostravam marcas reais ("Harvey Forum", "World Economic Forum") e pessoas que parecem reais, por isso não foram usadas.
 - **Movimento:** o bilhete aparece uma vez e a faixa desliza devagar. Tudo pára para quem pede menos movimento no telemóvel.
 
 ## Salvaguardas
