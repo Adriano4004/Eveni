@@ -75,9 +75,10 @@ export function registarRotasAdmin(
   app.post<{ Params: { id: string } }>('/api/admin/espacos/:id/plano', { preHandler: exigirAdmin }, async (pedido) => {
     const { plano } = validar(mudarPlano, pedido.body);
     const id = pedido.params.id;
-    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new ErroHttp(404, m.espacoInexistente);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new ErroHttp(404, m.espacoInexistente);
     const cliente = await pool.connect();
-    let resultado: { nome: string; dono: string | null; projectos: number; membros: number } | null = null;
+    let resultado: { nome: string; dono: string | null } | null = null;
+    let contagens = { projectos: 0, membros: 0 };
     try {
       await cliente.query('begin');
       // Bloqueia o espaço: a mudança não se cruza com a criação de um projecto ou um convite (que lêem o plano).
@@ -92,6 +93,7 @@ export function registarRotasAdmin(
       );
       const espaco = rows[0];
       if (!espaco) throw new ErroHttp(404, m.espacoInexistente);
+      contagens = { projectos: espaco.projectos, membros: espaco.membros };
       if (espaco.plan_code !== plano) {
         // O período do plano começa no dia da mudança (decisão 027).
         await cliente.query('update workspaces set plan_code = $2, plan_started_at = now() where id = $1', [id, plano]);
@@ -101,7 +103,7 @@ export function registarRotasAdmin(
           espacoId: id,
           detalhes: { de: espaco.plan_code, para: plano },
         });
-        resultado = { nome: espaco.name, dono: espaco.dono, projectos: espaco.projectos, membros: espaco.membros };
+        resultado = { nome: espaco.name, dono: espaco.dono };
       }
       await cliente.query('commit');
     } catch (erro) {
@@ -112,11 +114,9 @@ export function registarRotasAdmin(
     }
 
     // Depois do commit, sem bloquear a resposta (as falhas ficam nos logs).
-    if (resultado?.dono) {
-      const acima = acimaDoLimite(plano, resultado.projectos, resultado.membros);
-      enviarEmail(emailPlanoAlterado(resultado.dono, config.APP_URL, resultado.nome, mensagens.planos[plano], acima));
-    }
-    return { plano, mudou: resultado !== null };
+    const acima = acimaDoLimite(plano, contagens.projectos, contagens.membros);
+    if (resultado?.dono) enviarEmail(emailPlanoAlterado(resultado.dono, config.APP_URL, resultado.nome, mensagens.planos[plano], acima));
+    return { plano, mudou: resultado !== null, ...contagens, acimaDoLimite: acima };
   });
 }
 

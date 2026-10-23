@@ -76,6 +76,19 @@ test('o administrador encontra um cliente e muda-lhe o plano', async ({ browser,
   await linha.getByRole('button', { name: 'Mudar plano' }).click();
   await expect(linha.getByRole('status')).toHaveText('Plano mudado para Empresarial. O dono vai receber um e-mail.');
   await expect(linha.locator('.etiqueta')).toHaveText('Empresarial');
+  // Descer para o Singular com dois membros (dono + 1): o aviso aparece logo, sem pesquisar de novo.
+  await naBaseDeDados(
+    `insert into workspace_members (workspace_id, user_id, role)
+       select wm.workspace_id, (select id from users where email = $2), 'member'
+         from workspace_members wm join users u on u.id = wm.user_id where u.email = $1 and wm.role = 'owner'`,
+    [emailCliente, ADMIN],
+  );
+  await linha.getByLabel('Mudar o plano para').selectOption('singular');
+  await linha.getByRole('button', { name: 'Mudar plano' }).click();
+  await expect(linha.getByText(/passa do limite do novo plano/)).toBeVisible();
+  await linha.getByLabel('Mudar o plano para').selectOption('empresarial');
+  await linha.getByRole('button', { name: 'Mudar plano' }).click();
+  await expect(linha.getByText(/passa do limite do novo plano/)).toHaveCount(0);
   expect(await planoDe(emailCliente)).toBe('empresarial');
 
   // O cliente vê o plano novo ao recarregar.

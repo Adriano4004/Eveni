@@ -144,7 +144,7 @@ describe('mudar o plano', () => {
 
     const r = await mudar(admin, antes.id, 'empresarial');
     expect(r.statusCode).toBe(200);
-    expect(r.json()).toEqual({ plano: 'empresarial', mudou: true });
+    expect(r.json()).toEqual({ plano: 'empresarial', mudou: true, projectos: 0, membros: 1, acimaDoLimite: false });
     const depois = await espacoDe('ana@exemplo.ao');
     expect(depois.plan_code).toBe('empresarial');
     expect(depois.plan_started_at.getTime()).toBeGreaterThan(antes.plan_started_at.getTime());
@@ -164,7 +164,7 @@ describe('mudar o plano', () => {
     await conta('ana@exemplo.ao', 'Ana');
     const antes = await espacoDe('ana@exemplo.ao');
     const emails = c.emails.length;
-    expect((await mudar(admin, antes.id, 'singular')).json()).toEqual({ plano: 'singular', mudou: false });
+    expect((await mudar(admin, antes.id, 'singular')).json()).toMatchObject({ plano: 'singular', mudou: false });
     expect((await espacoDe('ana@exemplo.ao')).plan_started_at).toEqual(antes.plan_started_at);
     expect((await base.pool.query("select count(*)::int as n from audit_log where action = 'admin.plano_alterado'")).rows[0].n).toBe(0);
     expect(c.emails).toHaveLength(emails);
@@ -178,7 +178,7 @@ describe('mudar o plano', () => {
     expect(r.json().campos.plano).toBe('Escolha um plano válido.');
   });
 
-  it.each(['00000000-0000-0000-0000-000000000000', 'nao-e-id', "1' or '1'='1"])('espaço inexistente (%s): 404', async (id) => {
+  it.each(['00000000-0000-0000-0000-000000000000', 'nao-e-id', "1' or '1'='1", '-'.repeat(36), `${'a'.repeat(32)}----`])('espaço inexistente (%s): 404', async (id) => {
     const admin = await administrador();
     expect((await mudar(admin, encodeURIComponent(id), 'grandes')).statusCode).toBe(404);
   });
@@ -193,7 +193,7 @@ describe('mudar o plano', () => {
     expect((await criar('Segundo')).statusCode).toBe(201);
 
     const emails = c.emails.length;
-    await mudar(admin, id, 'singular');
+    expect((await mudar(admin, id, 'singular')).json()).toMatchObject({ projectos: 2, acimaDoLimite: true });
     expect(c.emails.at(-1)!.texto).toContain('não pode criar mais projectos');
     expect(c.emails).toHaveLength(emails + 1);
     const lista = (await c.get('/api/admin/espacos?pesquisa=ana@', admin)).json();

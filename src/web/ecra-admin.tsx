@@ -98,9 +98,13 @@ function LinhaEspaco({ espaco: e, aoMudar }: { espaco: EspacoAdmin; aoMudar: (e:
             aEnviar={q.aGuardar}
             enviar={async (dados) => {
               setMudado(undefined);
-              const r = await api<{ plano: EspacoAdmin['plano']; mudou: boolean }>('POST', `/api/admin/espacos/${e.id}/plano`, dados);
-              // Os números (e o "acima do limite") vêm da lista seguinte; aqui basta o plano.
-              aoMudar({ ...e, plano: r.plano, planoDesde: r.mudou ? new Date().toISOString() : e.planoDesde });
+              const r = await api<Pick<EspacoAdmin, 'plano' | 'projectos' | 'membros' | 'acimaDoLimite'> & { mudou: boolean }>(
+                'POST',
+                `/api/admin/espacos/${e.id}/plano`,
+                dados,
+              );
+              const { mudou, ...actual } = r;
+              aoMudar({ ...e, ...actual, planoDesde: mudou ? new Date().toISOString() : e.planoDesde });
               setMudado(q.mudado(mensagens.planos[r.plano]));
             }}
           >
