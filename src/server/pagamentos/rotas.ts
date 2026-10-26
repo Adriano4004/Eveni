@@ -265,16 +265,21 @@ export function registarRotasPagamentos(
     return enviarComprovativo(resposta, rows[0]);
   });
 
-  // Decidir um pagamento por confirmar: bloqueia o pagamento e o espaço, para não se cruzar com outra decisão,
+  // Decidir um pagamento por confirmar: bloqueia o espaço e o pagamento, para não se cruzar com outra decisão,
   // um cancelamento ou uma mudança de plano à mão.
   async function decidir<T>(id: string, fn: (cliente: pg.PoolClient, p: { id: string; reference: string; plan_code: PlanoPago; period: Periodo; workspace_id: string; ws_plan: CodigoPlano; ws_fim: Date | null; ws_nome: string; dono: string | null }) => Promise<T>) {
     if (!ID_VALIDO.test(id)) throw new ErroHttp(404, q.naoEncontrado);
     return emTransaccao(pool, async (cliente) => {
+      // Primeiro o espaço, depois o pagamento: a mesma ordem do cancelamento e do envio do comprovativo, para as
+      // duas transacções não ficarem à espera uma da outra.
+      const espaco = (await cliente.query<{ workspace_id: string }>('select workspace_id from payments where id = $1', [id])).rows[0];
+      if (!espaco) throw new ErroHttp(404, q.naoEncontrado);
+      await cliente.query('select id from workspaces where id = $1 for update', [espaco.workspace_id]);
       const { rows } = await cliente.query(
         `select p.id, p.reference, p.plan_code, p.period, p.status, p.workspace_id, w.plan_code as ws_plan, w.plan_ends_at as ws_fim, w.name as ws_nome,
                 (select u.email from workspace_members wm join users u on u.id = wm.user_id where wm.workspace_id = w.id and wm.role = 'owner' limit 1) as dono
            from payments p join workspaces w on w.id = p.workspace_id
-          where p.id = $1 for update of p, w`,
+          where p.id = $1 for update of p`,
         [id],
       );
       const p = rows[0];
