@@ -127,6 +127,13 @@
       "when": 1793033164767,
       "tag": "0017_pagamentos",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793036327078,
+      "tag": "0018_avisos_fim_plano",
+      "breakpoints": true
     }
   ]
 }

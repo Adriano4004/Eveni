@@ -490,3 +490,21 @@ export const payments = pgTable(
     check('payments_motivo_curto', sql`char_length(${t.rejectionReason}) <= 500`),
   ],
 );
+
+// Avisos de fim do plano já enviados (decisão 030): um por espaço, data de fim e tipo, para a verificação de
+// hora a hora (ou duas instâncias ao mesmo tempo) nunca mandar o mesmo e-mail duas vezes.
+export const planNotices = pgTable(
+  'plan_notices',
+  {
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    planEndsAt: timestamp('plan_ends_at', { withTimezone: true }).notNull(),
+    kind: text('kind').notNull(),
+    sentAt: criadoEm(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.planEndsAt, t.kind] }),
+    check('plan_notices_tipo_valido', sql`${t.kind} in ('antes', 'fim')`),
+  ],
+);

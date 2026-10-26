@@ -2,6 +2,8 @@ import { criarApp } from './app.js';
 import { ConfigInvalida, lerConfig } from './config.js';
 import { limparExpirados } from './contas/sessoes.js';
 import { esperarSegundoPlano } from './segundo-plano.js';
+import { criarEnvioDeEmail } from './email/index.js';
+import { verificarPlanos } from './pagamentos/fim-plano.js';
 import { aplicarMigracoes, criarBaseDeDados } from './db/index.js';
 import { RAIZ } from './raiz.js';
 
@@ -27,7 +29,17 @@ async function arrancar() {
   await aplicarMigracoes(base, `${raiz}drizzle`);
   console.log('[migrate] migrações aplicadas');
 
-  const app = await criarApp({ config, base, pastaWeb: `${raiz}dist/web` });
+  const enviarEmail = criarEnvioDeEmail(config);
+  const app = await criarApp({ config, base, pastaWeb: `${raiz}dist/web`, enviarEmail });
+
+  // De hora a hora (e logo no arranque), avisos de fim do plano e regresso ao Singular depois da tolerância.
+  const planos = () =>
+    verificarPlanos(base.pool, config, enviarEmail)
+      .then((r) => console.log(`[planos] avisos antes do fim: ${r.avisosAntes}, avisos de fim: ${r.avisosFim}, de volta ao Singular: ${r.descidas}`))
+      .catch((erro) => console.error('[planos] falhou:', erro));
+  void planos();
+  const verificacaoPlanos = setInterval(planos, 60 * 60 * 1000);
+  verificacaoPlanos.unref();
 
   // De hora a hora, apagar sessões expiradas e contadores de tentativas antigos.
   const limpeza = setInterval(() => {

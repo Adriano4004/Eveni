@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { contaConfirmada, entrarComoAdmin } from './ajuda.js';
+import { contaConfirmada, entrarComoAdmin, naBaseDeDados } from './ajuda.js';
 
 // Pagamento por transferência (decisão 029), do pedido do cliente à confirmação na administração.
 const ADMIN = 'admin.pagamentos.e2e@exemplo.ao';
@@ -79,4 +79,30 @@ test('o cliente cancela um pedido e o administrador recusa outro com motivo', as
   await page.reload();
   await expect(page.locator('li.convidado', { hasText: referencia })).toContainText('Motivo: O valor transferido não corresponde.');
   await expect(page.getByText('Singular · sem data de fim')).toBeVisible();
+});
+
+test('perto do fim do plano, o início e o ecrã do plano avisam; depois do fim, dizem quando volta ao Singular', async ({ page }) => {
+  const email = await contaConfirmada(page, 'Rita');
+  const comFim = (intervalo: string) =>
+    naBaseDeDados(
+      `update workspaces set plan_code = 'grandes', plan_ends_at = now() + $2::interval
+        where id = (select wm.workspace_id from workspace_members wm join users u on u.id = wm.user_id where u.email = $1 and wm.role = 'owner')`,
+      [email, intervalo],
+    );
+  await comFim('3 days');
+  await page.reload();
+  await expect(page.getByText(/^O seu plano acaba a \d{2}\/\d{2}\/\d{4}\. Renove/)).toBeVisible();
+  await page.getByRole('button', { name: 'Plano e pagamentos' }).click();
+  await expect(page.getByText(/^O seu plano acaba a/)).toBeVisible();
+  // Para renovar, o plano actual já vem escolhido.
+  await expect(page.getByRole('radio', { name: /Grandes/ })).toBeChecked();
+
+  await comFim('-2 days');
+  await page.reload();
+  await expect(page.getByText(/^O período pago acabou\. Se não renovar, o espaço volta ao Singular a \d{2}\/\d{2}\/\d{4}\.$/)).toBeVisible();
+
+  await comFim('30 days');
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Olá, Rita' })).toBeVisible();
+  await expect(page.getByText(/O seu plano acaba a/)).toHaveCount(0);
 });

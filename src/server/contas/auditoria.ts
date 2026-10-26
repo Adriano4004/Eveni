@@ -35,6 +35,7 @@ export type AccaoAuditada =
   | 'projecto.acesso_dado'
   | 'projecto.acesso_retirado'
   | 'admin.plano_alterado'
+  | 'plano.expirado'
   | 'pagamento.pedido'
   | 'pagamento.comprovativo'
   | 'pagamento.cancelado'

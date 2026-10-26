@@ -5,6 +5,8 @@ import { mensagens } from '../shared/mensagens.js';
 import {
   CONTA_BANCARIA,
   DESCONTO_ANUAL_PCT,
+  DIAS_AVISO,
+  descidaDoPlano,
   MAX_BYTES_COMPROVATIVO,
   type Pagamento,
   PERIODOS,
@@ -57,10 +59,11 @@ export function EcraPlano() {
               </dd>
             </div>
           </dl>
+          {situacao.fim && <AvisoFim fim={new Date(situacao.fim)} />}
           {situacao.emAberto ? (
             <PagamentoEmAberto pagamento={situacao.emAberto} aoMudar={setSituacao} />
           ) : (
-            <EscolherPlano aoPedir={setSituacao} />
+            <EscolherPlano actual={situacao.plano} aoPedir={setSituacao} />
           )}
           <p className="campo__ajuda">{q.facturas}</p>
           {situacao.historico.length > 0 && (
@@ -92,7 +95,18 @@ export function EcraPlano() {
   );
 }
 
-function EscolherPlano({ aoPedir }: { aoPedir: (s: SituacaoPlano) => void }) {
+// A partir de 7 dias antes do fim (decisão 030): quando acaba, ou quando volta ao Singular se não renovar.
+export function AvisoFim({ fim }: { fim: Date }) {
+  const agora = Date.now();
+  if (fim.getTime() - agora > DIAS_AVISO * 24 * 60 * 60 * 1000) return null;
+  return (
+    <p className="aviso aviso--alerta" role="status">
+      {fim.getTime() > agora ? q.acabaEm(dataLuanda(fim.toISOString())) : q.acabou(dataLuanda(descidaDoPlano(fim).toISOString()))}
+    </p>
+  );
+}
+
+function EscolherPlano({ actual, aoPedir }: { actual: SituacaoPlano['plano']; aoPedir: (s: SituacaoPlano) => void }) {
   return (
     <section>
       <h2>{q.escolher}</h2>
@@ -104,7 +118,7 @@ function EscolherPlano({ aoPedir }: { aoPedir: (s: SituacaoPlano) => void }) {
               <legend>{q.plano}</legend>
               {PLANOS_PAGOS.map((p, i) => (
                 <label key={p} className="escolha">
-                  <input type="radio" name="plano" value={p} defaultChecked={i === 0} />
+                  <input type="radio" name="plano" value={p} defaultChecked={actual === 'singular' ? i === 0 : p === actual} />
                   <span>
                     <strong>{mensagens.planos[p]}</strong>
                     <span className="campo__ajuda">

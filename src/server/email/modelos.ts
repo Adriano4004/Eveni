@@ -143,3 +143,28 @@ export function emailPagamentoRecusado(para: string, url: string, referencia: st
     html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(corpo)], { texto: c.botao, url }, [escaparHtml(c.depois)]),
   };
 }
+
+// Fim do período pago (decisão 030). O nome do espaço é do cliente: escapado no HTML.
+function emailSimples(para: string, assunto: string, paragrafos: string[], botao: { texto: string; url: string }): MensagemEmail {
+  return {
+    para,
+    assunto,
+    texto: [e.confirmar.ola, '', ...paragrafos.flatMap((p) => [p, '']), `${botao.texto}: ${botao.url}`, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(e.confirmar.ola), ...paragrafos.map(escaparHtml)], botao, []),
+  };
+}
+
+export function emailPlanoAcaba(para: string, url: string, espaco: string, plano: string, data: string): MensagemEmail {
+  const a = e.planoAcaba;
+  return emailSimples(para, a.assunto(plano, data), [a.corpo(espaco, plano, data), a.renovar], { texto: a.botao, url });
+}
+
+export function emailPlanoAcabou(para: string, url: string, espaco: string, plano: string, descida: string): MensagemEmail {
+  const a = e.planoAcabou;
+  return emailSimples(para, a.assunto(plano), [a.corpo(espaco, plano, descida), a.renovar], { texto: a.botao, url });
+}
+
+export function emailPlanoExpirado(para: string, url: string, espaco: string, plano: string): MensagemEmail {
+  const a = e.planoExpirado;
+  return emailSimples(para, a.assunto, [a.corpo(espaco, plano), a.mantem], { texto: a.botao, url });
+}

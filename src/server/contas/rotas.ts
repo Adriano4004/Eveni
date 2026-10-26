@@ -166,11 +166,12 @@ export function registarRotasContas(
       workspace_id: string;
       workspace_name: string;
       plan_code: Eu['espaco']['plano'];
+      plan_ends_at: Date | null;
       dois_factores: boolean;
       termos_aceites: boolean;
     }>(
       `select u.id, u.name, u.email, u.email_verified_at, u.totp_enabled_at is not null as dois_factores,
-              u.terms_version is not distinct from $2 as termos_aceites, w.id as workspace_id, w.name as workspace_name, w.plan_code
+              u.terms_version is not distinct from $2 as termos_aceites, w.id as workspace_id, w.name as workspace_name, w.plan_code, w.plan_ends_at
          from users u
          join workspace_members wm on wm.user_id = u.id
          join workspaces w on w.id = wm.workspace_id
@@ -189,7 +190,7 @@ export function registarRotasContas(
       doisFactores: l.dois_factores,
       termosPorAceitar: !l.termos_aceites,
       administrador: config.ADMINS.includes(l.email),
-      espaco: { id: l.workspace_id, nome: l.workspace_name, plano: l.plan_code },
+      espaco: { id: l.workspace_id, nome: l.workspace_name, plano: l.plan_code, fim: l.plan_ends_at?.toISOString() ?? null },
     };
   }
 }

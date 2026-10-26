@@ -6,6 +6,7 @@ import { ListaProjectos } from './ecras-projectos.js';
 import { Campo } from './Campo.js';
 import { CaixaAceitarTermos, LigacoesLegais } from './ecras-legal.js';
 import { Formulario } from './Formulario.js';
+import { AvisoFim } from './ecra-plano.js';
 import { navegar } from './navegacao.js';
 
 const e = mensagens.ecras;
@@ -123,6 +124,7 @@ export function EcraInicio({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
       <Logo />
       <h1>{e.inicio.ola(eu.nome)}</h1>
       {!eu.emailConfirmado && <AvisoConfirmar email={eu.email} />}
+      {eu.espaco.fim && <AvisoFim fim={new Date(eu.espaco.fim)} />}
       <ListaProjectos eu={eu} />
       <dl className="detalhes">
         <div>

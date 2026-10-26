@@ -877,6 +877,27 @@ export const mensagens = {
       depois: 'Pode fazer um novo pedido em "Plano e pagamentos". Se tiver dúvidas, escreva para comercial@eveni.ao.',
       botao: 'Abrir o Eveni',
     },
+    // Fim do período pago (decisão 030).
+    planoAcaba: {
+      assunto: (plano: string, data: string) => `O seu plano ${plano} acaba a ${data}`,
+      corpo: (espaco: string, plano: string, data: string) => `O plano ${plano} do espaço «${espaco}» acaba a ${data}.`,
+      renovar: 'Para continuar sem interrupções, peça a renovação em "Plano e pagamentos" e faça a transferência com a referência indicada.',
+      botao: 'Renovar o plano',
+    },
+    planoAcabou: {
+      assunto: (plano: string) => `O seu plano ${plano} acabou hoje`,
+      corpo: (espaco: string, plano: string, descida: string) =>
+        `O período pago do plano ${plano} do espaço «${espaco}» acabou. O espaço continua com o plano até ${descida}; nesse dia, se não houver renovação, volta ao Singular.`,
+      renovar: 'Se já fez a transferência, envie o comprovativo em "Plano e pagamentos".',
+      botao: 'Renovar o plano',
+    },
+    planoExpirado: {
+      assunto: 'O seu espaço voltou ao plano Singular',
+      corpo: (espaco: string, plano: string) => `O plano ${plano} do espaço «${espaco}» não foi renovado e o espaço voltou ao Singular.`,
+      mantem:
+        'Tudo o que já existe mantém-se: projectos, tarefas, convidados e orçamentos. Enquanto estiver acima do limite do Singular, não pode criar mais projectos nem convidar mais pessoas.',
+      botao: 'Mudar de plano',
+    },
     planoAlterado: {
       assunto: (plano: string) => `O seu plano do Eveni passou a ${plano}`,
       corpo: (espaco: string, plano: string) => `O plano do espaço de trabalho «${espaco}» passou a ${plano}.`,
@@ -900,6 +921,9 @@ export const mensagens = {
     planoActual: 'Plano actual',
     ate: (data: string) => `até ${data}`,
     semFim: 'sem data de fim',
+    acabaEm: (data: string) => `O seu plano acaba a ${data}. Renove para continuar sem interrupções.`,
+    acabou: (descida: string) => `O período pago acabou. Se não renovar, o espaço volta ao Singular a ${descida}.`,
+    renovar: 'Renovar o plano',
     soDono: 'Só o dono do espaço de trabalho pode mudar de plano.',
     escolher: 'Mudar de plano',
     escolherTexto: 'Escolha o plano e o período. Paga por transferência bancária e o plano fica activo assim que confirmarmos o pagamento.',
@@ -1195,6 +1219,7 @@ export const mensagens = {
             'Grandes: 640 000,00 Kz por mês, com projectos ilimitados e membros ilimitados.',
             'No pagamento anual, os planos pagos têm 10% de desconto sobre 12 meses: Empresarial, 3 996 000,00 Kz por ano; Grandes, 6 912 000,00 Kz por ano.',
             'O pagamento é feito por transferência bancária, com a referência indicada na aplicação, e o comprovativo é enviado em "Plano e pagamentos". O plano fica activo quando confirmarmos o pagamento e dura até à data de fim indicada. A factura é emitida e enviada à parte.',
+            'Avisamos por e-mail 7 dias antes do fim do período e no próprio dia. Se não renovar, o espaço mantém o plano durante mais 7 dias e depois volta ao Singular, sem perder nada do que já existe. Uma renovação conta a partir do fim do período anterior.',
             'Qualquer alteração de preços é anunciada com antecedência e não muda o valor de um período já pago.',
             'Os projectos não se eliminam: arquivam-se e restauram-se.',
           ],

@@ -47,6 +47,7 @@ export const TABELAS_PESSOAIS = {
   suppliers: 'exportada (fornecedores dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
   workspace_brands: 'exportada (cor, rodapé e logótipo dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
   payments: 'exportada (pagamentos dos espaços de que a pessoa é dona, com o comprovativo); apagada com o espaço (cascata)',
+  plan_notices: 'não exportada (só regista que avisos de fim do plano já saíram); apagada com o espaço (cascata)',
   supplier_ratings: 'exportada (as dos fornecedores dos espaços de que a pessoa é dona e as que ela fez); apagada com o fornecedor ou o projecto (cascata); as feitas noutros espaços ficam anónimas',
 } as const;
 
