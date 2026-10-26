@@ -44,6 +44,8 @@ export const workspaces = pgTable(
     name: text('name').notNull(),
     planCode: text('plan_code').notNull().default('singular'),
     planStartedAt: timestamp('plan_started_at', { withTimezone: true }).notNull().defaultNow(),
+    // Fim do período pago (decisão 029). Vazio no Singular e nos planos mudados à mão na administração.
+    planEndsAt: timestamp('plan_ends_at', { withTimezone: true }),
     createdAt: criadoEm(),
   },
   (t) => [check('workspaces_plano_valido', sql`${t.planCode} in ('singular', 'empresarial', 'grandes')`)],
@@ -437,5 +439,54 @@ export const workspaceBrands = pgTable(
     check('workspace_brands_cor_valida', sql`${t.color} ~ '^#[0-9a-f]{6}$'`),
     check('workspace_brands_rodape_curto', sql`char_length(${t.footer}) <= 200`),
     check('workspace_brands_logo_tipo', sql`(${t.logo} is null and ${t.logoType} is null) or (${t.logoType} in ('image/png', 'image/jpeg') and octet_length(${t.logo}) <= 512000)`),
+  ],
+);
+
+// Pagamentos por transferência bancária (decisão 029). O dono pede um plano e um período, transfere com a
+// referência, envia o comprovativo, e um administrador confirma (activa o plano) ou recusa.
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // Número sequencial que dá a referência (EVN-2026-00007).
+    number: bigserial('number', { mode: 'number' }).notNull(),
+    reference: text('reference').notNull(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    requestedBy: uuid('requested_by').references(() => users.id, { onDelete: 'set null' }),
+    planCode: text('plan_code').notNull(),
+    period: text('period').notNull(),
+    // Em cêntimos de Kwanza.
+    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+    status: text('status').notNull().default('awaiting_proof'),
+    // PDF, PNG ou JPEG, até 5 MB (verificado no servidor antes de guardar).
+    proof: bytea('proof'),
+    proofType: text('proof_type'),
+    proofUploadedAt: timestamp('proof_uploaded_at', { withTimezone: true }),
+    decidedBy: uuid('decided_by').references(() => users.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    rejectionReason: text('rejection_reason'),
+    periodStart: timestamp('period_start', { withTimezone: true }),
+    periodEnd: timestamp('period_end', { withTimezone: true }),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    uniqueIndex('payments_referencia_unica').on(t.reference),
+    index('payments_espaco').on(t.workspaceId),
+    // Um só pedido em aberto por espaço.
+    uniqueIndex('payments_um_aberto_por_espaco')
+      .on(t.workspaceId)
+      .where(sql`${t.status} in ('awaiting_proof', 'pending')`),
+    check('payments_plano_pago', sql`${t.planCode} in ('empresarial', 'grandes')`),
+    check('payments_periodo_valido', sql`${t.period} in ('monthly', 'yearly')`),
+    check('payments_estado_valido', sql`${t.status} in ('awaiting_proof', 'pending', 'confirmed', 'rejected', 'cancelled')`),
+    check('payments_valor_positivo', sql`${t.amountCents} > 0`),
+    check(
+      'payments_comprovativo',
+      sql`(${t.proof} is null and ${t.proofType} is null) or (${t.proofType} in ('application/pdf', 'image/png', 'image/jpeg') and octet_length(${t.proof}) <= 5242880)`,
+    ),
+    check('payments_confirmado_com_periodo', sql`${t.status} <> 'confirmed' or (${t.periodStart} is not null and ${t.periodEnd} > ${t.periodStart})`),
+    check('payments_motivo_curto', sql`char_length(${t.rejectionReason}) <= 500`),
   ],
 );

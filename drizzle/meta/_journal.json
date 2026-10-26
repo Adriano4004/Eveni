@@ -120,6 +120,13 @@
       "when": 1792762577611,
       "tag": "0016_termos",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793033164767,
+      "tag": "0017_pagamentos",
+      "breakpoints": true
     }
   ]
 }

@@ -17,5 +17,5 @@ export function configTeste(extra: Partial<Config> = {}): Config {
 
 // Apaga os dados de todas as tabelas de produto (mantém o registo de migrações).
 export async function limparBaseDeDados(pool: import('pg').Pool) {
-  await pool.query('truncate users, workspaces, workspace_members, sessions, rate_limits, audit_log, email_tokens, recovery_codes, login_challenges, projects, tasks, budget_items, project_members, invitations, guests, event_tables, suppliers, supplier_ratings, workspace_brands restart identity cascade');
+  await pool.query('truncate users, workspaces, workspace_members, sessions, rate_limits, audit_log, email_tokens, recovery_codes, login_challenges, projects, tasks, budget_items, project_members, invitations, guests, event_tables, suppliers, supplier_ratings, workspace_brands, payments restart identity cascade');
 }
