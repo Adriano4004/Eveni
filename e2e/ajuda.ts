@@ -42,3 +42,22 @@ export async function naBaseDeDados(sql: string, valores: unknown[] = []) {
 }
 
 export const emDias = (dias: number) => somarDias(hojeEmLuanda(), dias);
+
+// Conta de administração (tem de estar em ADMINS, em playwright.config.ts), recriada do zero, com o e-mail
+// confirmado e, se pedido, a verificação em dois passos activa.
+export async function entrarComoAdmin(page: Page, email: string, doisFactores: boolean) {
+  await naBaseDeDados('delete from users where email = $1', [email]);
+  await naBaseDeDados("delete from rate_limits where key like 'registo-ip:%'");
+  await page.goto('/registo');
+  await page.getByLabel('Nome').fill('Adriano');
+  await page.getByLabel('E-mail').fill(email);
+  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
+  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page.getByRole('heading', { name: 'Olá, Adriano' })).toBeVisible();
+  await naBaseDeDados(
+    `update users set email_verified_at = now() ${doisFactores ? ", totp_enabled_at = now(), totp_secret = 'x'" : ''} where email = $1`,
+    [email],
+  );
+  await page.reload();
+}

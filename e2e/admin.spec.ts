@@ -1,7 +1,7 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import pg from 'pg';
 import { envValido } from '../tests/ajuda.js';
-import { contaConfirmada, naBaseDeDados, PALAVRA_PASSE } from './ajuda.js';
+import { contaConfirmada, entrarComoAdmin, naBaseDeDados } from './ajuda.js';
 
 // Administração dos planos (decisão 027). O e-mail do administrador está em ADMINS (playwright.config.ts).
 const ADMIN = 'admin.e2e@exemplo.ao';
@@ -11,23 +11,6 @@ test.beforeEach(({ page }) => {
     if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) throw new Error(`Erro na consola: ${m.text()}`);
   });
 });
-
-async function entrarComoAdmin(page: Page, doisFactores: boolean) {
-  await naBaseDeDados('delete from users where email = $1', [ADMIN]);
-  await naBaseDeDados("delete from rate_limits where key like 'registo-ip:%'");
-  await page.goto('/registo');
-  await page.getByLabel('Nome').fill('Adriano');
-  await page.getByLabel('E-mail').fill(ADMIN);
-  await page.getByLabel('Palavra-passe').fill(PALAVRA_PASSE);
-  await page.getByRole('checkbox', { name: /aceito os termos/ }).check();
-  await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page.getByRole('heading', { name: 'Olá, Adriano' })).toBeVisible();
-  await naBaseDeDados(
-    `update users set email_verified_at = now() ${doisFactores ? ", totp_enabled_at = now(), totp_secret = 'x'" : ''} where email = $1`,
-    [ADMIN],
-  );
-  await page.reload();
-}
 
 const planoDe = async (email: string) => {
   const cliente = new pg.Client({ connectionString: envValido.DATABASE_URL });
@@ -52,7 +35,7 @@ test('um cliente comum não vê a administração, nem pelo endereço', async ({
 });
 
 test('sem a verificação em dois passos, a administração pede que a active', async ({ page }) => {
-  await entrarComoAdmin(page, false);
+  await entrarComoAdmin(page, ADMIN, false);
   await page.getByRole('button', { name: 'Administração' }).click();
   await expect(page.getByRole('alert')).toContainText('active primeiro a verificação em dois passos');
   await page.getByRole('button', { name: 'Activar a verificação em dois passos' }).click();
@@ -63,7 +46,7 @@ test('o administrador encontra um cliente e muda-lhe o plano', async ({ browser,
   const cliente = await (await browser.newContext()).newPage();
   const emailCliente = await contaConfirmada(cliente, 'Nadia');
 
-  await entrarComoAdmin(page, true);
+  await entrarComoAdmin(page, ADMIN, true);
   await page.getByRole('button', { name: 'Administração' }).click();
   await expect(page.getByRole('heading', { name: 'Administração' })).toBeVisible();
   await page.getByLabel('Pesquisar por e-mail do dono ou nome do espaço').fill(emailCliente);

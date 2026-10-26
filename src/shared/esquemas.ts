@@ -376,3 +376,18 @@ export const dadosMarca = z.object({
 
 // Logótipo: a imagem lida no telemóvel, como "data:image/png;base64,…". O servidor verifica o resto.
 export const logoMarca = z.object({ imagem: z.string({ error: m.logoInvalido }).max(800_000, m.logoGrande).startsWith('data:image/', m.logoInvalido) });
+
+// Pagamentos por transferência (decisão 029).
+export const pedirPagamento = z.object({
+  plano: z.enum(['empresarial', 'grandes'], { error: m.planoInvalido }),
+  periodo: z.enum(['monthly', 'yearly'], { error: m.periodoInvalido }),
+});
+
+// O comprovativo vem como data URL num pedido JSON (como o logótipo da marca).
+export const comprovativo = z.object({
+  ficheiro: z.string({ error: m.comprovativoInvalido }).max(8 * 1024 * 1024, m.comprovativoGrande),
+});
+
+export const recusarPagamento = z.object({
+  motivo: textoDeUmaLinha(500, { obrigatorio: m.motivoObrigatorio, longo: m.motivoLongo, invalido: m.motivoInvalido }),
+});

@@ -105,3 +105,41 @@ export function emailPlanoAlterado(para: string, url: string, espaco: string, pl
     html: moldeHtml([escaparHtml(e.confirmar.ola), ...paragrafos.map(escaparHtml)], { texto: p.botao, url }, [escaparHtml(p.duvidas)]),
   };
 }
+
+// Pagamentos por transferência (decisão 029). O nome do espaço é do cliente: escapado no HTML.
+export function emailComprovativoRecebido(
+  para: string,
+  url: string,
+  dados: { espaco: string; plano: string; periodo: string; valor: string; referencia: string },
+): MensagemEmail {
+  const c = e.comprovativoRecebido;
+  const corpo = c.corpo(dados.espaco, dados.plano, dados.periodo, dados.valor, dados.referencia);
+  return {
+    para,
+    assunto: c.assunto(dados.referencia),
+    texto: [corpo, '', `${c.botao}: ${url}`, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(corpo)], { texto: c.botao, url }, []),
+  };
+}
+
+export function emailPagamentoConfirmado(para: string, url: string, espaco: string, plano: string, fim: string): MensagemEmail {
+  const c = e.pagamentoConfirmado;
+  const corpo = c.corpo(espaco, plano, fim);
+  return {
+    para,
+    assunto: c.assunto(plano),
+    texto: [e.confirmar.ola, '', corpo, '', c.factura, '', `${c.botao}: ${url}`, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(corpo)], { texto: c.botao, url }, [escaparHtml(c.factura)]),
+  };
+}
+
+export function emailPagamentoRecusado(para: string, url: string, referencia: string, motivo: string): MensagemEmail {
+  const c = e.pagamentoRecusado;
+  const corpo = c.corpo(referencia, motivo);
+  return {
+    para,
+    assunto: c.assunto(referencia),
+    texto: [e.confirmar.ola, '', corpo, '', c.depois, '', `${c.botao}: ${url}`, '', e.rodape].join('\n'),
+    html: moldeHtml([escaparHtml(e.confirmar.ola), escaparHtml(corpo)], { texto: c.botao, url }, [escaparHtml(c.depois)]),
+  };
+}

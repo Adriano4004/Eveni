@@ -46,6 +46,7 @@ export const TABELAS_PESSOAIS = {
   event_tables: 'exportada com o projecto (mesas); apagada com o projecto (cascata)',
   suppliers: 'exportada (fornecedores dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
   workspace_brands: 'exportada (cor, rodapé e logótipo dos espaços de que a pessoa é dona); apagada com o espaço (cascata)',
+  payments: 'exportada (pagamentos dos espaços de que a pessoa é dona, com o comprovativo); apagada com o espaço (cascata)',
   supplier_ratings: 'exportada (as dos fornecedores dos espaços de que a pessoa é dona e as que ela fez); apagada com o fornecedor ou o projecto (cascata); as feitas noutros espaços ficam anónimas',
 } as const;
 
@@ -75,6 +76,20 @@ export interface Exportacao {
   marcas: { espaco: string; cor: string | null; rodape: string | null; logo: string | null }[];
   // Avaliações dos fornecedores desses espaços, e as que a pessoa fez noutros espaços.
   avaliacoesFornecedores: { fornecedor: string; projecto: string; estrelas: number; comentario: string | null; feitaPorMim: boolean; data: string }[];
+  // Pagamentos dos espaços de que a pessoa é dona (decisão 029), com o comprovativo como data URL.
+  pagamentos: {
+    espaco: string;
+    referencia: string;
+    plano: string;
+    periodo: string;
+    valorCentimos: number;
+    estado: string;
+    motivoRecusa: string | null;
+    inicio: string | null;
+    fim: string | null;
+    criadoEm: string;
+    comprovativo: string | null;
+  }[];
   convitesEnviados: { email: string; criadoEm: string; estado: EstadoConvite }[];
   convitesRecebidos: { espaco: string; criadoEm: string; estado: EstadoConvite }[];
 }
@@ -156,6 +171,14 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       where b.workspace_id in (select workspace_id from workspace_members where user_id = $1 and role = 'owner')`,
     [utilizadorId],
   );
+  const { rows: pagamentos } = await pool.query(
+    `select w.name as espaco, p.reference, p.plan_code, p.period, p.amount_cents, p.status, p.rejection_reason,
+            p.period_start, p.period_end, p.created_at, p.proof, p.proof_type
+       from payments p join workspaces w on w.id = p.workspace_id
+      where p.workspace_id in (select workspace_id from workspace_members where user_id = $1 and role = 'owner')
+      order by p.number`,
+    [utilizadorId],
+  );
   return {
     geradoEm: new Date().toISOString(),
     conta: {
@@ -206,6 +229,19 @@ export async function exportarDados(pool: pg.Pool, utilizadorId: string): Promis
       comentario: a.comment,
       feitaPorMim: a.minha,
       data: a.updated_at.toISOString(),
+    })),
+    pagamentos: pagamentos.map((p) => ({
+      espaco: p.espaco,
+      referencia: p.reference,
+      plano: p.plan_code,
+      periodo: p.period,
+      valorCentimos: Number(p.amount_cents),
+      estado: p.status,
+      motivoRecusa: p.rejection_reason,
+      inicio: iso(p.period_start),
+      fim: iso(p.period_end),
+      criadoEm: p.created_at.toISOString(),
+      comprovativo: p.proof ? `data:${p.proof_type};base64,${p.proof.toString('base64')}` : null,
     })),
     convitesEnviados: enviados.map((c) => ({ email: c.email, criadoEm: c.created_at.toISOString(), estado: c.estado })),
     convitesRecebidos: recebidos.map((c) => ({ espaco: c.espaco, criadoEm: c.created_at.toISOString(), estado: c.estado })),

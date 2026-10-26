@@ -13,6 +13,21 @@ import { ErroHttp, validar } from '../erros.js';
 
 const m = mensagens.admin;
 
+// Só para os e-mails em ADMINS, com a verificação em dois passos activa (decisão 027). Também usada nas
+// rotas de administração dos pagamentos (decisão 029).
+export function criarExigirAdmin(config: Config, base: BaseDeDados, guardas: ReturnType<typeof criarGuardas>) {
+  return async function exigirAdmin(pedido: FastifyRequest, resposta: FastifyReply) {
+    await guardas.exigirSessao(pedido, resposta);
+    const { rows } = await base.pool.query<{ email: string; dois_factores: boolean }>(
+      'select email, totp_enabled_at is not null as dois_factores from users where id = $1',
+      [pedido.sessao!.utilizadorId],
+    );
+    // Para quem não é administrador, a administração não existe (a mesma resposta que um endereço errado).
+    if (!rows[0] || !config.ADMINS.includes(rows[0].email)) throw new ErroHttp(404, mensagens.erros.naoEncontrado);
+    if (!rows[0].dois_factores) throw new ErroHttp(403, m.precisaDoisFactores);
+  };
+}
+
 // Até haver pagamentos na aplicação, o plano de cada espaço muda-se aqui (decisão 027). Só para os e-mails
 // em ADMINS, e só com a verificação em dois passos activa: a palavra-passe sozinha não chega.
 export function registarRotasAdmin(
@@ -23,17 +38,7 @@ export function registarRotasAdmin(
   guardas: ReturnType<typeof criarGuardas>,
 ) {
   const { pool } = base;
-
-  async function exigirAdmin(pedido: FastifyRequest, resposta: FastifyReply) {
-    await guardas.exigirSessao(pedido, resposta);
-    const { rows } = await pool.query<{ email: string; dois_factores: boolean }>(
-      'select email, totp_enabled_at is not null as dois_factores from users where id = $1',
-      [pedido.sessao!.utilizadorId],
-    );
-    // Para quem não é administrador, a administração não existe (a mesma resposta que um endereço errado).
-    if (!rows[0] || !config.ADMINS.includes(rows[0].email)) throw new ErroHttp(404, mensagens.erros.naoEncontrado);
-    if (!rows[0].dois_factores) throw new ErroHttp(403, m.precisaDoisFactores);
-  }
+  const exigirAdmin = criarExigirAdmin(config, base, guardas);
 
   app.get('/api/admin/espacos', { preHandler: exigirAdmin }, async (pedido): Promise<EspacoAdmin[]> => {
     const { pesquisa } = validar(pesquisaAdmin, pedido.query);
@@ -96,7 +101,8 @@ export function registarRotasAdmin(
       contagens = { projectos: espaco.projectos, membros: espaco.membros };
       if (espaco.plan_code !== plano) {
         // O período do plano começa no dia da mudança (decisão 027).
-        await cliente.query('update workspaces set plan_code = $2, plan_started_at = now() where id = $1', [id, plano]);
+        // Mudado à mão: sem data de fim (os períodos pagos vêm dos pagamentos, decisão 029).
+        await cliente.query('update workspaces set plan_code = $2, plan_started_at = now(), plan_ends_at = null where id = $1', [id, plano]);
         await auditar(cliente, 'admin.plano_alterado', {
           utilizadorId: pedido.sessao!.utilizadorId,
           ip: pedido.ip,

@@ -34,7 +34,12 @@ export type AccaoAuditada =
   | 'equipa.membro_removido'
   | 'projecto.acesso_dado'
   | 'projecto.acesso_retirado'
-  | 'admin.plano_alterado';
+  | 'admin.plano_alterado'
+  | 'pagamento.pedido'
+  | 'pagamento.comprovativo'
+  | 'pagamento.cancelado'
+  | 'pagamento.confirmado'
+  | 'pagamento.recusado';
 
 export async function auditar(
   pool: pg.Pool | pg.PoolClient,

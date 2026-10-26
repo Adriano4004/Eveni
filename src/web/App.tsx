@@ -9,6 +9,7 @@ import { EcraDados } from './ecras-dados.js';
 import { EcraLegal, EcraNovosTermos } from './ecras-legal.js';
 import { EcraFornecedores } from './ecra-fornecedores.js';
 import { EcraMarca } from './ecra-marca.js';
+import { EcraPlano } from './ecra-plano.js';
 import { EcraMesas } from './ecra-mesas.js';
 import { EcraOrcamento } from './ecra-orcamento.js';
 import { EcraRsvp } from './ecra-rsvp.js';
@@ -157,6 +158,7 @@ export function App() {
     if (caminho === '/equipa') return <EcraEquipa />;
     if (caminho === '/fornecedores') return <EcraFornecedores />;
     if (caminho === '/marca') return <EcraMarca />;
+    if (caminho === '/conta/plano') return <EcraPlano />;
     if (caminho === '/admin' && estado.eu.administrador) return <EcraAdmin />;
     if (caminho === '/conta/palavra-passe') return <EcraMudarPalavraPasse />;
     if (caminho === '/conta/2fa') return <EcraDoisFactores eu={estado.eu} aoMudar={carregarEu} />;

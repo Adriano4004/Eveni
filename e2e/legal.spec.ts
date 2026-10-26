@@ -11,7 +11,7 @@ test.beforeEach(({ page }) => {
 test('as páginas de privacidade e termos abrem-se sem sessão e ligam-se entre si', async ({ page }) => {
   await page.goto('/privacidade');
   await expect(page.getByRole('heading', { name: 'Política de privacidade', level: 1 })).toBeVisible();
-  await expect(page.getByText('Versão de 23/10/2026')).toBeVisible();
+  await expect(page.getByText('Versão de 26/10/2026')).toBeVisible();
   await expect(page.getByText(/BLUE BERN Comércio Geral e Prestação de Serviços, Lda\., NIF 5000143723/).first()).toBeVisible();
   await expect(page.getByText(/privacidade@eveni\.ao/).first()).toBeVisible();
 
