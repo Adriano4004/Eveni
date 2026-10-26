@@ -13,6 +13,7 @@ import {
   type Periodo,
   type PlanoPago,
   type SituacaoPlano,
+  descidaDoPlano,
   valorDoPagamento,
 } from '../../shared/pagamentos.js';
 import { criarExigirAdmin } from '../admin/rotas.js';
@@ -291,8 +292,9 @@ export function registarRotasPagamentos(
 
   app.post<{ Params: { id: string } }>('/api/admin/pagamentos/:id/confirmar', { preHandler: exigirAdmin }, async (pedido) => {
     const r = await decidir(pedido.params.id, async (cliente, p) => {
-      // Renovação do mesmo plano ainda activo: o novo período começa quando o actual acaba. Senão, começa hoje.
-      const renova = p.ws_plan === p.plan_code && p.ws_fim !== null && p.ws_fim.getTime() > Date.now();
+      // Renovação do mesmo plano, ainda activo ou dentro da tolerância (decisão 030): o novo período começa quando
+      // o anterior acabou, sem dias a mais para quem paga tarde. Noutro caso, começa hoje.
+      const renova = p.ws_plan === p.plan_code && p.ws_fim !== null && descidaDoPlano(p.ws_fim).getTime() > Date.now();
       const { rows } = await cliente.query<{ inicio: Date; fim: Date }>(
         `select $1::timestamptz as inicio, $1::timestamptz + make_interval(months => $2) as fim`,
         [renova ? p.ws_fim : new Date(), MESES[p.period]],

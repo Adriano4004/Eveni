@@ -33,4 +33,5 @@ Uma decisão alterada não se apaga: escreve-se uma nova que a substitui e marca
 | 026 | [Política de privacidade e termos de utilização](026-privacidade-termos.md) | Em vigor |
 | 027 | [Administração dos planos](027-administracao-planos.md) | Em vigor |
 | 028 | [Página pública](028-pagina-publica.md) | Em vigor |
-| 029 | [Pagamentos por transferência bancária](029-pagamentos-transferencia.md) | Em vigor (primeira parte) |
+| 029 | [Pagamentos por transferência bancária](029-pagamentos-transferencia.md) | Em vigor |
+| 030 | [Fim do período pago](030-fim-do-plano.md) | Em vigor |

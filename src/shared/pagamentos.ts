@@ -25,6 +25,14 @@ export function valorDoPagamento(plano: PlanoPago, periodo: Periodo): number {
 // Meses de cada período.
 export const MESES: Record<Periodo, number> = { monthly: 1, yearly: 12 };
 
+// Fim do período pago (decisão 030, Adriano a 26/10/2026): aviso por e-mail 7 dias antes e no dia; depois do
+// fim, 7 dias de tolerância antes de o espaço voltar ao Singular.
+export const DIAS_AVISO = 7;
+export const DIAS_TOLERANCIA = 7;
+
+// Dia em que um plano que acaba em `fim` volta ao Singular, se não for renovado.
+export const descidaDoPlano = (fim: Date) => new Date(fim.getTime() + DIAS_TOLERANCIA * 24 * 60 * 60 * 1000);
+
 // Conta para as transferências. Não são segredos: aparecem a quem paga.
 export const CONTA_BANCARIA = {
   titular: 'BLUE BERN Comércio Geral e Prestação de Serviços, Lda.',

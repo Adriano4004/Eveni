@@ -128,7 +128,8 @@ export interface Eu {
   termosPorAceitar: boolean;
   // O e-mail está na lista de administradores (ADMINS): mostra o botão da administração (decisão 027).
   administrador: boolean;
-  espaco: { id: string; nome: string; plano: CodigoPlano };
+  // fim: fim do período pago (decisão 029), null sem fim.
+  espaco: { id: string; nome: string; plano: CodigoPlano; fim: string | null };
 }
 
 // Administração (decisão 027).

@@ -1,6 +1,6 @@
 # 029 — Pagamentos por transferência bancária
 
-**Data:** 26/10/2026 · **Estado:** Em vigor (primeira parte)
+**Data:** 26/10/2026 · **Estado:** Em vigor
 
 Os planos pagos passam a pagar-se dentro da aplicação, por transferência bancária. O Multicaixa Express fica para depois.
 
@@ -11,7 +11,7 @@ Os planos pagos passam a pagar-se dentro da aplicação, por transferência banc
 | Conta | BLUE BERN Comércio Geral e Prestação de Serviços, Lda. · Banco Millennium Atlântico · conta 1463 33 33 810001 · IBAN AO06 0055 0000 4633 3338 1012 8 |
 | Períodos | Mensal ou anual. No anual, 10% de desconto sobre 12 meses: Empresarial 3 996 000,00 Kz, Grandes 6 912 000,00 Kz |
 | Comprovativo | Enviado na aplicação (PDF, JPG ou PNG, até 5 MB) |
-| Fim do período | Há uns dias de tolerância antes de voltar ao Singular (número de dias por decidir; fica para a segunda parte) |
+| Fim do período | Há uns dias de tolerância antes de voltar ao Singular (ver decisão 030) |
 | Facturas | Emitidas fora da aplicação, num programa certificado pela AGT |
 
 ## Como funciona
@@ -39,10 +39,9 @@ Os planos pagos passam a pagar-se dentro da aplicação, por transferência banc
   - eliminar a conta apaga-os juntamente com o espaço.
 - **Termos e privacidade:** foram actualizados (versão de 26/10/2026), por isso cada conta volta a aceitá-los na entrada seguinte.
 
-## Fica para a segunda parte
+## Fim do período
 
-- Avisos por e-mail antes do fim do período.
-- Regresso ao Singular depois dos dias de tolerância.
+Os avisos antes do fim e o regresso ao Singular depois da tolerância estão na decisão 030.
 
 ## Assuntos fora do código
 
