@@ -20,8 +20,9 @@ Esta decisão completa a 029 (pagamentos por transferência). Diz o que acontece
   - no fim do período, envia o e-mail "O seu plano … acabou hoje", com o dia em que o espaço volta ao Singular;
   - 7 dias depois do fim, o espaço volta ao Singular e o dono recebe o e-mail "O seu espaço voltou ao plano Singular". Fica registado na auditoria como `plano.expirado`.
 - **Cada aviso sai uma só vez.** Fica registado na tabela `plan_notices`, mesmo que haja duas instâncias da aplicação a verificar ao mesmo tempo.
-- **Comprovativo por confirmar:** enquanto houver um, não há avisos nem descida, porque o atraso é nosso e não do cliente.
-  - Um pedido sem comprovativo não trava a descida.
+- **Comprovativo por confirmar:** enquanto houver um, não há avisos. Se foi enviado antes do fim da tolerância, também não há descida, porque o atraso é nosso e não do cliente.
+  - Um comprovativo enviado já depois da tolerância não trava a descida. Assim, quem envie um comprovativo novo depois de cada recusa não fica no plano pago para sempre.
+  - Um pedido sem comprovativo também não trava a descida.
 - **Depois da descida:** o espaço mantém tudo o que tem. Se estiver acima do limite do Singular, não pode criar mais projectos nem convidar mais pessoas (como na decisão 027).
 - **Renovação:**
   - se for confirmada antes da descida, conta a partir do fim do período anterior;

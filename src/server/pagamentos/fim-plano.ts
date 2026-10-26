@@ -12,7 +12,8 @@ import { emailPlanoAcaba, emailPlanoAcabou, emailPlanoExpirado } from '../email/
 // Fim do período pago (decisão 030), verificado de hora a hora:
 //  - 7 dias antes do fim, e no dia do fim, um e-mail ao dono;
 //  - 7 dias depois do fim (tolerância), o espaço volta ao Singular, com e-mail ao dono.
-// Enquanto houver um comprovativo por confirmar, não se avisa nem se desce: o atraso é nosso, não do cliente.
+// Enquanto houver um comprovativo por confirmar, não se avisa; se foi enviado antes do fim da tolerância, também
+// não se desce: o atraso é nosso, não do cliente.
 // Pode correr em mais de uma instância ao mesmo tempo: cada aviso fica registado (plan_notices) antes de sair,
 // e a descida bloqueia o espaço e volta a verificar a data.
 
@@ -29,6 +30,10 @@ interface Espaco {
 const COM_DONO = `w.id, w.name, w.plan_code, w.plan_ends_at,
   (select u.email from workspace_members wm join users u on u.id = wm.user_id where wm.workspace_id = w.id and wm.role = 'owner' limit 1) as dono`;
 const SEM_COMPROVATIVO_POR_CONFIRMAR = `not exists (select 1 from payments p where p.workspace_id = w.id and p.status = 'pending')`;
+// Para a descida, só conta um comprovativo enviado antes do fim da tolerância: senão, quem enviasse um
+// comprovativo novo depois de cada recusa nunca voltaria ao Singular.
+const COMPROVATIVO_A_TEMPO = `select 1 from payments p where p.workspace_id = $1 and p.status = 'pending'
+  and p.proof_uploaded_at < $2::timestamptz + make_interval(days => $3)`;
 
 // Regista o aviso; devolve true só a quem o registou primeiro (esse é que envia o e-mail).
 async function registarAviso(pool: pg.Pool, espaco: Espaco, tipo: 'antes' | 'fim'): Promise<boolean> {
@@ -74,7 +79,7 @@ export async function verificarPlanos(pool: pg.Pool, config: Config, enviarEmail
   // (pode ter sido renovado, ou mudado à mão, entretanto).
   const { rows: expirados } = await pool.query<{ id: string }>(
     `select w.id from workspaces w
-      where w.plan_ends_at is not null and w.plan_ends_at + make_interval(days => $2) <= $1 and ${SEM_COMPROVATIVO_POR_CONFIRMAR}`,
+      where w.plan_ends_at is not null and w.plan_ends_at + make_interval(days => $2) <= $1`,
     [agora, DIAS_TOLERANCIA],
   );
   for (const { id } of expirados) {
@@ -82,12 +87,13 @@ export async function verificarPlanos(pool: pg.Pool, config: Config, enviarEmail
       const { rows } = await cliente.query<Espaco>(
         `select ${COM_DONO} from workspaces w
           where w.id = $1 and w.plan_ends_at is not null and w.plan_ends_at + make_interval(days => $3) <= $2
-            and ${SEM_COMPROVATIVO_POR_CONFIRMAR}
           for update of w`,
         [id, agora, DIAS_TOLERANCIA],
       );
       const w = rows[0];
       if (!w) return null;
+      // Numa consulta à parte, depois do bloqueio: vê um comprovativo enviado enquanto se esperava por ele.
+      if ((await cliente.query(COMPROVATIVO_A_TEMPO, [id, w.plan_ends_at, DIAS_TOLERANCIA])).rowCount) return null;
       await cliente.query("update workspaces set plan_code = 'singular', plan_started_at = now(), plan_ends_at = null where id = $1", [id]);
       await auditar(cliente, 'plano.expirado', { espacoId: id, detalhes: { de: w.plan_code, fim: w.plan_ends_at.toISOString() } });
       return w;

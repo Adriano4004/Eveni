@@ -148,6 +148,15 @@ describe('regresso ao Singular', () => {
     expect(await verificar(new Date(fim.getTime() + 20 * DIA))).toMatchObject({ descidas: 1 });
   });
 
+  it('um comprovativo enviado depois do fim da tolerância não trava a descida', async () => {
+    const ana = await anaComPlano(fim);
+    const id = (await c.post('/api/pagamentos', { plano: 'empresarial', periodo: 'monthly' }, ana)).json().emAberto.id;
+    const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4').toString('base64')}`;
+    expect((await c.post(`/api/pagamentos/${id}/comprovativo`, { ficheiro: pdf }, ana)).statusCode).toBe(200);
+    await base.pool.query("update payments set proof_uploaded_at = $1", [new Date(fim.getTime() + 7 * DIA + 1000)]);
+    expect(await verificar(new Date(fim.getTime() + 8 * DIA))).toMatchObject({ descidas: 1 });
+  });
+
   it('um pedido sem comprovativo não trava a descida', async () => {
     const ana = await anaComPlano(fim);
     expect((await c.post('/api/pagamentos', { plano: 'empresarial', periodo: 'monthly' }, ana)).statusCode).toBe(201);
